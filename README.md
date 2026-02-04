@@ -1,3 +1,4 @@
+# 🔴🟠🟡🟢🔵🟣
 # Dot Diary
 
 Dot Diary is a minimalist web app for tracking daily habits/events with colored dots.
