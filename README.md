@@ -3,6 +3,8 @@
 
 Dot Diary is a minimalist web app for tracking daily habits/events with colored dots.
 
+<img width="1455" height="1106" alt="image" src="https://github.com/user-attachments/assets/0bdc9376-ebbf-4683-8c2a-c95f11359a3a" />
+
 ## Features
 
 - Desktop year view and mobile month view
