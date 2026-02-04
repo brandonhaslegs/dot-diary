@@ -30,7 +30,7 @@ html[data-theme="dark"] {
 
 body {
   margin: 0;
-  font-family: "Space Grotesk", "Avenir Next", "Trebuchet MS", sans-serif;
+  font-family: "Funnel Sans", "Avenir Next", "Trebuchet MS", sans-serif;
   font-weight: 700;
   color: var(--ink);
   background: var(--bg);
@@ -681,6 +681,18 @@ button {
   inset: 0;
 }
 
+.year-day:has(.dot-layer:hover),
+.month-day:has(.dot-layer:hover) {
+  background: var(--foreground);
+}
+
+.year-day:has(.dot-layer:hover) .day-label,
+.month-day:has(.dot-layer:hover) .month-day-label,
+.year-day:has(.dot-layer:hover) .day-note,
+.month-day:has(.dot-layer:hover) .month-note {
+  color: var(--background);
+}
+
 .day-note {
   position: absolute;
   left: 50%;
@@ -813,7 +825,7 @@ button {
 }
 
 .modal-card p {
-  margin: 0;
+  margin: 8px 0;
 }
 
 .modal-actions {
@@ -857,6 +869,8 @@ button {
 .popover-note-row input {
   flex: 1;
   width: 100px;
+  overflow: visible;
+  border-radius: 0;
   border: 0;
   background: transparent;
   padding: 0;

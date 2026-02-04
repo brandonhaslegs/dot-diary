@@ -34,7 +34,7 @@ const defaultState = {
   monthCursor: startOfMonth(new Date()).toISOString(),
   yearCursor: new Date().getFullYear(),
   weekStartsMonday: false,
-  darkMode: false,
+  darkMode: null,
   dotTypes: [],
   dayDots: {},
   dotPositions: {},
@@ -180,14 +180,26 @@ document.addEventListener("keydown", (event) => {
 render();
 showSettingsOnFirstLoad();
 
+const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+if (colorSchemeMedia && typeof colorSchemeMedia.addEventListener === "function") {
+  colorSchemeMedia.addEventListener("change", () => {
+    if (state.darkMode === null) render();
+  });
+} else if (colorSchemeMedia && typeof colorSchemeMedia.addListener === "function") {
+  colorSchemeMedia.addListener(() => {
+    if (state.darkMode === null) render();
+  });
+}
+
 function render() {
   applyTheme();
   renderPeriodPicker();
   renderDiaryGrid();
   renderDotTypeList();
   weekStartMondayInput.checked = Boolean(state.weekStartsMonday);
-  colorModeLightButton.classList.toggle("active", !state.darkMode);
-  colorModeDarkButton.classList.toggle("active", Boolean(state.darkMode));
+  const darkModeEnabled = isDarkModeEnabled();
+  colorModeLightButton.classList.toggle("active", !darkModeEnabled);
+  colorModeDarkButton.classList.toggle("active", darkModeEnabled);
   renderSuggestedDotTypes();
 }
 
@@ -421,7 +433,7 @@ function renderDotTypeList() {
     const empty = document.createElement("li");
     empty.className = "empty-state";
     empty.innerHTML =
-      '<span class="empty-state-emoji" aria-hidden="true">🖊️</span>No dot types yet, choose your dots below.';
+      'You don’t have any dot types yet';
     dotTypeList.appendChild(empty);
   }
 
@@ -851,7 +863,7 @@ function loadState() {
       monthCursor: parsed.monthCursor || defaultState.monthCursor,
       yearCursor: Number.isInteger(parsed.yearCursor) ? parsed.yearCursor : yearFromMonthCursor || defaultState.yearCursor,
       weekStartsMonday: Boolean(parsed.weekStartsMonday),
-      darkMode: Boolean(parsed.darkMode),
+      darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
       dotTypes: Array.isArray(parsed.dotTypes) ? parsed.dotTypes : structuredClone(defaultState.dotTypes),
       dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
       dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
@@ -940,7 +952,7 @@ function createDemoState() {
     monthCursor: startOfMonth(now).toISOString(),
     yearCursor: year,
     weekStartsMonday: false,
-    darkMode: false,
+    darkMode: null,
     dotTypes,
     dayDots,
     dotPositions,
@@ -1183,7 +1195,7 @@ function syncDotTypeInputSize(input) {
 }
 
 function applyTheme() {
-  document.documentElement.dataset.theme = state.darkMode ? "dark" : "light";
+  document.documentElement.dataset.theme = isDarkModeEnabled() ? "dark" : "light";
 }
 
 function downloadDataExport() {
@@ -1234,11 +1246,19 @@ function normalizeImportedState(parsed) {
     monthCursor: typeof parsed.monthCursor === "string" ? parsed.monthCursor : defaultState.monthCursor,
     yearCursor: Number.isInteger(parsed.yearCursor) ? parsed.yearCursor : yearFromMonthCursor || defaultState.yearCursor,
     weekStartsMonday: Boolean(parsed.weekStartsMonday),
+    darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
     dotTypes: Array.isArray(parsed.dotTypes) ? parsed.dotTypes : [],
     dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
     dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
     dayNotes: parsed.dayNotes && typeof parsed.dayNotes === "object" ? parsed.dayNotes : {}
   };
+}
+
+function isDarkModeEnabled() {
+  if (typeof state.darkMode === "boolean") {
+    return state.darkMode;
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 function showToast(message) {
