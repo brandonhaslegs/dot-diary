@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+*.swp
+
+# Common dependency/build folders (safe if you later add tooling)
+node_modules/
+dist/
+build/
+
