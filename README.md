@@ -20,6 +20,18 @@ Dot Diary is a minimalist web app for tracking your life with colored dots.
 
 <img width="839" height="1020" alt="image" src="https://github.com/user-attachments/assets/942966c2-4f09-479f-a206-121a0888377d" />
 
+## To do
+
+- [ ] Add cloud backup/syncing
+- [ ] Add feature-gating for a business model
+  - [ ] Add more than 6 dots
+  - [ ] Recolor your dots
+  - [ ] Custom skins
+  - [ ] Cloud sync
+- [ ] Marketing page
+- [ ] iOS app
+- [ ] Android app
+
 ## Tech
 
 - Vanilla HTML, CSS, and JavaScript
