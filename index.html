@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dot Diary</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">Dot Diary</div>
+        <div class="period-picker">
+          <button id="period-picker-toggle" type="button" aria-label="Select period">
+            <span id="period-picker-label"></span>
+            <svg class="year-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M9.75 4.5L6 8.25L2.25 4.5" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div id="period-picker-menu" class="period-picker-menu hidden"></div>
+        </div>
+        <nav class="view-nav" aria-label="Sections">
+          <button id="open-settings" type="button" class="icon-button" aria-label="Settings">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <g clip-path="url(#settings_clip_1)">
+                <path
+                  d="M4.375 12.5C5.41053 12.5 6.25 11.6605 6.25 10.625C6.25 9.58947 5.41053 8.75 4.375 8.75C3.33947 8.75 2.5 9.58947 2.5 10.625C2.5 11.6605 3.33947 12.5 4.375 12.5Z"
+                  stroke="black"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M10 8.75C11.0355 8.75 11.875 7.91053 11.875 6.875C11.875 5.83947 11.0355 5 10 5C8.96447 5 8.125 5.83947 8.125 6.875C8.125 7.91053 8.96447 8.75 10 8.75Z"
+                  stroke="black"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M15.625 15C16.6605 15 17.5 14.1605 17.5 13.125C17.5 12.0895 16.6605 11.25 15.625 11.25C14.5895 11.25 13.75 12.0895 13.75 13.125C13.75 14.1605 14.5895 15 15.625 15Z"
+                  stroke="black"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path d="M4.375 3.125V8.75" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M15.625 3.125V11.25" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M10 3.125V5" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M4.375 12.5V16.875" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M15.625 15V16.875" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M10 8.75V16.875" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </g>
+              <defs>
+                <clipPath id="settings_clip_1">
+                  <rect width="20" height="20" fill="white" />
+                </clipPath>
+              </defs>
+            </svg>
+            <span>Settings</span>
+          </button>
+        </nav>
+      </header>
+
+      <main id="diary-page" class="page calendar-area">
+        <section id="month-grid" class="month-grid hidden"></section>
+        <section id="year-grid" class="year-grid"></section>
+      </main>
+    </div>
+
+    <div id="day-popover" class="popover hidden" role="dialog" aria-label="Pick a dot"></div>
+
+    <div id="delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <div class="modal-card">
+        <h3 id="delete-title">Are you sure?</h3>
+        <p id="delete-text"></p>
+        <div class="modal-actions">
+          <button id="delete-cancel" type="button">Cancel</button>
+          <button id="delete-confirm" type="button" class="small-danger">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-card settings-card">
+        <h3 id="settings-title" class="hidden">Settings</h3>
+        <section class="settings-section suggestions">
+          <h4>Your dot types</h4>
+          <ul id="dot-type-list" class="dot-type-list"></ul>
+          <h5>Suggested dot types</h5>
+          <p class="muted">
+            It’s helpful to choose three you want to do more of, and three you want to do less of.
+          </p>
+          <div id="suggested-dot-list" class="suggested-dot-list"></div>
+        </section>
+
+        <hr />
+
+        <section class="settings-section">
+          <h4>Display</h4>
+          <div class="display-row">
+            <div>
+              <div>Start weeks on Monday</div>
+              <div class="muted">This only affects the month view</div>
+            </div>
+            <label class="settings-toggle">
+              <input id="week-start-monday" type="checkbox" />
+            </label>
+          </div>
+          <div class="display-row">
+            <div>Color mode</div>
+            <div class="color-mode-toggle" role="group" aria-label="Color mode">
+              <button id="color-mode-light" type="button">Light</button>
+              <button id="color-mode-dark" type="button">Dark</button>
+            </div>
+          </div>
+        </section>
+
+        <hr />
+
+        <section class="settings-section">
+          <h4>My data</h4>
+          <div class="data-action-row">
+            <p class="muted">
+              You can download all your dot names, colors, entries, positions, and preferences and upload them on another device.
+            </p>
+            <button id="download-data" type="button">Download</button>
+          </div>
+          <div class="data-action-row">
+            <p class="muted">
+              Already downloaded your data from another device? Upload it here to keep going where you left off.
+            </p>
+            <button id="upload-data" type="button">Upload</button>
+          </div>
+          <input id="upload-data-input" type="file" accept="application/json,.json" class="hidden" />
+        </section>
+      </div>
+    </div>
+
+    <template id="popover-item-template">
+      <button class="popover-item" type="button">
+        <span class="swatch"></span>
+        <span class="label"></span>
+      </button>
+    </template>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
