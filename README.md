@@ -29,6 +29,7 @@ Dot Diary is a minimalist web app for tracking your life with colored dots.
   - [ ] Retro theme that looks like a time card
 - [ ]  Refine animations
 - [ ]  Add better button hover states
+- [ ]  Add custom color picker instead of system color picker
 - [ ] Marketing page
 
 ### Hard stuff
