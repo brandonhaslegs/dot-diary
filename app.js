@@ -1,4 +1,6 @@
 const STORAGE_KEY = "dot-diary-v1";
+const FIRST_LOAD_SETTINGS_KEY = "dot-diary-settings-shown-v1";
+const DEMO_MODE = new URLSearchParams(window.location.search).get("demo") === "1";
 const SUGGESTED_DOT_TYPES = [
   { name: "Smoking", color: "#875436" },
   { name: "Drugs", color: "#FF0000" },
@@ -39,7 +41,7 @@ const defaultState = {
   dayNotes: {}
 };
 
-let state = loadState();
+let state = DEMO_MODE ? createDemoState() : loadState();
 let activePopover = null;
 let pendingFocusDotId = null;
 let pendingDeleteDotTypeId = null;
@@ -176,6 +178,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 render();
+showSettingsOnFirstLoad();
 
 function render() {
   applyTheme();
@@ -830,6 +833,10 @@ function setDayNote(isoDate, rawValue) {
 }
 
 function saveAndRender() {
+  if (DEMO_MODE) {
+    render();
+    return;
+  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   render();
 }
@@ -853,6 +860,92 @@ function loadState() {
   } catch {
     return structuredClone(defaultState);
   }
+}
+
+function showSettingsOnFirstLoad() {
+  if (DEMO_MODE) return;
+  try {
+    if (localStorage.getItem(FIRST_LOAD_SETTINGS_KEY) === "1") return;
+    openSettingsModal();
+    localStorage.setItem(FIRST_LOAD_SETTINGS_KEY, "1");
+  } catch {
+    // Ignore storage access issues.
+  }
+}
+
+function createDemoState() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const dotTypes = [
+    { id: "demo-sex", name: "Sex", color: "#2F8CFA" },
+    { id: "demo-alcohol", name: "Alcohol", color: "#875436" },
+    { id: "demo-smoking", name: "Smoking", color: "#FF0000" },
+    { id: "demo-drugs", name: "Drugs", color: "#FFC700" },
+    { id: "demo-exercise", name: "Exercise", color: "#15C771" },
+    { id: "demo-exploring", name: "Exploring", color: "#2F8CFA" },
+    { id: "demo-music", name: "Music", color: "#0F766E" },
+    { id: "demo-movie", name: "Movie", color: "#1D3557" }
+  ];
+  const noteBank = [
+    "Great walk downtown",
+    "Late night movie",
+    "Date night",
+    "Sunset bike ride",
+    "Met old friend",
+    "Long studio session",
+    "Felt grounded today",
+    "Amazing ramen spot",
+    "Park run",
+    "Stayed in tonight"
+  ];
+  const dayDots = {};
+  const dayNotes = {};
+  const dotPositions = {};
+  const start = new Date(year, 0, 1);
+  const end = new Date(year, 11, 31);
+
+  for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+    const iso = formatISODate(date);
+    const densitySeed = hash32(`${iso}|demo|density`) % 100;
+    const count = densitySeed < 45 ? 0 : densitySeed < 73 ? 1 : densitySeed < 90 ? 2 : 3;
+    if (count > 0) {
+      const ids = [];
+      let attempts = 0;
+      while (ids.length < count && attempts < 24) {
+        const pick = hash32(`${iso}|demo|pick|${attempts}`) % dotTypes.length;
+        const id = dotTypes[pick].id;
+        if (!ids.includes(id)) ids.push(id);
+        attempts += 1;
+      }
+      dayDots[iso] = ids;
+
+      for (const id of ids) {
+        const moved = hash32(`${iso}|${id}|demo|moved`) % 4 === 0;
+        if (!moved) continue;
+        if (!dotPositions[iso]) dotPositions[iso] = {};
+        dotPositions[iso][id] = {
+          left: 10 + (hash32(`${iso}|${id}|demo|x`) % 81),
+          top: 14 + (hash32(`${iso}|${id}|demo|y`) % 73)
+        };
+      }
+    }
+
+    if (hash32(`${iso}|demo|note`) % 7 === 0) {
+      const note = noteBank[hash32(`${iso}|demo|note-text`) % noteBank.length];
+      dayNotes[iso] = normalizeNote(note);
+    }
+  }
+
+  return {
+    monthCursor: startOfMonth(now).toISOString(),
+    yearCursor: year,
+    weekStartsMonday: false,
+    darkMode: false,
+    dotTypes,
+    dayDots,
+    dotPositions,
+    dayNotes
+  };
 }
 
 function formatISODate(date) {
