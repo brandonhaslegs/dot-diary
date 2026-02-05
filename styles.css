@@ -35,6 +35,7 @@ body {
   color: var(--ink);
   background: var(--bg);
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -52,6 +53,7 @@ textarea {
   display: grid;
   grid-template-rows: auto 1fr;
   height: 100vh;
+  height: 100dvh;
 }
 
 .topbar {
@@ -804,6 +806,7 @@ button {
 .settings-card {
   width: min(760px, calc(100vw - 24px));
   max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
   overflow: auto;
   text-align: left;
 }
@@ -883,7 +886,7 @@ button {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   transform: translate(-50%, 32px);
   opacity: 0;
   background: var(--foreground);
@@ -1040,7 +1043,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   .popover {
     left: 4px !important;
     right: 4px;
-    bottom: 4px !important;
+    bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important;
     top: auto !important;
     width: calc(100% - 8px);
     max-width: none;
