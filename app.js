@@ -653,10 +653,16 @@ function openPopover(isoDate, x, y) {
   popover.appendChild(noteWrap);
 
   popover.classList.remove("hidden");
-  const maxX = window.innerWidth - popover.offsetWidth - 8;
-  const maxY = window.innerHeight - popover.offsetHeight - 8;
-  popover.style.left = `${clamp(x, 8, maxX)}px`;
-  popover.style.top = `${clamp(y, 8, maxY)}px`;
+  const isSmallScreen = window.matchMedia("(max-width: 480px)").matches;
+  if (isSmallScreen) {
+    popover.style.left = "";
+    popover.style.top = "";
+  } else {
+    const maxX = window.innerWidth - popover.offsetWidth - 8;
+    const maxY = window.innerHeight - popover.offsetHeight - 8;
+    popover.style.left = `${clamp(x, 8, maxX)}px`;
+    popover.style.top = `${clamp(y, 8, maxY)}px`;
+  }
   if (shouldAnimateIn) {
     showAnimated(popover);
   } else {
