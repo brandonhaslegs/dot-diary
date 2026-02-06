@@ -1330,8 +1330,12 @@ button:active {
 }
 
 .onboarding-split-right {
-  display: grid;
   gap: 12px;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 24px;
 }
 
 .demo-day {
