@@ -1700,7 +1700,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   /* Hide "Settings" text label, keep icon */
   .view-nav .icon-button span {
-    display: none;
+    font-size: 14px;
   }
 
   /* Month grid: tighter gap, better cell sizing */
