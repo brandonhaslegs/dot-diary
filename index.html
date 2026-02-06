@@ -322,48 +322,48 @@
         </section>
 
         <hr />
-
+		
         <section class="settings-section">
-          <h4>My data</h4>
-          <div class="data-action-row">
-            <p class="muted">
-              You can download all your dot names, colors, entries, positions, and preferences and upload them on another device.
-            </p>
-            <button id="download-data" type="button">Download</button>
-          </div>
-          <div class="data-action-row">
-            <p class="muted">
-              Already downloaded your data from another device? Upload it here to keep going where you left off.
-            </p>
-            <button id="upload-data" type="button">Upload</button>
-          </div>
-          <input id="upload-data-input" type="file" accept="application/json,.json" class="hidden" />
+			<h4>Cloud sync</h4>
+			<div class="auth-row" id="auth-row">
+				<input
+				id="auth-email"
+				type="text"
+				placeholder="you@example.com"
+				autocomplete="email"
+				autocorrect="on"
+				spellcheck="true"
+				autocapitalize="none"
+				inputmode="email"
+				/>
+				<button id="auth-send" type="button">Send magic link</button>
+			</div>
+			<div class="auth-status" id="auth-status"></div>
+			<div class="auth-status muted" id="sync-status"></div>
+			<button id="auth-signout" type="button" class="hidden">Sign out</button>
         </section>
+		
+		<hr />
+
+		<section class="settings-section">
+		  <h4>My data</h4>
+		  <div class="data-action-row">
+			<p class="muted">
+			  You can download all your dot names, colors, entries, positions, and preferences and upload them on another device.
+			</p>
+			<button id="download-data" type="button">Download</button>
+		  </div>
+		  <div class="data-action-row">
+			<p class="muted">
+			  Already downloaded your data from another device? Upload it here to keep going where you left off.
+			</p>
+			<button id="upload-data" type="button">Upload</button>
+		  </div>
+		  <input id="upload-data-input" type="file" accept="application/json,.json" class="hidden" />
+		</section>
 
         <hr />
-
-        <section class="settings-section">
-          <h4>Cloud sync</h4>
-          <div class="auth-row" id="auth-row">
-            <input
-              id="auth-email"
-              type="text"
-              placeholder="you@example.com"
-              autocomplete="email"
-              autocorrect="on"
-              spellcheck="true"
-              autocapitalize="none"
-              inputmode="email"
-            />
-            <button id="auth-send" type="button">Send magic link</button>
-          </div>
-          <div class="auth-status" id="auth-status"></div>
-          <div class="auth-status muted" id="sync-status"></div>
-          <button id="auth-signout" type="button" class="hidden">Sign out</button>
-        </section>
-
-        <hr />
-
+		
         <section class="settings-section">
           <h4>Reset</h4>
           <p class="muted">Reopen onboarding and settings as if it’s your first time.</p>

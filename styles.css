@@ -1527,7 +1527,7 @@ button:active {
   font: inherit;
   color: var(--ink);
   cursor: pointer;
-  display: inline-flex;
+  display: none;
   align-items: center;
   gap: 8px;
 }
@@ -1836,6 +1836,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .settings-back {
+    display: inline-flex;
     width: 100%;
     justify-content: center;
   }
