@@ -151,6 +151,7 @@ let hasEnteredApp = false;
 const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let syncUser = null;
 let syncTimer = null;
+let pendingSyncToast = false;
 let lastSyncedAt = null;
 let loginMode = false;
 
@@ -2021,6 +2022,115 @@ function getStateTimestamp() {
   return new Date(state.lastModified || 0).getTime();
 }
 
+function mergeNotes(localNote, remoteNote) {
+  const local = (localNote || "").trim();
+  const remote = (remoteNote || "").trim();
+  if (!local) return remote;
+  if (!remote) return local;
+  if (local === remote) return local;
+  return normalizeNote(`${local} / ${remote}`);
+}
+
+function mergeDotTypes(localTypes, remoteTypes, preferRemote) {
+  const localById = new Map(localTypes.map((dot) => [dot.id, dot]));
+  const remoteById = new Map(remoteTypes.map((dot) => [dot.id, dot]));
+  const localByName = new Map(localTypes.map((dot) => [dot.name.toLowerCase(), dot]));
+  const remoteByName = new Map(remoteTypes.map((dot) => [dot.name.toLowerCase(), dot]));
+  const idRemap = new Map();
+  const merged = [];
+
+  const allNames = new Set([...localByName.keys(), ...remoteByName.keys()]);
+  allNames.forEach((name) => {
+    const local = localByName.get(name);
+    const remote = remoteByName.get(name);
+    if (local && remote) {
+      const chosen = preferRemote ? remote : local;
+      const other = preferRemote ? local : remote;
+      merged.push({ ...chosen });
+      if (other.id !== chosen.id) {
+        idRemap.set(other.id, chosen.id);
+      }
+    } else if (local) {
+      merged.push({ ...local });
+    } else if (remote) {
+      merged.push({ ...remote });
+    }
+  });
+
+  localById.forEach((dot, id) => {
+    if (!merged.some((item) => item.id === id) && !idRemap.has(id)) {
+      merged.push({ ...dot });
+    }
+  });
+  remoteById.forEach((dot, id) => {
+    if (!merged.some((item) => item.id === id) && !idRemap.has(id)) {
+      merged.push({ ...dot });
+    }
+  });
+
+  return { merged, idRemap };
+}
+
+function mergeStates(localState, remoteState, preferRemote) {
+  const { merged: dotTypes, idRemap } = mergeDotTypes(
+    localState.dotTypes || [],
+    remoteState.dotTypes || [],
+    preferRemote
+  );
+
+  const dayDots = {};
+  const allDays = new Set([
+    ...Object.keys(localState.dayDots || {}),
+    ...Object.keys(remoteState.dayDots || {})
+  ]);
+  allDays.forEach((iso) => {
+    const localIds = (localState.dayDots?.[iso] || []).map((id) => idRemap.get(id) || id);
+    const remoteIds = (remoteState.dayDots?.[iso] || []).map((id) => idRemap.get(id) || id);
+    const mergedIds = Array.from(new Set([...localIds, ...remoteIds]));
+    if (mergedIds.length > 0) dayDots[iso] = mergedIds;
+  });
+
+  const dotPositions = {};
+  allDays.forEach((iso) => {
+    const localPos = localState.dotPositions?.[iso] || {};
+    const remotePos = remoteState.dotPositions?.[iso] || {};
+    const mergedPos = {};
+    const allDotIds = new Set([...Object.keys(localPos), ...Object.keys(remotePos)]);
+    allDotIds.forEach((dotId) => {
+      const remapped = idRemap.get(dotId) || dotId;
+      if (localPos[dotId]) {
+        mergedPos[remapped] = localPos[dotId];
+      } else if (remotePos[dotId]) {
+        mergedPos[remapped] = remotePos[dotId];
+      }
+    });
+    if (Object.keys(mergedPos).length > 0) dotPositions[iso] = mergedPos;
+  });
+
+  const dayNotes = {};
+  const allNotes = new Set([
+    ...Object.keys(localState.dayNotes || {}),
+    ...Object.keys(remoteState.dayNotes || {})
+  ]);
+  allNotes.forEach((iso) => {
+    const mergedNote = mergeNotes(localState.dayNotes?.[iso], remoteState.dayNotes?.[iso]);
+    if (mergedNote) dayNotes[iso] = mergedNote;
+  });
+
+  return {
+    ...localState,
+    monthCursor: remoteState.monthCursor || localState.monthCursor,
+    yearCursor: remoteState.yearCursor || localState.yearCursor,
+    weekStartsMonday: Boolean(remoteState.weekStartsMonday),
+    darkMode: typeof remoteState.darkMode === "boolean" ? remoteState.darkMode : localState.darkMode,
+    dotTypes,
+    dayDots,
+    dotPositions,
+    dayNotes,
+    lastModified: new Date(Math.max(getStateTimestamp(), new Date(remoteState.lastModified || 0).getTime())).toISOString()
+  };
+}
+
 async function loadFromCloud() {
   if (!supabase || !syncUser) return;
   const { data, error } = await supabase
@@ -2036,22 +2146,27 @@ async function loadFromCloud() {
     await syncToCloud();
     return;
   }
-  const remoteTimestamp = new Date(data.updated_at || 0).getTime();
-  if (remoteTimestamp > getStateTimestamp()) {
-    state = normalizeImportedState(data.data);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    render();
-    lastSyncedAt = new Date().toISOString();
-    updateAuthUI();
-    showToast("Synced from cloud.");
-  } else if (remoteTimestamp < getStateTimestamp()) {
+  const remoteState = normalizeImportedState(data.data);
+  const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime();
+  const localTimestamp = getStateTimestamp();
+  if (!remoteTimestamp && localTimestamp) {
     await syncToCloud();
+    return;
   }
+  if (remoteTimestamp === localTimestamp) return;
+  const preferRemote = remoteTimestamp > localTimestamp;
+  state = mergeStates(state, remoteState, preferRemote);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  render();
+  lastSyncedAt = new Date().toISOString();
+  updateAuthUI();
+  await syncToCloud();
 }
 
 function scheduleSync() {
   if (!supabase || !syncUser) return;
   if (syncTimer) clearTimeout(syncTimer);
+  pendingSyncToast = true;
   syncTimer = setTimeout(() => {
     syncToCloud();
   }, 800);
@@ -2067,9 +2182,14 @@ async function syncToCloud() {
   const { error } = await supabase.from("user_data").upsert(payload);
   if (error) {
     showToast("Could not sync to cloud.");
+    pendingSyncToast = false;
   } else {
     lastSyncedAt = new Date().toISOString();
     updateAuthUI();
+    if (pendingSyncToast) {
+      showToast("Synced.");
+      pendingSyncToast = false;
+    }
   }
 }
 
