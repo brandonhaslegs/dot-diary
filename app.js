@@ -1292,12 +1292,12 @@ function createDemoState() {
   const now = new Date();
   const year = now.getFullYear();
   const dotTypes = [
-    { id: "demo-exercise", name: "Exercise", color: "#15C771" },
-    { id: "demo-slept", name: "Slept Well", color: "#3A86FF" },
-    { id: "demo-reading", name: "Reading", color: "#FF7A59" },
-    { id: "demo-cooking", name: "Cooking", color: "#00A676" },
-    { id: "demo-social", name: "Social Media", color: "#0A66C2" },
-    { id: "demo-sugar", name: "Sugar", color: "#8338EC" },
+    { id: "demo-exercise", name: "Exercise", color: "#FF0000" },
+    { id: "demo-slept", name: "Slept Well", color: "#FFC700" },
+    { id: "demo-reading", name: "Reading", color: "#15C771" },
+    { id: "demo-cooking", name: "Cooking", color: "#2F8CFA" },
+    { id: "demo-social", name: "Social Media", color: "#B632CC" },
+    { id: "demo-sugar", name: "Sugar", color: "#875436" },
     { id: "demo-movie", name: "Movie", color: "#1D3557" },
     { id: "demo-music", name: "Music", color: "#0F766E" }
   ];
@@ -1325,49 +1325,64 @@ function createDemoState() {
   const end = new Date(year, 11, 31);
 
   const isoNotes = [];
-  const habitOverrides = {
-    exercise: { offStart: new Date(year, 6, 1), offEnd: new Date(year, 8, 30) }, // July-Sep off
-    reading: { lightStart: new Date(year, 1, 1), lightEnd: new Date(year, 2, 28) }, // Feb-Mar lighter
-    music: { weekendOnly: true },
-    movie: { fridayOnly: true }
-  };
-
   for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
     const iso = formatISODate(date);
     isoNotes.push(iso);
     const ids = [];
+    const month = date.getMonth();
+    const weekday = date.getDay();
 
-    // Exercise 5 days a week (Mon-Fri)
-    const inExerciseOff =
-      date >= habitOverrides.exercise.offStart && date <= habitOverrides.exercise.offEnd;
-    if (!inExerciseOff && date.getDay() >= 1 && date.getDay() <= 5) ids.push("demo-exercise");
+    // Exercise: heavy Jan-Mar, off Jun-Aug, 3x/week Sep-Dec
+    if (month <= 2 && weekday !== 0) ids.push("demo-exercise");
+    if (month >= 5 && month <= 7) {
+      // off
+    } else if (month >= 8 && [1, 3, 5].includes(weekday)) {
+      ids.push("demo-exercise");
+    }
 
-    // Slept well most nights (Sun-Thu)
-    if (date.getDay() !== 5 && date.getDay() !== 6) ids.push("demo-slept");
+    // Slept well: most nights, but more misses in summer + holidays
+    const sleepSkip = hash32(`${iso}|demo|sleep`) % 7 === 0;
+    if (![5, 6].includes(weekday) && !sleepSkip) ids.push("demo-slept");
+    if (month >= 10 && hash32(`${iso}|demo|sleep-holiday`) % 3 === 0) {
+      const idx = ids.indexOf("demo-slept");
+      if (idx >= 0) ids.splice(idx, 1);
+    }
 
-    // Reading 4 nights a week (Mon, Tue, Thu, Sun)
-    const inReadingLight =
-      date >= habitOverrides.reading.lightStart && date <= habitOverrides.reading.lightEnd;
-    if ([0, 1, 2, 4].includes(date.getDay()) && !inReadingLight) ids.push("demo-reading");
-    if (inReadingLight && date.getDay() === 0) ids.push("demo-reading"); // only Sundays in light months
+    // Reading: strong in winter, off in summer, light in spring
+    if (month <= 1 && ![5, 6].includes(weekday)) ids.push("demo-reading");
+    if (month >= 2 && month <= 3 && [0, 2, 4].includes(weekday)) ids.push("demo-reading");
+    if (month >= 8 && [1, 3, 6].includes(weekday)) ids.push("demo-reading");
 
-    // Cooking 3 nights a week (Mon, Wed, Sat)
-    if ([1, 3, 6].includes(date.getDay())) ids.push("demo-cooking");
+    // Cooking: bursts by season
+    if (month <= 3 && [1, 3, 6].includes(weekday)) ids.push("demo-cooking");
+    if (month >= 4 && month <= 5 && [2, 4].includes(weekday)) ids.push("demo-cooking");
+    if (month >= 8 && [0, 2, 4, 6].includes(weekday)) ids.push("demo-cooking");
 
-    // Social media more bursty (3-4 day streaks then breaks)
-    const socialCycle = hash32(`${iso}|demo|social`) % 10;
-    if (socialCycle <= 3) ids.push("demo-social");
+    // Social media: heavy Mar-Apr, break May, streaky otherwise
+    if (month >= 2 && month <= 3) {
+      ids.push("demo-social");
+    } else if (month === 4) {
+      // break
+    } else {
+      const socialCycle = hash32(`${iso}|demo|social`) % 12;
+      if (socialCycle <= 3) ids.push("demo-social");
+    }
 
-    // Sugar roughly 2x/week, clustered on weekends
-    if ((date.getDay() === 6 || date.getDay() === 0) && (hash32(`${iso}|demo|sugar`) % 4 === 0)) {
+    // Sugar: weekends mostly, heavy in Nov-Dec
+    if ((weekday === 6 || weekday === 0) && (hash32(`${iso}|demo|sugar`) % 3 === 0)) {
+      ids.push("demo-sugar");
+    }
+    if (month >= 10 && hash32(`${iso}|demo|sugar-holiday`) % 4 === 0) {
       ids.push("demo-sugar");
     }
 
-    // Movie on Fridays
-    if (date.getDay() === 5) ids.push("demo-movie");
+    // Movie: mostly winter weekends, occasional summer
+    if ((month <= 1 || month >= 9) && (weekday === 5 || weekday === 6)) ids.push("demo-movie");
+    if (month >= 5 && month <= 7 && weekday === 6 && date.getDate() <= 7) ids.push("demo-movie");
 
-    // Music on weekends
-    if (date.getDay() === 0 || date.getDay() === 6) ids.push("demo-music");
+    // Music: daily in May, weekends otherwise
+    if (month === 4) ids.push("demo-music");
+    if (month !== 4 && (weekday === 0 || weekday === 6)) ids.push("demo-music");
 
     if (ids.length > 0) {
       dayDots[iso] = ids;
@@ -1398,6 +1413,26 @@ function createDemoState() {
     const iso = bucket.splice(pick, 1)[0];
     dayNotes[iso] = normalizeNote(shuffledNotes[i]);
   }
+
+  const holidayNotes = {
+    [formatISODate(new Date(year, 0, 1))]: "New Year's Day",
+    [formatISODate(new Date(year, 1, 14))]: "Valentine's Day date",
+    [formatISODate(new Date(year, 6, 4))]: "Fourth of July fireworks",
+    [formatISODate(new Date(year, 9, 31))]: "Halloween costumes",
+    [formatISODate(new Date(year, 11, 24))]: "Christmas Eve dinner",
+    [formatISODate(new Date(year, 11, 25))]: "Christmas Day family"
+  };
+  const thanksgiving = (() => {
+    const nov1 = new Date(year, 10, 1);
+    const firstThursdayOffset = (4 - nov1.getDay() + 7) % 7;
+    const fourthThursday = 1 + firstThursdayOffset + 21;
+    return formatISODate(new Date(year, 10, fourthThursday));
+  })();
+  holidayNotes[thanksgiving] = "Thanksgiving dinner";
+
+  Object.entries(holidayNotes).forEach(([iso, note]) => {
+    dayNotes[iso] = normalizeNote(note);
+  });
 
   return {
     monthCursor: startOfMonth(now).toISOString(),
