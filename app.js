@@ -1,6 +1,8 @@
 const STORAGE_KEY = "dot-diary-v1";
 const FIRST_LOAD_SETTINGS_KEY = "dot-diary-settings-shown-v1";
 const DEMO_MODE = new URLSearchParams(window.location.search).get("demo") === "1";
+const SUPABASE_URL = "https://onmrtxwqwyqyiicweffy.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_E9ZgVOUfB3EWjP1Njm5PJQ_c-maFufE";
 const SUGGESTED_DOT_TYPES = [
   { name: "Smoking", color: "#875436" },
   { name: "Drugs", color: "#FF0000" },
@@ -35,6 +37,7 @@ const defaultState = {
   yearCursor: new Date().getFullYear(),
   weekStartsMonday: false,
   darkMode: null,
+  lastModified: new Date().toISOString(),
   dotTypes: [],
   dayDots: {},
   dotPositions: {},
@@ -83,8 +86,29 @@ const deleteText = document.querySelector("#delete-text");
 const deleteCancel = document.querySelector("#delete-cancel");
 const deleteConfirm = document.querySelector("#delete-confirm");
 const toast = document.querySelector("#toast");
+const appShell = document.querySelector(".app-shell");
+const marketingPage = document.querySelector("#marketing-page");
+const enterAppButton = document.querySelector("#enter-app");
+const brandHomeButton = document.querySelector("#brand-home");
+const authEmailInput = document.querySelector("#auth-email");
+const authSendButton = document.querySelector("#auth-send");
+const authStatus = document.querySelector("#auth-status");
+const syncStatus = document.querySelector("#sync-status");
+const authSignOutButton = document.querySelector("#auth-signout");
+let hasEnteredApp = false;
+const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let syncUser = null;
+let syncTimer = null;
+let lastSyncedAt = null;
 
 window.addEventListener("resize", render);
+enterAppButton?.addEventListener("click", enterApp);
+brandHomeButton?.addEventListener("click", () => {
+  marketingPage?.classList.remove("hidden");
+  appShell?.classList.add("hidden");
+});
+authSendButton?.addEventListener("click", handleMagicLink);
+authSignOutButton?.addEventListener("click", signOutSupabase);
 openSettings.addEventListener("click", () => {
   closePopover();
   openSettingsModal();
@@ -179,6 +203,7 @@ document.addEventListener("keydown", (event) => {
 
 render();
 showSettingsOnFirstLoad();
+initSupabaseAuth();
 
 const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 if (colorSchemeMedia && typeof colorSchemeMedia.addEventListener === "function") {
@@ -201,6 +226,7 @@ function render() {
   colorModeLightButton.classList.toggle("active", !darkModeEnabled);
   colorModeDarkButton.classList.toggle("active", darkModeEnabled);
   renderSuggestedDotTypes();
+  updateAuthUI();
 }
 
 function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0) {
@@ -855,8 +881,10 @@ function saveAndRender() {
     render();
     return;
   }
+  state.lastModified = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   render();
+  scheduleSync();
 }
 
 function loadState() {
@@ -870,6 +898,7 @@ function loadState() {
       yearCursor: Number.isInteger(parsed.yearCursor) ? parsed.yearCursor : yearFromMonthCursor || defaultState.yearCursor,
       weekStartsMonday: Boolean(parsed.weekStartsMonday),
       darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
+      lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : new Date().toISOString(),
       dotTypes: Array.isArray(parsed.dotTypes) ? parsed.dotTypes : structuredClone(defaultState.dotTypes),
       dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
       dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
@@ -881,6 +910,7 @@ function loadState() {
 }
 
 function showSettingsOnFirstLoad() {
+  if (!hasEnteredApp) return;
   if (DEMO_MODE) return;
   try {
     if (localStorage.getItem(FIRST_LOAD_SETTINGS_KEY) === "1") return;
@@ -889,6 +919,13 @@ function showSettingsOnFirstLoad() {
   } catch {
     // Ignore storage access issues.
   }
+}
+
+function enterApp() {
+  hasEnteredApp = true;
+  marketingPage?.classList.add("hidden");
+  appShell?.classList.remove("hidden");
+  showSettingsOnFirstLoad();
 }
 
 function createDemoState() {
@@ -959,6 +996,7 @@ function createDemoState() {
     yearCursor: year,
     weekStartsMonday: false,
     darkMode: null,
+    lastModified: new Date().toISOString(),
     dotTypes,
     dayDots,
     dotPositions,
@@ -1253,11 +1291,151 @@ function normalizeImportedState(parsed) {
     yearCursor: Number.isInteger(parsed.yearCursor) ? parsed.yearCursor : yearFromMonthCursor || defaultState.yearCursor,
     weekStartsMonday: Boolean(parsed.weekStartsMonday),
     darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
+    lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : new Date().toISOString(),
     dotTypes: Array.isArray(parsed.dotTypes) ? parsed.dotTypes : [],
     dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
     dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
     dayNotes: parsed.dayNotes && typeof parsed.dayNotes === "object" ? parsed.dayNotes : {}
   };
+}
+
+async function initSupabaseAuth() {
+  if (!supabase) return;
+  const { data } = await supabase.auth.getSession();
+  syncUser = data?.session?.user || null;
+  updateAuthUI();
+  if (syncUser) {
+    await loadFromCloud();
+  }
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    syncUser = session?.user || null;
+    updateAuthUI();
+    if (syncUser) {
+      await loadFromCloud();
+    }
+  });
+}
+
+async function handleMagicLink() {
+  if (!supabase) return;
+  const email = authEmailInput?.value?.trim();
+  if (!email) {
+    showToast("Enter an email first.");
+    return;
+  }
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: window.location.origin
+    }
+  });
+  if (error) {
+    showToast("Could not send magic link.");
+  } else {
+    showToast("Magic link sent. Check your email.");
+  }
+}
+
+async function signOutSupabase() {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+  syncUser = null;
+  lastSyncedAt = null;
+  updateAuthUI();
+  showToast("Signed out.");
+}
+
+function updateAuthUI() {
+  if (!authStatus || !authSignOutButton) return;
+  if (!supabase) {
+    authStatus.textContent = "Supabase client not available.";
+    authStatus.classList.add("muted");
+    if (syncStatus) syncStatus.textContent = "";
+    return;
+  }
+  if (syncUser) {
+    authStatus.textContent = `Signed in as ${syncUser.email || "user"}.`;
+    authStatus.classList.remove("muted");
+    authSignOutButton.classList.remove("hidden");
+    if (syncStatus) {
+      syncStatus.textContent = lastSyncedAt ? `Last synced ${formatSyncTime(lastSyncedAt)}.` : "Not synced yet.";
+    }
+  } else {
+    authStatus.textContent = "Sign in to sync this diary across devices.";
+    authStatus.classList.add("muted");
+    authSignOutButton.classList.add("hidden");
+    if (syncStatus) syncStatus.textContent = "";
+  }
+}
+
+function getStateTimestamp() {
+  return new Date(state.lastModified || 0).getTime();
+}
+
+async function loadFromCloud() {
+  if (!supabase || !syncUser) return;
+  const { data, error } = await supabase
+    .from("user_data")
+    .select("data, updated_at")
+    .eq("user_id", syncUser.id)
+    .maybeSingle();
+  if (error) {
+    showToast("Cloud sync failed.");
+    return;
+  }
+  if (!data?.data) {
+    await syncToCloud();
+    return;
+  }
+  const remoteTimestamp = new Date(data.updated_at || 0).getTime();
+  if (remoteTimestamp > getStateTimestamp()) {
+    state = normalizeImportedState(data.data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    render();
+    lastSyncedAt = new Date().toISOString();
+    updateAuthUI();
+    showToast("Synced from cloud.");
+  } else if (remoteTimestamp < getStateTimestamp()) {
+    await syncToCloud();
+  }
+}
+
+function scheduleSync() {
+  if (!supabase || !syncUser) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    syncToCloud();
+  }, 800);
+}
+
+async function syncToCloud() {
+  if (!supabase || !syncUser) return;
+  const payload = {
+    user_id: syncUser.id,
+    data: state,
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await supabase.from("user_data").upsert(payload);
+  if (error) {
+    showToast("Could not sync to cloud.");
+  } else {
+    lastSyncedAt = new Date().toISOString();
+    updateAuthUI();
+  }
+}
+
+function formatSyncTime(iso) {
+  try {
+    const date = new Date(iso);
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  } catch {
+    return "just now";
+  }
 }
 
 function isDarkModeEnabled() {

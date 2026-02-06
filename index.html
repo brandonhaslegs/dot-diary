@@ -13,9 +13,18 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app-shell">
+    <section id="marketing-page" class="marketing-shell">
+      <div class="marketing-card">
+        <p class="marketing-eyebrow">Dot Diary</p>
+        <h1>Track your year with dots.</h1>
+        <p>Pick your dot types, mark each day, and leave tiny notes that feel handwritten.</p>
+        <button id="enter-app" type="button">Open Dot Diary</button>
+      </div>
+    </section>
+
+    <div class="app-shell hidden">
       <header class="topbar">
-        <div class="brand">Dot Diary</div>
+        <button id="brand-home" type="button" class="brand-link">Dot Diary</button>
         <div class="period-picker">
           <button id="period-picker-toggle" type="button" aria-label="Select period">
             <span id="period-picker-label"></span>
@@ -140,6 +149,28 @@
           </div>
           <input id="upload-data-input" type="file" accept="application/json,.json" class="hidden" />
         </section>
+
+        <hr />
+
+        <section class="settings-section">
+          <h4>Cloud sync</h4>
+          <div class="auth-row">
+            <input
+              id="auth-email"
+              type="text"
+              placeholder="you@example.com"
+              autocomplete="email"
+              autocorrect="on"
+              spellcheck="true"
+              autocapitalize="none"
+              inputmode="email"
+            />
+            <button id="auth-send" type="button">Send magic link</button>
+          </div>
+          <div class="auth-status" id="auth-status"></div>
+          <div class="auth-status muted" id="sync-status"></div>
+          <button id="auth-signout" type="button" class="hidden">Sign out</button>
+        </section>
       </div>
     </div>
 
@@ -152,6 +183,7 @@
 
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

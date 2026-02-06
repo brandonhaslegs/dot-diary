@@ -56,6 +56,50 @@ textarea {
   height: 100dvh;
 }
 
+.marketing-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.marketing-card {
+  width: min(680px, 100%);
+  border: 2px solid var(--line);
+  border-radius: 40px;
+  padding: 32px;
+  background: var(--card);
+  display: grid;
+  gap: 14px;
+}
+
+.marketing-card h1 {
+  margin: 0;
+  font-size: clamp(34px, 6vw, 64px);
+  line-height: 0.94;
+}
+
+.marketing-card p {
+  margin: 0;
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.25;
+}
+
+.marketing-eyebrow {
+  font-size: 14px !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#enter-app {
+  justify-self: start;
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+  padding: 10px 16px;
+}
+
 .topbar {
   position: relative;
   display: flex;
@@ -66,13 +110,18 @@ textarea {
   background: var(--panel);
 }
 
-.brand {
+.brand-link {
   position: absolute;
   left: 20px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 18px;
   font-weight: 700;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0;
+  cursor: pointer;
 }
 
 .period-picker {
@@ -493,6 +542,33 @@ button {
 
 .data-action-row .muted {
   margin: 0;
+}
+
+.auth-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.auth-row input {
+  width: 100%;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  font: inherit;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.auth-status {
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+.auth-status.muted {
+  color: var(--muted);
 }
 
 .display-row {
@@ -927,7 +1003,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     gap: 8px;
   }
 
-  .brand {
+  .brand-link {
     position: static;
     transform: none;
     font-size: 16px;
@@ -1010,7 +1086,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     padding: 8px 10px;
   }
 
-  .brand {
+  .brand-link {
     font-size: 14px;
   }
 
@@ -1111,7 +1187,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
 /* ── Extra small: <= 360px ───────────────────────────────── */
 @media (max-width: 360px) {
-  .brand {
+  .brand-link {
     font-size: 13px;
   }
 
