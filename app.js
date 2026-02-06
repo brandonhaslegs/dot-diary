@@ -22,14 +22,15 @@ const SUGGESTED_DOT_TYPES = [
   { name: "Therapy", color: "#8D99AE" },
   { name: "Family Time", color: "#F4A261" },
   { name: "Cleaned", color: "#118AB2" },
-  { name: "Screen-Free Hour", color: "#EF476F" },
+  { name: "Screen Free", color: "#EF476F" },
   { name: "Creative Work", color: "#4CC9F0" },
   { name: "Caffeine", color: "#5C3A21" },
   { name: "Social Media", color: "#0A66C2" },
   { name: "Drawing", color: "#D97706" },
   { name: "Art", color: "#7C3AED" },
   { name: "Music", color: "#0F766E" },
-  { name: "Movie", color: "#1D3557" }
+  { name: "Movie", color: "#1D3557" },
+  { name: "Exploring", color: "#2F8CFA" }
 ];
 
 const defaultState = {
@@ -149,11 +150,20 @@ authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsBackButton?.addEventListener("click", closeSettingsModal);
 resetOnboardingButton?.addEventListener("click", () => {
   try {
+    localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(ONBOARDING_KEY);
   } catch {
     // ignore
   }
   closeSettingsModal();
+  state = structuredClone(defaultState);
+  saveAndRender();
+  hasEnteredApp = false;
+  loginMode = false;
+  marketingLogin?.classList.add("hidden");
+  marketingHero?.classList.remove("hidden");
+  marketingPage?.classList.remove("hidden");
+  appShell?.classList.add("hidden");
   showOnboardingIfNeeded();
 });
 onboardingNextButton?.addEventListener("click", () => showOnboardingStep("dots"));
@@ -1197,28 +1207,43 @@ function createDemoState() {
   const end = new Date(year, 11, 31);
 
   const isoNotes = [];
+  const habitOverrides = {
+    exercise: { offStart: new Date(year, 6, 1), offEnd: new Date(year, 8, 30) }, // July-Sep off
+    reading: { lightStart: new Date(year, 1, 1), lightEnd: new Date(year, 2, 28) }, // Feb-Mar lighter
+    music: { weekendOnly: true },
+    movie: { fridayOnly: true }
+  };
+
   for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
     const iso = formatISODate(date);
     isoNotes.push(iso);
     const ids = [];
 
     // Exercise 5 days a week (Mon-Fri)
-    if (date.getDay() >= 1 && date.getDay() <= 5) ids.push("demo-exercise");
+    const inExerciseOff =
+      date >= habitOverrides.exercise.offStart && date <= habitOverrides.exercise.offEnd;
+    if (!inExerciseOff && date.getDay() >= 1 && date.getDay() <= 5) ids.push("demo-exercise");
 
     // Slept well most nights (Sun-Thu)
     if (date.getDay() !== 5 && date.getDay() !== 6) ids.push("demo-slept");
 
     // Reading 4 nights a week (Mon, Tue, Thu, Sun)
-    if ([0, 1, 2, 4].includes(date.getDay())) ids.push("demo-reading");
+    const inReadingLight =
+      date >= habitOverrides.reading.lightStart && date <= habitOverrides.reading.lightEnd;
+    if ([0, 1, 2, 4].includes(date.getDay()) && !inReadingLight) ids.push("demo-reading");
+    if (inReadingLight && date.getDay() === 0) ids.push("demo-reading"); // only Sundays in light months
 
     // Cooking 3 nights a week (Mon, Wed, Sat)
     if ([1, 3, 6].includes(date.getDay())) ids.push("demo-cooking");
 
-    // Social media every other day
-    if ((hash32(`${iso}|demo|social`) % 2) === 0) ids.push("demo-social");
+    // Social media more bursty (3-4 day streaks then breaks)
+    const socialCycle = hash32(`${iso}|demo|social`) % 10;
+    if (socialCycle <= 3) ids.push("demo-social");
 
-    // Sugar roughly 2x/week
-    if (hash32(`${iso}|demo|sugar`) % 7 <= 1) ids.push("demo-sugar");
+    // Sugar roughly 2x/week, clustered on weekends
+    if ((date.getDay() === 6 || date.getDay() === 0) && (hash32(`${iso}|demo|sugar`) % 4 === 0)) {
+      ids.push("demo-sugar");
+    }
 
     // Movie on Fridays
     if (date.getDay() === 5) ids.push("demo-movie");
@@ -1241,9 +1266,18 @@ function createDemoState() {
   }
 
   const shuffledNotes = shuffleArray(noteBank);
-  const noteCount = Math.min(shuffledNotes.length, Math.floor(isoNotes.length / 7));
+  const noteCount = Math.min(shuffledNotes.length, Math.floor(isoNotes.length / 6));
+  const monthBuckets = Array.from({ length: 12 }, () => []);
+  isoNotes.forEach((iso) => {
+    const month = Number(iso.slice(5, 7)) - 1;
+    monthBuckets[month].push(iso);
+  });
   for (let i = 0; i < noteCount; i += 1) {
-    const iso = isoNotes[(i * 7 + 3) % isoNotes.length];
+    const monthIndex = i % 12;
+    const bucket = monthBuckets[monthIndex];
+    if (!bucket || bucket.length === 0) continue;
+    const pick = (hash32(`${bucket[0]}|note|${i}`) % bucket.length + bucket.length) % bucket.length;
+    const iso = bucket.splice(pick, 1)[0];
     dayNotes[iso] = normalizeNote(shuffledNotes[i]);
   }
 
@@ -1616,6 +1650,23 @@ async function signOutSupabase() {
   await supabase.auth.signOut();
   syncUser = null;
   lastSyncedAt = null;
+  hasEnteredApp = false;
+  loginMode = false;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(ONBOARDING_KEY);
+  } catch {
+    // ignore
+  }
+  state = structuredClone(defaultState);
+  closePopover();
+  closeSettingsModal();
+  closeDeleteModal();
+  marketingLogin?.classList.add("hidden");
+  marketingHero?.classList.remove("hidden");
+  marketingPage?.classList.remove("hidden");
+  appShell?.classList.add("hidden");
+  render();
   updateAuthUI();
   showToast("Signed out.");
 }

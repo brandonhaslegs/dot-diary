@@ -72,7 +72,7 @@ textarea {
   display: grid;
   place-items: stretch;
   pointer-events: none;
-  opacity: 0.12;
+  opacity: 0.2;
   padding: 16px;
 }
 
@@ -129,6 +129,14 @@ textarea {
   .marketing-calendar #marketing-month {
     display: grid;
   }
+
+  .marketing-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-card h1 {
+    letter-spacing: -0.1rem;
+  }
 }
 
 .marketing-card {
@@ -147,6 +155,7 @@ textarea {
   margin: 0;
   font-size: clamp(34px, 6vw, 64px);
   line-height: 0.94;
+  letter-spacing: -0.2rem;
 }
 
 .marketing-card p {
@@ -155,14 +164,41 @@ textarea {
   line-height: 1.25;
 }
 
+.marketing-free {
+  font-size: 16px;
+}
+
 .feature-list {
   display: grid;
   gap: 14px;
+  border: 2px solid var(--line);
+  border-radius: 24px;
+  padding: 18px;
+}
+
+.marketing-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.paid-list h4 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.feature-bullets {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.3;
 }
 
 .feature-item h4 {
   margin: 0 0 4px;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .feature-item p {
@@ -174,6 +210,17 @@ textarea {
 .marketing-brand {
   font-size: 18px;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-mark {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: currentColor;
+  flex: 0 0 auto;
 }
 
 #enter-app {
@@ -188,6 +235,10 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.marketing-actions + .marketing-sections {
+  margin-top: 6px;
 }
 
 .outline-button {
@@ -217,6 +268,9 @@ textarea {
   color: var(--ink);
   padding: 0;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .period-picker {
@@ -404,7 +458,7 @@ button {
   background: var(--card);
   border: 2px solid var(--line);
   border-radius: 12px;
-  padding: 8px;
+  padding: 10px 12px;
   overflow: visible;
   z-index: 1;
 }
@@ -559,6 +613,42 @@ button {
   overflow-y: auto;
 }
 
+@media (min-width: 921px) {
+  .calendar-area,
+  .year-grid,
+  .month-grid,
+  .year-day,
+  .month-day {
+    cursor: url("data:image/svg+xml;utf8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M8%2016C12.4183%2016%2016%2012.4183%2016%208C16%203.58172%2012.4183%200%208%200C3.58172%200%200%203.58172%200%208C0%2012.4183%203.58172%2016%208%2016Z%22%20fill%3D%22black%22/%3E%3Cpath%20d%3D%22M4.66669%208H11.3334%22%20stroke%3D%22white%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M8%204.66667V11.3333%22%20stroke%3D%22white%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E") 8 8, pointer;
+  }
+
+  body.popover-open .calendar-area,
+  body.popover-open .year-grid,
+  body.popover-open .month-grid,
+  body.popover-open .year-day,
+  body.popover-open .month-day {
+    cursor: default;
+  }
+}
+
+@media (min-width: 921px) {
+  html[data-theme="dark"] .calendar-area,
+  html[data-theme="dark"] .year-grid,
+  html[data-theme="dark"] .month-grid,
+  html[data-theme="dark"] .year-day,
+  html[data-theme="dark"] .month-day {
+    cursor: url("data:image/svg+xml;utf8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M8%2016C12.4183%2016%2016%2012.4183%2016%208C16%203.58172%2012.4183%200%208%200C3.58172%200%200%203.58172%200%208C0%2012.4183%203.58172%2016%208%2016Z%22%20fill%3D%22white%22/%3E%3Cpath%20d%3D%22M4.66669%208H11.3334%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M8%204.66667V11.3333%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E") 8 8, pointer;
+  }
+
+  html[data-theme="dark"] body.popover-open .calendar-area,
+  html[data-theme="dark"] body.popover-open .year-grid,
+  html[data-theme="dark"] body.popover-open .month-grid,
+  html[data-theme="dark"] body.popover-open .year-day,
+  html[data-theme="dark"] body.popover-open .month-day {
+    cursor: default !important;
+  }
+}
+
 .suggestions {
   margin: 0;
 }
@@ -693,6 +783,8 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 48px;
+  padding: 10px 12px;
 }
 
 .suggestion-chip.add-new {
@@ -854,29 +946,6 @@ button {
   inset: 0;
 }
 
-.year-day:has(.dot-layer:hover),
-.month-day:has(.dot-layer:hover) {
-  background: var(--foreground);
-}
-
-.year-day:has(.dot-layer:hover) .day-label,
-.month-day:has(.dot-layer:hover) .month-day-label,
-.year-day:has(.dot-layer:hover) .day-note,
-.month-day:has(.dot-layer:hover) .month-note {
-  color: var(--background);
-}
-
-body.popover-open .year-day:has(.dot-layer:hover),
-body.popover-open .month-day:has(.dot-layer:hover) {
-  background: var(--card);
-}
-
-body.popover-open .year-day:has(.dot-layer:hover) .day-label,
-body.popover-open .month-day:has(.dot-layer:hover) .month-day-label,
-body.popover-open .year-day:has(.dot-layer:hover) .day-note,
-body.popover-open .month-day:has(.dot-layer:hover) .month-note {
-  color: var(--ink);
-}
 
 .day-note {
   position: absolute;
@@ -993,6 +1062,10 @@ body.popover-open .month-day:has(.dot-layer:hover) .month-note {
   overflow: auto;
 }
 
+#onboarding-modal {
+  background: rgba(0, 0, 0, 0.22);
+}
+
 .onboarding-card {
   display: grid;
   gap: 16px;
@@ -1036,9 +1109,9 @@ body.popover-open .month-day:has(.dot-layer:hover) .month-note {
 }
 
 .settings-back {
-  border: 0;
+  border: 2px solid var(--line);
   background: transparent;
-  padding: 0;
+  padding: 8px 12px;
   margin-bottom: 16px;
   font: inherit;
   color: var(--ink);
@@ -1046,6 +1119,10 @@ body.popover-open .month-day:has(.dot-layer:hover) .month-note {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.settings-back svg path {
+  stroke: currentColor;
 }
 
 .settings-card .dot-type-list,
