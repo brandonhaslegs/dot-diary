@@ -185,7 +185,7 @@ textarea {
   border-radius: 999px;
   background: var(--foreground);
   flex: 0 0 auto;
-  margin-top: -1px;
+  margin-top: -2px;
 }
 
 .feature-dot.dot-a {
@@ -220,7 +220,8 @@ textarea {
 
 .paid-list h4 {
   margin: 0 0 4px;
-  font-size: 18px;
+  font-size: 24px;
+  font-family: "Borel", "Brush Script MT", cursive;
 }
 
 .feature-bullets {
@@ -237,6 +238,10 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+}
+
+.feature-bullets .feature-dot {
+  margin-top: 1px;
 }
 
 .feature-item h4 {
@@ -271,11 +276,12 @@ textarea {
 }
 
 .brand-mark {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: currentColor;
   flex: 0 0 auto;
+  margin-top: 1px;
 }
 
 #enter-app {
@@ -355,7 +361,7 @@ textarea {
 .period-picker-menu {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
+  left: 50%;
   min-width: 140px;
   max-height: 280px;
   overflow: auto;
@@ -367,7 +373,7 @@ textarea {
   display: grid;
   gap: 2px;
   opacity: 0;
-  transform: translateY(8px);
+  transform: translate(-50%, 8px);
   pointer-events: none;
   transition:
     transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -376,7 +382,7 @@ textarea {
 
 .period-picker-menu.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
   pointer-events: auto;
 }
 
@@ -892,6 +898,18 @@ button {
   background: var(--card);
   overflow: hidden;
   text-align: left;
+}
+
+.month-day.current-day,
+.year-day.current-day {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.month-day.current-day .day-label,
+.year-day.current-day .day-label,
+.month-day.current-day .month-day-label {
+  color: var(--background);
 }
 
 .month-day:hover {

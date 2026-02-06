@@ -67,6 +67,7 @@ const MOBILE_MONTH_BATCH_SIZE = 12;
 const MODAL_ANIMATION_MS = 280;
 const POPOVER_ANIMATION_MS = 180;
 const AUTH_HASH = window.location.hash || "";
+const AUTH_STATE_KEY = "dot-diary-authenticated";
 
 const yearGrid = document.querySelector("#year-grid");
 const monthGrid = document.querySelector("#month-grid");
@@ -121,6 +122,7 @@ const authSendButton = document.querySelector("#auth-send");
 const authStatus = document.querySelector("#auth-status");
 const syncStatus = document.querySelector("#sync-status");
 const authSignOutButton = document.querySelector("#auth-signout");
+const authRow = document.querySelector("#auth-row");
 const settingsBackButton = document.querySelector("#settings-back");
 const resetOnboardingButton = document.querySelector("#reset-onboarding");
 let hasEnteredApp = false;
@@ -157,6 +159,7 @@ resetOnboardingButton?.addEventListener("click", () => {
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(ONBOARDING_KEY);
+    localStorage.removeItem(AUTH_STATE_KEY);
   } catch {
     // ignore
   }
@@ -283,6 +286,14 @@ document.addEventListener("keydown", (event) => {
 
 render();
 showOnboardingIfNeeded();
+try {
+  if (!DEMO_MODE && localStorage.getItem(AUTH_STATE_KEY) === "1") {
+    enterApp({ skipOnboarding: true });
+  }
+} catch {
+  // ignore storage access
+}
+
 initSupabaseAuth();
 renderMarketingCalendar();
 
@@ -407,6 +418,7 @@ function renderDiaryGrid() {
 
 function renderYearGrid() {
   const year = state.yearCursor;
+  const todayIso = formatISODate(new Date());
   yearGrid.innerHTML = "";
 
   for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
@@ -435,6 +447,7 @@ function renderYearGrid() {
       const row = document.createElement("button");
       row.type = "button";
       row.className = "year-day";
+      if (iso === todayIso) row.classList.add("current-day");
       row.dataset.date = iso;
 
       const label = document.createElement("span");
@@ -490,6 +503,7 @@ function renderYearGrid() {
 
 function renderMonthGrid() {
   const monthDate = new Date(state.monthCursor);
+  const todayIso = formatISODate(new Date());
   monthGrid.innerHTML = "";
   const days = buildMonthCells(monthDate, state.weekStartsMonday);
 
@@ -497,6 +511,7 @@ function renderMonthGrid() {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "month-day";
+    if (day.iso === todayIso) cell.classList.add("current-day");
     if (!day.inCurrentMonth) cell.classList.add("muted-day");
     cell.dataset.date = day.iso;
 
@@ -692,6 +707,12 @@ function renderDotTypeList(targetList = dotTypeList) {
     syncDotTypeInputSize(nameInput);
     nameInput.addEventListener("input", () => {
       syncDotTypeInputSize(nameInput);
+    });
+    nameInput.addEventListener("focus", () => {
+      nameInput.select();
+    });
+    nameInput.addEventListener("click", () => {
+      nameInput.select();
     });
     nameInput.addEventListener("change", () => {
       const nextName = nameInput.value.trim() || dotType.name;
@@ -1243,9 +1264,6 @@ function completeOnboarding() {
     // ignore
   }
   closeOnboardingModal();
-  if (hasEnteredApp) {
-    openSettingsModal();
-  }
 }
 
 function renderOnboardingLists() {
@@ -1745,6 +1763,15 @@ async function initSupabaseAuth() {
     if (!hasEnteredApp && syncUser && !marketingPage?.classList.contains("hidden")) {
       enterApp({ skipOnboarding: true });
     }
+    try {
+      if (syncUser) {
+        localStorage.setItem(AUTH_STATE_KEY, "1");
+      } else {
+        localStorage.removeItem(AUTH_STATE_KEY);
+      }
+    } catch {
+      // ignore
+    }
     updateAuthUI();
     if (syncUser) {
       await loadFromCloud();
@@ -1784,6 +1811,7 @@ async function signOutSupabase() {
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(ONBOARDING_KEY);
+    localStorage.removeItem(AUTH_STATE_KEY);
   } catch {
     // ignore
   }
@@ -1805,6 +1833,7 @@ function updateAuthUI() {
   if (!supabase) {
     authStatus.textContent = "Supabase client not available.";
     authStatus.classList.add("muted");
+    if (authRow) authRow.classList.remove("hidden");
     if (syncStatus) syncStatus.textContent = "";
     return;
   }
@@ -1812,6 +1841,7 @@ function updateAuthUI() {
     authStatus.textContent = `Signed in as ${syncUser.email || "user"}.`;
     authStatus.classList.remove("muted");
     authSignOutButton.classList.remove("hidden");
+    if (authRow) authRow.classList.add("hidden");
     if (syncStatus) {
       syncStatus.textContent = lastSyncedAt ? `Last synced ${formatSyncTime(lastSyncedAt)}.` : "Not synced yet.";
     }
@@ -1819,6 +1849,7 @@ function updateAuthUI() {
     authStatus.textContent = "Sign in to sync this diary across devices.";
     authStatus.classList.add("muted");
     authSignOutButton.classList.add("hidden");
+    if (authRow) authRow.classList.remove("hidden");
     if (syncStatus) syncStatus.textContent = "";
   }
 }
