@@ -1,5 +1,6 @@
 const STORAGE_KEY = "dot-diary-v1";
 const FIRST_LOAD_SETTINGS_KEY = "dot-diary-settings-shown-v1";
+const ONBOARDING_KEY = "dot-diary-onboarding-v1";
 const DEMO_MODE = new URLSearchParams(window.location.search).get("demo") === "1";
 const SUPABASE_URL = "https://onmrtxwqwyqyiicweffy.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_E9ZgVOUfB3EWjP1Njm5PJQ_c-maFufE";
@@ -63,6 +64,7 @@ const YEAR_BATCH_SIZE = 10;
 const MOBILE_MONTH_BATCH_SIZE = 12;
 const MODAL_ANIMATION_MS = 280;
 const POPOVER_ANIMATION_MS = 180;
+const AUTH_HASH = window.location.hash || "";
 
 const yearGrid = document.querySelector("#year-grid");
 const monthGrid = document.querySelector("#month-grid");
@@ -82,6 +84,12 @@ const uploadDataButton = document.querySelector("#upload-data");
 const uploadDataInput = document.querySelector("#upload-data-input");
 const suggestedDotList = document.querySelector("#suggested-dot-list");
 const deleteModal = document.querySelector("#delete-modal");
+const onboardingModal = document.querySelector("#onboarding-modal");
+const onboardingNextButton = document.querySelector("#onboarding-next");
+const onboardingBackButton = document.querySelector("#onboarding-back");
+const onboardingDoneButton = document.querySelector("#onboarding-done");
+const onboardingDotTypeList = document.querySelector("#onboarding-dot-type-list");
+const onboardingSuggestedDotList = document.querySelector("#onboarding-suggested-dot-list");
 const deleteText = document.querySelector("#delete-text");
 const deleteCancel = document.querySelector("#delete-cancel");
 const deleteConfirm = document.querySelector("#delete-confirm");
@@ -95,6 +103,8 @@ const authSendButton = document.querySelector("#auth-send");
 const authStatus = document.querySelector("#auth-status");
 const syncStatus = document.querySelector("#sync-status");
 const authSignOutButton = document.querySelector("#auth-signout");
+const settingsBackButton = document.querySelector("#settings-back");
+const resetOnboardingButton = document.querySelector("#reset-onboarding");
 let hasEnteredApp = false;
 const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let syncUser = null;
@@ -109,6 +119,20 @@ brandHomeButton?.addEventListener("click", () => {
 });
 authSendButton?.addEventListener("click", handleMagicLink);
 authSignOutButton?.addEventListener("click", signOutSupabase);
+settingsBackButton?.addEventListener("click", closeSettingsModal);
+resetOnboardingButton?.addEventListener("click", () => {
+  try {
+    localStorage.removeItem(ONBOARDING_KEY);
+    localStorage.removeItem(FIRST_LOAD_SETTINGS_KEY);
+  } catch {
+    // ignore
+  }
+  closeSettingsModal();
+  showOnboardingIfNeeded();
+});
+onboardingNextButton?.addEventListener("click", () => showOnboardingStep("dots"));
+onboardingBackButton?.addEventListener("click", () => showOnboardingStep("intro"));
+onboardingDoneButton?.addEventListener("click", completeOnboarding);
 openSettings.addEventListener("click", () => {
   closePopover();
   openSettingsModal();
@@ -202,7 +226,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 render();
-showSettingsOnFirstLoad();
+showOnboardingIfNeeded();
 initSupabaseAuth();
 
 const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
@@ -226,6 +250,7 @@ function render() {
   colorModeLightButton.classList.toggle("active", !darkModeEnabled);
   colorModeDarkButton.classList.toggle("active", darkModeEnabled);
   renderSuggestedDotTypes();
+  renderOnboardingLists();
   updateAuthUI();
 }
 
@@ -452,15 +477,16 @@ function renderMonthGrid() {
   }
 }
 
-function renderDotTypeList() {
-  dotTypeList.innerHTML = "";
+function renderDotTypeList(targetList = dotTypeList) {
+  if (!targetList) return;
+  targetList.innerHTML = "";
 
   if (state.dotTypes.length === 0) {
     const empty = document.createElement("li");
     empty.className = "empty-state";
     empty.innerHTML =
       'You don’t have any dot types yet';
-    dotTypeList.appendChild(empty);
+    targetList.appendChild(empty);
   }
 
   state.dotTypes.forEach((dotType) => {
@@ -588,12 +614,13 @@ function renderDotTypeList() {
     actions.append(toggle, menu);
     inputWrap.append(nameInput, actions);
     item.append(swatch, inputWrap, colorInput);
-    dotTypeList.appendChild(item);
+    targetList.appendChild(item);
   });
 }
 
-function renderSuggestedDotTypes() {
-  suggestedDotList.innerHTML = "";
+function renderSuggestedDotTypes(targetList = suggestedDotList) {
+  if (!targetList) return;
+  targetList.innerHTML = "";
 
   shuffledSuggestions.forEach((suggestion) => {
     if (hasDotTypeName(suggestion.name)) return;
@@ -603,7 +630,7 @@ function renderSuggestedDotTypes() {
     chip.className = "suggestion-chip";
     chip.innerHTML = `<span class="swatch" style="background:${suggestion.color}"></span><span>${suggestion.name}</span>`;
     chip.addEventListener("click", () => addSuggestedDotType(suggestion));
-    suggestedDotList.appendChild(chip);
+    targetList.appendChild(chip);
   });
 
   const addNewChip = document.createElement("button");
@@ -611,7 +638,7 @@ function renderSuggestedDotTypes() {
   addNewChip.className = "suggestion-chip add-new";
   addNewChip.textContent = "Add New";
   addNewChip.addEventListener("click", addNewDotType);
-  suggestedDotList.appendChild(addNewChip);
+  targetList.appendChild(addNewChip);
 }
 
 function openPopover(isoDate, x, y) {
@@ -921,11 +948,50 @@ function showSettingsOnFirstLoad() {
   }
 }
 
+function showOnboardingIfNeeded() {
+  if (!hasEnteredApp) return;
+  if (DEMO_MODE) return;
+  try {
+    if (localStorage.getItem(ONBOARDING_KEY) === "1") return;
+    showOnboardingStep("intro");
+    onboardingModal?.classList.remove("hidden");
+  } catch {
+    // Ignore storage access issues.
+  }
+}
+
+function showOnboardingStep(step) {
+  onboardingModal?.querySelectorAll(".onboarding-step").forEach((panel) => {
+    panel.classList.toggle("hidden", panel.dataset.step !== step);
+  });
+  if (step === "dots") {
+    renderOnboardingLists();
+  }
+}
+
+function closeOnboardingModal() {
+  onboardingModal?.classList.add("hidden");
+}
+
+function completeOnboarding() {
+  try {
+    localStorage.setItem(ONBOARDING_KEY, "1");
+  } catch {
+    // ignore
+  }
+  closeOnboardingModal();
+}
+
+function renderOnboardingLists() {
+  renderDotTypeList(onboardingDotTypeList);
+  renderSuggestedDotTypes(onboardingSuggestedDotList);
+}
+
 function enterApp() {
   hasEnteredApp = true;
   marketingPage?.classList.add("hidden");
   appShell?.classList.remove("hidden");
-  showSettingsOnFirstLoad();
+  showOnboardingIfNeeded();
 }
 
 function createDemoState() {
@@ -1303,12 +1369,18 @@ async function initSupabaseAuth() {
   if (!supabase) return;
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
+  if (!hasEnteredApp && AUTH_HASH.includes("access_token")) {
+    enterApp();
+  }
   updateAuthUI();
   if (syncUser) {
     await loadFromCloud();
   }
   supabase.auth.onAuthStateChange(async (_event, session) => {
     syncUser = session?.user || null;
+    if (!hasEnteredApp && AUTH_HASH.includes("access_token")) {
+      enterApp();
+    }
     updateAuthUI();
     if (syncUser) {
       await loadFromCloud();
@@ -1326,11 +1398,13 @@ async function handleMagicLink() {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.origin
+      emailRedirectTo: "https://dot-diary.com"
     }
   });
   if (error) {
-    showToast("Could not send magic link.");
+    const message = error?.message ? `Magic link failed: ${error.message}` : "Could not send magic link.";
+    showToast(message);
+    console.error("Magic link error:", error);
   } else {
     showToast("Magic link sent. Check your email.");
   }
