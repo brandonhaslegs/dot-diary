@@ -886,6 +886,14 @@ button:active {
   margin-bottom: 10px;
 }
 
+.signout-row {
+  margin-bottom: 0;
+}
+
+.signout-row .muted {
+  margin: 0;
+}
+
 .data-action-row .muted {
   margin: 0;
 }
@@ -1646,10 +1654,10 @@ button:active {
 }
 
 html[data-theme="dark"] .year-caret path,
-html[data-theme="dark"] #open-settings svg path {
+html[data-theme="dark"] #open-settings svg path,
+html[data-theme="dark"] #open-settings svg circle {
   stroke: var(--foreground);
 }
-
 html[data-theme="dark"] .dot-actions-item:disabled:hover {
   background: #222;
 }

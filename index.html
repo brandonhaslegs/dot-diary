@@ -103,41 +103,8 @@
         </div>
         <nav class="view-nav" aria-label="Sections">
           <button id="open-settings" type="button" class="icon-button" aria-label="Settings">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <g clip-path="url(#settings_clip_1)">
-                <path
-                  d="M4.375 12.5C5.41053 12.5 6.25 11.6605 6.25 10.625C6.25 9.58947 5.41053 8.75 4.375 8.75C3.33947 8.75 2.5 9.58947 2.5 10.625C2.5 11.6605 3.33947 12.5 4.375 12.5Z"
-                  stroke="black"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M10 8.75C11.0355 8.75 11.875 7.91053 11.875 6.875C11.875 5.83947 11.0355 5 10 5C8.96447 5 8.125 5.83947 8.125 6.875C8.125 7.91053 8.96447 8.75 10 8.75Z"
-                  stroke="black"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M15.625 15C16.6605 15 17.5 14.1605 17.5 13.125C17.5 12.0895 16.6605 11.25 15.625 11.25C14.5895 11.25 13.75 12.0895 13.75 13.125C13.75 14.1605 14.5895 15 15.625 15Z"
-                  stroke="black"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path d="M4.375 3.125V8.75" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M15.625 3.125V11.25" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M10 3.125V5" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M4.375 12.5V16.875" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M15.625 15V16.875" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M10 8.75V16.875" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </g>
-              <defs>
-                <clipPath id="settings_clip_1">
-                  <rect width="20" height="20" fill="white" />
-                </clipPath>
-              </defs>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="7.25" stroke="black" stroke-width="1.5"/>
             </svg>
             <span>Settings</span>
           </button>
@@ -324,10 +291,10 @@
         <hr />
 		
         <section class="settings-section">
-			<h4>Cloud sync</h4>
-			<div class="auth-row" id="auth-row">
-				<input
-				id="auth-email"
+          <h4>Cloud sync</h4>
+          <div class="auth-row" id="auth-row">
+            <input
+              id="auth-email"
 				type="text"
 				placeholder="you@example.com"
 				autocomplete="email"
@@ -337,10 +304,13 @@
 				inputmode="email"
 				/>
 				<button id="auth-send" type="button">Send magic link</button>
-			</div>
-			<div class="auth-status" id="auth-status"></div>
-			<div class="auth-status muted" id="sync-status"></div>
-			<button id="auth-signout" type="button" class="hidden">Sign out</button>
+          </div>
+          <div class="auth-status" id="auth-status"></div>
+          <div class="auth-status muted" id="sync-status"></div>
+          <div class="data-action-row signout-row">
+            <p class="muted"></p>
+            <button id="auth-signout" type="button" class="hidden">Sign out</button>
+          </div>
         </section>
 		
 		<hr />
@@ -367,7 +337,10 @@
         <section class="settings-section">
           <h4>Reset</h4>
           <p class="muted">Reopen onboarding and settings as if it’s your first time.</p>
-          <button id="reset-onboarding" type="button">Reset onboarding</button>
+          <div class="data-action-row">
+            <p class="muted"></p>
+            <button id="reset-onboarding" type="button">Reset onboarding</button>
+          </div>
         </section>
       </div>
     </div>
