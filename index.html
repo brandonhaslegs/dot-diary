@@ -85,6 +85,35 @@
 
     <div id="day-popover" class="popover hidden" role="dialog" aria-label="Pick a dot"></div>
 
+    <div id="onboarding-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <div class="modal-card">
+        <div class="onboarding-step" data-step="intro">
+          <p class="marketing-eyebrow">Welcome</p>
+          <h3 id="onboarding-title">Dot Diary</h3>
+          <p>Pick a few dot types you want more of, and a few you want less of.</p>
+          <p>Then tap a day to add dots or a short note.</p>
+          <div class="modal-actions">
+            <button id="onboarding-next" type="button">Get started</button>
+          </div>
+        </div>
+        <div class="onboarding-step hidden" data-step="dots">
+          <section class="settings-section suggestions">
+            <h4>Your dot types</h4>
+            <ul id="onboarding-dot-type-list" class="dot-type-list"></ul>
+            <h5>Suggested dot types</h5>
+            <p class="muted">
+              It’s helpful to choose three you want to do more of, and three you want to do less of.
+            </p>
+            <div id="onboarding-suggested-dot-list" class="suggested-dot-list"></div>
+          </section>
+          <div class="onboarding-actions">
+            <button id="onboarding-back" type="button">Back</button>
+            <button id="onboarding-done" type="button">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="delete-title">
       <div class="modal-card">
         <h3 id="delete-title">Are you sure?</h3>
@@ -98,6 +127,20 @@
 
     <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="modal-card settings-card">
+        <button id="settings-back" type="button" class="settings-back">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <g clip-path="url(#back_clip_1)">
+              <path d="M16.875 10H3.125" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M8.75 4.375L3.125 10L8.75 15.625" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+            <defs>
+              <clipPath id="back_clip_1">
+                <rect width="20" height="20" fill="white" />
+              </clipPath>
+            </defs>
+          </svg>
+          <span>Back to my diary</span>
+        </button>
         <h3 id="settings-title" class="hidden">Settings</h3>
         <section class="settings-section suggestions">
           <h4>Your dot types</h4>
@@ -170,6 +213,14 @@
           <div class="auth-status" id="auth-status"></div>
           <div class="auth-status muted" id="sync-status"></div>
           <button id="auth-signout" type="button" class="hidden">Sign out</button>
+        </section>
+
+        <hr />
+
+        <section class="settings-section">
+          <h4>Reset</h4>
+          <p class="muted">Reopen onboarding and settings as if it’s your first time.</p>
+          <button id="reset-onboarding" type="button">Reset onboarding</button>
         </section>
       </div>
     </div>

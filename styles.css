@@ -879,12 +879,40 @@ button {
   padding: 32px;
 }
 
+#onboarding-modal .modal-card {
+  width: min(520px, calc(100vw - 24px));
+}
+
+.onboarding-step.hidden {
+  display: none;
+}
+
+.onboarding-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+
 .settings-card {
   width: min(760px, calc(100vw - 24px));
   max-height: calc(100vh - 24px);
   max-height: calc(100dvh - 24px);
   overflow: auto;
   text-align: left;
+}
+
+.settings-back {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin-bottom: 16px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .settings-card .dot-type-list,
@@ -1133,16 +1161,27 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   /* Settings modal: nearly full screen */
   .settings-card {
-    width: calc(100vw - 8px);
-    max-height: calc(100vh - 8px);
-    border-radius: 20px;
+    width: 100vw;
+    max-height: 100vh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
     padding: 16px;
   }
 
   .modal-card {
-    width: calc(100vw - 8px);
-    border-radius: 20px;
+    width: 100vw;
+    border: 0;
+    border-radius: 0;
     padding: 20px;
+  }
+
+  #settings-modal .modal-card {
+    transform: translateY(100%);
+  }
+
+  #settings-modal.visible .modal-card {
+    transform: translateY(0);
   }
 
   .settings-section h4 {
