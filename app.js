@@ -13,16 +13,16 @@ const SUGGESTED_DOT_TYPES = [
   { name: "Reading", color: "#FF7A59" },
   { name: "Meditation", color: "#6A4C93" },
   { name: "Cooking", color: "#00A676" },
-  { name: "Slept Well", color: "#3A86FF" },
+  { name: "Restful Sleep", color: "#3A86FF" },
   { name: "Journaling", color: "#FB5607" },
   { name: "Sugar", color: "#8338EC" },
   { name: "Watered Plants", color: "#2A9D8F" },
-  { name: "No Spending", color: "#E63946" },
+  { name: "Shopping", color: "#E63946" },
   { name: "Studied", color: "#264653" },
   { name: "Therapy", color: "#8D99AE" },
   { name: "Family Time", color: "#F4A261" },
   { name: "Cleaned", color: "#118AB2" },
-  { name: "Screen Free", color: "#EF476F" },
+  { name: "Screentime", color: "#EF476F" },
   { name: "Creative Work", color: "#4CC9F0" },
   { name: "Caffeine", color: "#5C3A21" },
   { name: "Social Media", color: "#0A66C2" },
@@ -30,7 +30,12 @@ const SUGGESTED_DOT_TYPES = [
   { name: "Art", color: "#7C3AED" },
   { name: "Music", color: "#0F766E" },
   { name: "Movie", color: "#1D3557" },
-  { name: "Exploring", color: "#2F8CFA" }
+  { name: "Exploring", color: "#2F8CFA" },
+  { name: "Doomscrolling", color: "#8E9AAF" },
+  { name: "Partying", color: "#FF6B6B" },
+  { name: "Ate Meat", color: "#8D5524" },
+  { name: "Travel", color: "#3D5A80" },
+  { name: "Swimming", color: "#48CAE4" }
 ];
 
 const defaultState = {
@@ -68,6 +73,20 @@ const MODAL_ANIMATION_MS = 280;
 const POPOVER_ANIMATION_MS = 180;
 const AUTH_HASH = window.location.hash || "";
 const AUTH_STATE_KEY = "dot-diary-authenticated";
+const COLOR_PALETTE = [
+  "#FF0000",
+  "#FFC700",
+  "#15C771",
+  "#2F8CFA",
+  "#B632CC",
+  "#875436",
+  "#FF7A59",
+  "#00A676",
+  "#0A66C2",
+  "#8338EC",
+  "#1D3557",
+  "#0F766E"
+];
 
 const yearGrid = document.querySelector("#year-grid");
 const monthGrid = document.querySelector("#month-grid");
@@ -93,6 +112,9 @@ const onboardingBackButton = document.querySelector("#onboarding-back");
 const onboardingNextDotsButton = document.querySelector("#onboarding-next-dots");
 const onboardingBackSyncButton = document.querySelector("#onboarding-back-sync");
 const onboardingDoneButton = document.querySelector("#onboarding-done");
+const onboardingSkipIntroButton = document.querySelector("#onboarding-skip-intro");
+const onboardingSkipButton = document.querySelector("#onboarding-skip");
+const onboardingUpgradeButton = document.querySelector("#onboarding-upgrade");
 const onboardingEmailInput = document.querySelector("#onboarding-email");
 const onboardingSendButton = document.querySelector("#onboarding-send");
 const onboardingDotTypeList = document.querySelector("#onboarding-dot-type-list");
@@ -179,6 +201,11 @@ onboardingBackButton?.addEventListener("click", () => showOnboardingStep("intro"
 onboardingNextDotsButton?.addEventListener("click", () => showOnboardingStep("sync"));
 onboardingBackSyncButton?.addEventListener("click", () => showOnboardingStep("dots"));
 onboardingDoneButton?.addEventListener("click", completeOnboarding);
+onboardingSkipIntroButton?.addEventListener("click", completeOnboarding);
+onboardingSkipButton?.addEventListener("click", completeOnboarding);
+onboardingUpgradeButton?.addEventListener("click", () => {
+  window.open("mailto:hello@dot-diary.com?subject=Dot%20Diary%20Upgrade", "_blank");
+});
 onboardingSendButton?.addEventListener("click", () => handleMagicLink(onboardingEmailInput?.value));
 openSettings.addEventListener("click", () => {
   closePopover();
@@ -254,6 +281,9 @@ document.addEventListener("pointerdown", (event) => {
   }
   if (!event.target.closest(".dot-actions, .dot-actions-menu")) {
     closeDotMenus();
+  }
+  if (!event.target.closest(".color-picker, .swatch")) {
+    closeColorPickers();
   }
   if (!settingsModal.classList.contains("hidden") && event.target === settingsModal) {
     closeSettingsModal();
@@ -567,6 +597,7 @@ function renderMarketingCalendar() {
   if (!marketingCalendar || !marketingYear || !marketingMonth) return;
   const demoState = createDemoState();
   const year = demoState.yearCursor;
+  const todayIso = formatISODate(new Date());
   marketingYear.innerHTML = "";
   marketingMonth.innerHTML = "";
 
@@ -595,6 +626,7 @@ function renderMarketingCalendar() {
       const iso = formatISODate(date);
       const row = document.createElement("div");
       row.className = "year-day";
+      if (iso === todayIso) row.classList.add("current-day");
 
       const label = document.createElement("span");
       label.className = "day-label";
@@ -637,11 +669,13 @@ function renderMarketingCalendar() {
 function renderMarketingMonth(demoState) {
   const monthDate = startOfMonth(new Date());
   const days = buildMonthCells(monthDate, demoState.weekStartsMonday);
+  const todayIso = formatISODate(new Date());
   marketingMonth.innerHTML = "";
 
   for (const day of days) {
     const cell = document.createElement("div");
     cell.className = "month-day";
+    if (day.iso === todayIso) cell.classList.add("current-day");
     if (!day.inCurrentMonth) cell.classList.add("muted-day");
 
     const dayLabel = document.createElement("div");
@@ -704,6 +738,7 @@ function renderDotTypeList(targetList = dotTypeList) {
     nameInput.type = "text";
     nameInput.value = dotType.name;
     nameInput.setAttribute("aria-label", "Dot meaning");
+    nameInput.className = "dot-name-input";
     syncDotTypeInputSize(nameInput);
     nameInput.addEventListener("input", () => {
       syncDotTypeInputSize(nameInput);
@@ -732,21 +767,10 @@ function renderDotTypeList(targetList = dotTypeList) {
       pendingFocusDotId = null;
     }
 
-    const colorInput = document.createElement("input");
-    colorInput.type = "color";
-    colorInput.value = dotType.color;
-    colorInput.setAttribute("aria-label", "Dot color");
-    colorInput.style.display = "none";
-    colorInput.addEventListener("change", () => {
-      const changed = colorInput.value !== dotType.color;
-      dotType.color = colorInput.value;
-      saveAndRender();
-      if (changed) {
-        showToast(`Changed color for "${dotType.name}".`);
-      }
-    });
-    swatch.addEventListener("click", () => {
-      colorInput.click();
+    const colorPicker = buildColorPicker(dotType, swatch);
+    swatch.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openColorPicker(colorPicker);
     });
 
     const inUse = isDotTypeInUse(dotType.id);
@@ -789,6 +813,15 @@ function renderDotTypeList(targetList = dotTypeList) {
       closeDotMenus();
     });
 
+    const colorItem = document.createElement("button");
+    colorItem.type = "button";
+    colorItem.className = "dot-actions-item";
+    colorItem.textContent = "Change color";
+    colorItem.addEventListener("click", () => {
+      closeDotMenus();
+      openColorPicker(colorPicker);
+    });
+
     const permanentDeleteItem = document.createElement("button");
     permanentDeleteItem.type = "button";
     permanentDeleteItem.className = "dot-actions-item danger-solid";
@@ -826,13 +859,13 @@ function renderDotTypeList(targetList = dotTypeList) {
     });
 
     if (inUse) {
-      menu.append(renameItem, permanentDeleteItem);
+      menu.append(renameItem, colorItem, permanentDeleteItem);
     } else {
-      menu.append(renameItem, deleteItem);
+      menu.append(renameItem, colorItem, deleteItem);
     }
     actions.append(toggle, menu);
     inputWrap.append(nameInput, actions);
-    item.append(swatch, inputWrap, colorInput);
+    item.append(swatch, inputWrap, colorPicker);
     targetList.appendChild(item);
   });
 }
@@ -1638,6 +1671,100 @@ function closeDotMenus() {
   updateMenuScrim();
 }
 
+function closeColorPickers() {
+  document.querySelectorAll(".color-picker").forEach((picker) => {
+    picker.classList.remove("visible");
+    picker.classList.add("hidden");
+    if (picker.dataset.portalActive === "true" && picker._portalParent) {
+      picker._portalParent.appendChild(picker);
+      picker.dataset.portalActive = "";
+    }
+  });
+  updateMenuScrim();
+}
+
+function openColorPicker(picker) {
+  const opening = picker.classList.contains("hidden");
+  closeColorPickers();
+  if (!opening) return;
+  if (picker._hexInput && picker._currentColor) {
+    picker._hexInput.value = picker._currentColor();
+  }
+  const isMobile = window.matchMedia("(max-width: 480px)").matches;
+  if (isMobile && mobileMenuPortal && !picker.dataset.portalActive) {
+    picker.dataset.portalActive = "true";
+    picker._portalParent = picker.parentElement;
+    mobileMenuPortal.appendChild(picker);
+  }
+  showAnimated(picker);
+  updateMenuScrim();
+}
+
+function buildColorPicker(dotType, swatch) {
+  const picker = document.createElement("div");
+  picker.className = "color-picker hidden";
+  picker.dataset.portal = "color-picker";
+  picker._currentColor = () => dotType.color;
+
+  const grid = document.createElement("div");
+  grid.className = "color-grid";
+  const palette = COLOR_PALETTE.filter(
+    (color, index, arr) => arr.indexOf(color) === index
+  );
+  palette.forEach((color) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "color-swatch";
+    btn.style.background = color;
+    btn.setAttribute("aria-label", `Use ${color}`);
+    btn.addEventListener("click", () => {
+      const changed = dotType.color !== color;
+      dotType.color = color;
+      saveAndRender();
+      if (changed) {
+        showToast(`Changed color for "${dotType.name}".`);
+      }
+      closeColorPickers();
+    });
+    grid.appendChild(btn);
+  });
+
+  const customRow = document.createElement("div");
+  customRow.className = "color-custom";
+
+  const hexInput = document.createElement("input");
+  hexInput.type = "text";
+  hexInput.value = dotType.color;
+  hexInput.placeholder = "#RRGGBB";
+  hexInput.className = "color-hex-input";
+  picker._hexInput = hexInput;
+
+  const applyButton = document.createElement("button");
+  applyButton.type = "button";
+  applyButton.textContent = "Apply";
+  applyButton.className = "color-apply";
+  applyButton.addEventListener("click", () => {
+    const raw = hexInput.value.trim();
+    const normalized = raw.startsWith("#") ? raw : `#${raw}`;
+    if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) {
+      showToast("Enter a valid hex color.");
+      return;
+    }
+    const changed = dotType.color.toLowerCase() !== normalized.toLowerCase();
+    dotType.color = normalized;
+    swatch.style.background = normalized;
+    saveAndRender();
+    if (changed) {
+      showToast(`Changed color for "${dotType.name}".`);
+    }
+    closeColorPickers();
+  });
+
+  customRow.append(hexInput, applyButton);
+  picker.append(grid, customRow);
+  return picker;
+}
+
 function positionDotActionsMenu(menu) {
   const boundaryRect = menu.closest(".settings-card")?.getBoundingClientRect() || {
     left: 8,
@@ -1668,8 +1795,9 @@ function updateMenuScrim() {
   if (!menuScrim) return;
   const isMobileSheet = window.matchMedia("(max-width: 480px)").matches;
   const hasDotMenu = Boolean(document.querySelector(".dot-actions-menu:not(.hidden)"));
+  const hasColorPicker = Boolean(document.querySelector(".color-picker:not(.hidden)"));
   const hasPeriodMenu = !periodPickerMenu.classList.contains("hidden");
-  const shouldShow = isMobileSheet && (hasDotMenu || hasPeriodMenu);
+  const shouldShow = isMobileSheet && (hasDotMenu || hasPeriodMenu || hasColorPicker);
   if (menuScrimHideTimer) {
     clearTimeout(menuScrimHideTimer);
     menuScrimHideTimer = null;

@@ -158,7 +158,6 @@ textarea {
   .marketing-card h1 {
     letter-spacing: -0.1rem;
   }
-
 }
 
 .marketing-card p {
@@ -484,6 +483,18 @@ button {
   color: var(--ink);
   cursor: pointer;
   font: inherit;
+  transition: transform 100ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:hover {
+    transform: scale(1.05);
+  }
+}
+
+button:active {
+  transform: scale(0.95);
+  transition: none;
 }
 
 .dot-type-list {
@@ -522,6 +533,19 @@ button {
   padding: 10px 12px;
   overflow: visible;
   z-index: 1;
+  transition: transform 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dot-type-row:hover,
+  .suggestion-chip:hover {
+    transform: scale(1.03);
+  }
+}
+
+.dot-type-row:active,
+.suggestion-chip:active {
+  transform: scale(0.9);
 }
 
 .dot-type-row.menu-open {
@@ -536,7 +560,7 @@ button {
   min-width: 0;
 }
 
-.dot-type-row input[type="text"] {
+.dot-type-row .dot-name-input {
   width: 24px;
   padding: 2px 0;
   border: 0;
@@ -544,7 +568,7 @@ button {
   background: transparent;
 }
 
-.dot-type-row input[type="text"]:focus {
+.dot-type-row .dot-name-input:focus {
   outline: none;
   box-shadow: none;
 }
@@ -559,6 +583,76 @@ button {
 
 .dot-type-row .swatch {
   cursor: pointer;
+}
+
+.color-picker {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  min-width: 220px;
+  z-index: 120;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 180ms ease;
+}
+
+.color-picker.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 24px);
+  gap: 6px;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid var(--line);
+  padding: 0;
+}
+
+.color-custom {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.color-hex-input {
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+  font: inherit;
+  background: var(--card);
+  color: var(--ink);
+  width: 100%;
+}
+
+.color-picker .color-hex-input {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.color-apply {
+  padding: 8px 10px;
+  width: 100%;
 }
 
 .dot-actions {
@@ -1213,6 +1307,154 @@ button {
 .onboarding-card {
   display: grid;
   gap: 16px;
+  min-height: 520px;
+}
+
+.onboarding-demo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.onboarding-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.onboarding-split-left {
+  display: grid;
+  gap: 12px;
+}
+
+.onboarding-split-right {
+  display: grid;
+  gap: 12px;
+}
+
+.demo-day {
+  position: relative;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  min-height: 120px;
+  padding: 8px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.demo-day-label {
+  font-size: 12px;
+}
+
+.demo-dot {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+}
+
+.demo-dot.red {
+  background: #ff0000;
+}
+.demo-dot.yellow {
+  background: #ffc700;
+}
+.demo-dot.green {
+  background: #15c771;
+}
+.demo-dot.blue {
+  background: #2f8cfa;
+}
+.demo-dot.purple {
+  background: #b632cc;
+}
+.demo-dot.brown {
+  background: #875436;
+}
+
+.demo-day:nth-child(1) .demo-dot.red {
+  left: 60%;
+  top: 40%;
+}
+.demo-day:nth-child(1) .demo-dot.blue {
+  left: 30%;
+  top: 65%;
+}
+.demo-day:nth-child(2) .demo-dot.green {
+  left: 35%;
+  top: 45%;
+}
+.demo-day:nth-child(2) .demo-dot.purple {
+  left: 65%;
+  top: 60%;
+}
+.demo-day:nth-child(3) .demo-dot.yellow {
+  left: 35%;
+  top: 50%;
+}
+.demo-day:nth-child(3) .demo-dot.brown {
+  left: 65%;
+  top: 35%;
+}
+
+.demo-note {
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  transform: translate(-50%, -50%) rotate(-5deg);
+  font-family: "Borel", "Brush Script MT", cursive;
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+  width: 100%;
+  padding: 0 6px;
+}
+
+.demo-popover {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: 220px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 6px;
+  display: grid;
+  gap: 6px;
+}
+
+.demo-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 6px;
+}
+
+.demo-popover-note {
+  border-top: 2px solid var(--line);
+  padding-top: 6px;
+  font-size: 12px;
+}
+
+@media (max-width: 680px) {
+  .onboarding-demo {
+    grid-template-columns: 1fr;
+  }
+  .demo-day {
+    min-height: 110px;
+  }
+  .demo-popover {
+    left: 12px;
+    right: 12px;
+  }
+
+  .onboarding-split {
+    grid-template-columns: 1fr;
+  }
 }
 
 .onboarding-dots {
@@ -1237,11 +1479,31 @@ button {
   display: none;
 }
 
+#onboarding-modal .onboarding-step {
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+}
+
 .onboarding-actions {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   margin-top: 20px;
+  align-items: center;
+}
+
+#onboarding-modal .onboarding-actions,
+#onboarding-modal .modal-actions {
+  margin-top: auto;
+}
+
+#onboarding-modal .onboarding-actions .onboarding-dots {
+  margin: 0 auto;
+}
+
+#onboarding-modal .centered-actions {
+  justify-content: center;
 }
 
 .settings-card {
@@ -1626,6 +1888,21 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     z-index: 1000;
   }
 
+  .color-picker {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
+    top: auto;
+    width: 100%;
+    max-width: none;
+    max-height: 60vh;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    z-index: 1000;
+    padding-bottom: 20px;
+  }
+
   .period-picker-menu.visible,
   .dot-actions-menu.visible {
     transform: translateY(0);
@@ -1669,6 +1946,10 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     max-height: 100dvh;
     border-radius: 0;
     border: 2px solid var(--line);
+  }
+
+  .onboarding-card {
+    min-height: 100%;
   }
 
   .settings-section h4 {

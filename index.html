@@ -154,23 +154,44 @@
 
     <div id="onboarding-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
       <div class="modal-card onboarding-card">
-        <div class="onboarding-dots" aria-hidden="true">
-          <span class="onboarding-dot" data-step="intro"></span>
-          <span class="onboarding-dot" data-step="dots"></span>
-          <span class="onboarding-dot" data-step="sync"></span>
-        </div>
         <div class="onboarding-step" data-step="intro">
-          <h3 id="onboarding-title">How it works</h3>
+				<div class="onboarding-demo" aria-hidden="true">
+			  <div class="demo-day">
+				<div class="demo-day-label">06 Tu</div>
+				<span class="demo-dot red"></span>
+				<span class="demo-dot blue"></span>
+				<div class="demo-note">Morning swim</div>
+			  </div>
+			  <div class="demo-day">
+				<div class="demo-day-label">07 We</div>
+				<span class="demo-dot green"></span>
+				<span class="demo-dot purple"></span>
+				<div class="demo-note">Date night</div>
+			  </div>
+			  <div class="demo-day">
+				<div class="demo-day-label">08 Th</div>
+				<span class="demo-dot yellow"></span>
+				<span class="demo-dot brown"></span>
+				<div class="demo-note">Late coffee</div>
+			  </div>
+			</div>
+          <h1 id="onboarding-title">How it works</h1>
           <p>Pick some dots you want to do more of, and some you want to do less of. Add them to days where you do those things. Track progress over time.</p>
-          <div class="modal-actions">
+          <div class="onboarding-actions">
+            <button id="onboarding-skip-intro" type="button" class="outline-button">Skip</button>
+            <div class="onboarding-dots" aria-hidden="true">
+              <span class="onboarding-dot" data-step="intro"></span>
+              <span class="onboarding-dot" data-step="dots"></span>
+              <span class="onboarding-dot" data-step="sync"></span>
+            </div>
             <button id="onboarding-next" type="button">Get started</button>
           </div>
         </div>
         <div class="onboarding-step hidden" data-step="dots">
           <section class="settings-section suggestions">
-            <h4>Your dot types</h4>
+            <h2>Your dot types</h2>
             <ul id="onboarding-dot-type-list" class="dot-type-list"></ul>
-            <h5>Suggested dot types</h5>
+            <h2>Suggested dot types</h2>
             <p class="muted">
               It’s helpful to choose three you want to do more of, and three you want to do less of.
             </p>
@@ -178,29 +199,69 @@
           </section>
           <div class="onboarding-actions">
             <button id="onboarding-back" type="button">Back</button>
+            <div class="onboarding-dots" aria-hidden="true">
+              <span class="onboarding-dot" data-step="intro"></span>
+              <span class="onboarding-dot" data-step="dots"></span>
+              <span class="onboarding-dot" data-step="sync"></span>
+            </div>
             <button id="onboarding-next-dots" type="button">Continue</button>
           </div>
         </div>
         <div class="onboarding-step hidden" data-step="sync">
-          <h4>Sync across devices</h4>
-          <p>Send yourself a magic link to keep your diary backed up.</p>
-          <div class="auth-row">
-            <input
-              id="onboarding-email"
-              type="text"
-              placeholder="you@example.com"
-              autocomplete="email"
-              autocorrect="on"
-              spellcheck="true"
-              autocapitalize="none"
-              inputmode="email"
-            />
-            <button id="onboarding-send" type="button">Send magic link</button>
+          <div class="onboarding-split">
+            <div class="onboarding-split-left" aria-hidden="true">
+              <div class="demo-day">
+                <div class="demo-day-label">12 Sa</div>
+                <span class="demo-dot red"></span>
+                <span class="demo-dot blue"></span>
+                <div class="demo-note">Beach day</div>
+              </div>
+              <div class="demo-day">
+                <div class="demo-day-label">13 Su</div>
+                <span class="demo-dot green"></span>
+                <span class="demo-dot purple"></span>
+                <div class="demo-note">Family dinner</div>
+              </div>
+              <div class="demo-day">
+                <div class="demo-day-label">14 Mo</div>
+                <span class="demo-dot yellow"></span>
+                <span class="demo-dot brown"></span>
+                <div class="demo-note">Long walk</div>
+              </div>
+              <div class="demo-day">
+                <div class="demo-day-label">15 Tu</div>
+                <span class="demo-dot red"></span>
+                <span class="demo-dot green"></span>
+                <div class="demo-note">Gym & cook</div>
+              </div>
+            </div>
+            <div class="onboarding-split-right">
+              <div class="onboarding-plan paid-list">
+                <h4>$10 Lifetime Plan</h4>
+                <ul class="feature-bullets">
+                  <li><span class="feature-dot dot-a" aria-hidden="true"></span>Cloud sync across devices</li>
+                  <li><span class="feature-dot dot-b" aria-hidden="true"></span>Shareable link to your diary</li>
+                  <li><span class="feature-dot dot-c" aria-hidden="true"></span>Special app themes</li>
+                  <li><span class="feature-dot dot-d" aria-hidden="true"></span>Unlimited dot types</li>
+                  <li><span class="feature-dot dot-e" aria-hidden="true"></span>Year-end wrap up with trends</li>
+                  <li><span class="feature-dot dot-f" aria-hidden="true"></span>Unlimited separate calendars</li>
+                </ul>
+              </div>
+              <p>Dot Diary is free forever.</p>
+              <p>Upgrade any time if you want the lifetime plan.</p>
+            </div>
           </div>
-          <div class="auth-status muted" id="onboarding-sync-status">Optional for now.</div>
           <div class="onboarding-actions">
             <button id="onboarding-back-sync" type="button">Back</button>
-            <button id="onboarding-done" type="button">Finish</button>
+            <div class="onboarding-dots" aria-hidden="true">
+              <span class="onboarding-dot" data-step="intro"></span>
+              <span class="onboarding-dot" data-step="dots"></span>
+              <span class="onboarding-dot" data-step="sync"></span>
+            </div>
+            <div class="onboarding-actions-right">
+              <button id="onboarding-skip" type="button" class="outline-button">Skip</button>
+              <button id="onboarding-upgrade" type="button">Upgrade</button>
+            </div>
           </div>
         </div>
       </div>
