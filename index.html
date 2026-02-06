@@ -14,11 +14,55 @@
   </head>
   <body>
     <section id="marketing-page" class="marketing-shell">
-      <div class="marketing-card">
-        <p class="marketing-eyebrow">Dot Diary</p>
-        <h1>Track your year with dots.</h1>
+      <div class="marketing-background" aria-hidden="true">
+        <div id="marketing-calendar" class="marketing-calendar">
+          <div id="marketing-year" class="year-grid"></div>
+          <div id="marketing-month" class="month-grid"></div>
+        </div>
+      </div>
+      <div class="marketing-card" id="marketing-hero">
+        <p class="marketing-brand">Dot Diary</p>
+        <h1>Track your life in dots.</h1>
         <p>Pick your dot types, mark each day, and leave tiny notes that feel handwritten.</p>
-        <button id="enter-app" type="button">Open Dot Diary</button>
+        <div class="feature-list">
+          <div class="feature-item">
+            <h4>Customizable</h4>
+            <p>Change dot colors and define exactly what each dot type means for you.</p>
+          </div>
+          <div class="feature-item">
+            <h4>Take it with you</h4>
+            <p>Use Dot Diary on desktop or mobile and keep everything synced across devices.</p>
+          </div>
+          <div class="feature-item">
+            <h4>Simple</h4>
+            <p>A small, focused system for tracking habits without extra complexity.</p>
+          </div>
+        </div>
+        <div class="marketing-actions">
+          <button id="enter-app" type="button">Get started</button>
+          <button id="open-login" type="button" class="outline-button">Log in</button>
+        </div>
+      </div>
+      <div class="marketing-card hidden" id="marketing-login">
+        <p class="marketing-brand">Dot Diary</p>
+        <h1>Log in</h1>
+        <p>We’ll email you a magic link.</p>
+        <div class="auth-row">
+          <input
+            id="login-email"
+            type="text"
+            placeholder="you@example.com"
+            autocomplete="email"
+            autocorrect="on"
+            spellcheck="true"
+            autocapitalize="none"
+            inputmode="email"
+          />
+          <button id="login-send" type="button">Send magic link</button>
+        </div>
+        <div class="marketing-actions">
+          <button id="login-back" type="button" class="outline-button">Back</button>
+        </div>
       </div>
     </section>
 
@@ -86,9 +130,14 @@
     <div id="day-popover" class="popover hidden" role="dialog" aria-label="Pick a dot"></div>
 
     <div id="onboarding-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
-      <div class="modal-card">
+      <div class="modal-card onboarding-card">
+        <div class="onboarding-dots" aria-hidden="true">
+          <span class="onboarding-dot" data-step="intro"></span>
+          <span class="onboarding-dot" data-step="dots"></span>
+          <span class="onboarding-dot" data-step="sync"></span>
+        </div>
         <div class="onboarding-step" data-step="intro">
-          <p class="marketing-eyebrow">Welcome</p>
+          <p class="marketing-brand">Dot Diary</p>
           <h3 id="onboarding-title">Dot Diary</h3>
           <p>Pick a few dot types you want more of, and a few you want less of.</p>
           <p>Then tap a day to add dots or a short note.</p>
@@ -108,7 +157,29 @@
           </section>
           <div class="onboarding-actions">
             <button id="onboarding-back" type="button">Back</button>
-            <button id="onboarding-done" type="button">Done</button>
+            <button id="onboarding-next-dots" type="button">Continue</button>
+          </div>
+        </div>
+        <div class="onboarding-step hidden" data-step="sync">
+          <h4>Sync across devices</h4>
+          <p>Send yourself a magic link to keep your diary backed up.</p>
+          <div class="auth-row">
+            <input
+              id="onboarding-email"
+              type="text"
+              placeholder="you@example.com"
+              autocomplete="email"
+              autocorrect="on"
+              spellcheck="true"
+              autocapitalize="none"
+              inputmode="email"
+            />
+            <button id="onboarding-send" type="button">Send magic link</button>
+          </div>
+          <div class="auth-status muted" id="onboarding-sync-status">Optional for now.</div>
+          <div class="onboarding-actions">
+            <button id="onboarding-back-sync" type="button">Back</button>
+            <button id="onboarding-done" type="button">Finish</button>
           </div>
         </div>
       </div>

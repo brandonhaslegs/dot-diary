@@ -1,5 +1,4 @@
 const STORAGE_KEY = "dot-diary-v1";
-const FIRST_LOAD_SETTINGS_KEY = "dot-diary-settings-shown-v1";
 const ONBOARDING_KEY = "dot-diary-onboarding-v1";
 const DEMO_MODE = new URLSearchParams(window.location.search).get("demo") === "1";
 const SUPABASE_URL = "https://onmrtxwqwyqyiicweffy.supabase.co";
@@ -87,7 +86,11 @@ const deleteModal = document.querySelector("#delete-modal");
 const onboardingModal = document.querySelector("#onboarding-modal");
 const onboardingNextButton = document.querySelector("#onboarding-next");
 const onboardingBackButton = document.querySelector("#onboarding-back");
+const onboardingNextDotsButton = document.querySelector("#onboarding-next-dots");
+const onboardingBackSyncButton = document.querySelector("#onboarding-back-sync");
 const onboardingDoneButton = document.querySelector("#onboarding-done");
+const onboardingEmailInput = document.querySelector("#onboarding-email");
+const onboardingSendButton = document.querySelector("#onboarding-send");
 const onboardingDotTypeList = document.querySelector("#onboarding-dot-type-list");
 const onboardingSuggestedDotList = document.querySelector("#onboarding-suggested-dot-list");
 const deleteText = document.querySelector("#delete-text");
@@ -96,7 +99,16 @@ const deleteConfirm = document.querySelector("#delete-confirm");
 const toast = document.querySelector("#toast");
 const appShell = document.querySelector(".app-shell");
 const marketingPage = document.querySelector("#marketing-page");
+const marketingHero = document.querySelector("#marketing-hero");
+const marketingLogin = document.querySelector("#marketing-login");
+const marketingCalendar = document.querySelector("#marketing-calendar");
+const marketingYear = document.querySelector("#marketing-year");
+const marketingMonth = document.querySelector("#marketing-month");
 const enterAppButton = document.querySelector("#enter-app");
+const openLoginButton = document.querySelector("#open-login");
+const loginEmailInput = document.querySelector("#login-email");
+const loginSendButton = document.querySelector("#login-send");
+const loginBackButton = document.querySelector("#login-back");
 const brandHomeButton = document.querySelector("#brand-home");
 const authEmailInput = document.querySelector("#auth-email");
 const authSendButton = document.querySelector("#auth-send");
@@ -110,10 +122,25 @@ const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let syncUser = null;
 let syncTimer = null;
 let lastSyncedAt = null;
+let loginMode = false;
 
 window.addEventListener("resize", render);
 enterAppButton?.addEventListener("click", enterApp);
+openLoginButton?.addEventListener("click", () => {
+  loginMode = true;
+  marketingHero?.classList.add("hidden");
+  marketingLogin?.classList.remove("hidden");
+});
+loginBackButton?.addEventListener("click", () => {
+  loginMode = false;
+  marketingLogin?.classList.add("hidden");
+  marketingHero?.classList.remove("hidden");
+});
+loginSendButton?.addEventListener("click", () => handleMagicLink(loginEmailInput?.value));
 brandHomeButton?.addEventListener("click", () => {
+  loginMode = false;
+  marketingLogin?.classList.add("hidden");
+  marketingHero?.classList.remove("hidden");
   marketingPage?.classList.remove("hidden");
   appShell?.classList.add("hidden");
 });
@@ -123,7 +150,6 @@ settingsBackButton?.addEventListener("click", closeSettingsModal);
 resetOnboardingButton?.addEventListener("click", () => {
   try {
     localStorage.removeItem(ONBOARDING_KEY);
-    localStorage.removeItem(FIRST_LOAD_SETTINGS_KEY);
   } catch {
     // ignore
   }
@@ -132,7 +158,10 @@ resetOnboardingButton?.addEventListener("click", () => {
 });
 onboardingNextButton?.addEventListener("click", () => showOnboardingStep("dots"));
 onboardingBackButton?.addEventListener("click", () => showOnboardingStep("intro"));
+onboardingNextDotsButton?.addEventListener("click", () => showOnboardingStep("sync"));
+onboardingBackSyncButton?.addEventListener("click", () => showOnboardingStep("dots"));
 onboardingDoneButton?.addEventListener("click", completeOnboarding);
+onboardingSendButton?.addEventListener("click", () => handleMagicLink(onboardingEmailInput?.value));
 openSettings.addEventListener("click", () => {
   closePopover();
   openSettingsModal();
@@ -212,6 +241,11 @@ document.addEventListener("pointerdown", (event) => {
   if (!activePopover) return;
   const insidePopover = popover.contains(event.target);
   const clickedDay = event.target.closest(".year-day, .month-day");
+  if (!insidePopover && clickedDay) {
+    closePopover();
+    suppressDayOpenUntil = Date.now() + 200;
+    return;
+  }
   if (!insidePopover && !clickedDay) {
     closePopover();
   }
@@ -228,6 +262,7 @@ document.addEventListener("keydown", (event) => {
 render();
 showOnboardingIfNeeded();
 initSupabaseAuth();
+renderMarketingCalendar();
 
 const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 if (colorSchemeMedia && typeof colorSchemeMedia.addEventListener === "function") {
@@ -415,6 +450,10 @@ function renderYearGrid() {
 
       row.addEventListener("click", (event) => {
         if (Date.now() < suppressDayOpenUntil) return;
+        if (activePopover && activePopover.isoDate !== iso) {
+          closePopover();
+          return;
+        }
         openPopover(iso, event.clientX, event.clientY);
       });
       column.appendChild(row);
@@ -471,9 +510,127 @@ function renderMonthGrid() {
 
     cell.addEventListener("click", (event) => {
       if (Date.now() < suppressDayOpenUntil) return;
+      if (activePopover && activePopover.isoDate !== day.iso) {
+        closePopover();
+        return;
+      }
       openPopover(day.iso, event.clientX, event.clientY);
     });
     monthGrid.appendChild(cell);
+  }
+}
+
+function renderMarketingCalendar() {
+  if (!marketingCalendar || !marketingYear || !marketingMonth) return;
+  const demoState = createDemoState();
+  const year = demoState.yearCursor;
+  marketingYear.innerHTML = "";
+  marketingMonth.innerHTML = "";
+
+  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+    const column = document.createElement("section");
+    column.className = "month-column";
+    if (new Date(year, monthIndex + 1, 0).getDate() === 31) {
+      column.classList.add("month-31");
+    }
+
+    const monthTitle = document.createElement("h3");
+    monthTitle.className = "month-title";
+    monthTitle.textContent = new Date(year, monthIndex, 1).toLocaleDateString(undefined, { month: "long" });
+    column.appendChild(monthTitle);
+
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    for (let dayNum = 1; dayNum <= 31; dayNum += 1) {
+      if (dayNum > daysInMonth) {
+        const filler = document.createElement("div");
+        filler.className = "year-day filler";
+        column.appendChild(filler);
+        continue;
+      }
+
+      const date = new Date(year, monthIndex, dayNum);
+      const iso = formatISODate(date);
+      const row = document.createElement("div");
+      row.className = "year-day";
+
+      const label = document.createElement("span");
+      label.className = "day-label";
+      label.textContent = `${String(dayNum).padStart(2, "0")} ${weekdayShort(date)}`;
+      row.appendChild(label);
+
+      const dotLayer = document.createElement("div");
+      dotLayer.className = "dot-layer";
+      (demoState.dayDots[iso] || []).forEach((dotId) => {
+        const dotType = demoState.dotTypes.find((t) => t.id === dotId);
+        if (!dotType) return;
+        const sticker = document.createElement("span");
+        sticker.className = "dot-sticker";
+        sticker.style.background = dotType.color;
+        const pos = getDemoDotPosition(demoState, iso, dotId);
+        sticker.style.left = `${pos.left}%`;
+        sticker.style.top = `${pos.top}%`;
+        sticker.style.transform = `translate(-50%, -50%) rotate(${pos.rotate}deg)`;
+        dotLayer.appendChild(sticker);
+      });
+      row.appendChild(dotLayer);
+
+      const note = demoState.dayNotes[iso];
+      if (note) {
+        const noteNode = document.createElement("span");
+        noteNode.className = "day-note";
+        noteNode.textContent = note;
+        row.appendChild(noteNode);
+      }
+
+      column.appendChild(row);
+    }
+
+    marketingYear.appendChild(column);
+  }
+
+  renderMarketingMonth(demoState);
+}
+
+function renderMarketingMonth(demoState) {
+  const monthDate = startOfMonth(new Date());
+  const days = buildMonthCells(monthDate, demoState.weekStartsMonday);
+  marketingMonth.innerHTML = "";
+
+  for (const day of days) {
+    const cell = document.createElement("div");
+    cell.className = "month-day";
+    if (!day.inCurrentMonth) cell.classList.add("muted-day");
+
+    const dayLabel = document.createElement("div");
+    dayLabel.className = "month-day-label";
+    dayLabel.textContent = `${String(day.date.getDate()).padStart(2, "0")} ${weekdayShort(day.date)}`;
+    cell.appendChild(dayLabel);
+
+    const dotLayer = document.createElement("div");
+    dotLayer.className = "dot-layer";
+    (demoState.dayDots[day.iso] || []).forEach((dotId) => {
+      const dotType = demoState.dotTypes.find((t) => t.id === dotId);
+      if (!dotType) return;
+      const sticker = document.createElement("span");
+      sticker.className = "dot-sticker";
+      sticker.style.background = dotType.color;
+      const pos = getDemoDotPosition(demoState, day.iso, dotId);
+      sticker.style.left = `${pos.left}%`;
+      sticker.style.top = `${pos.top}%`;
+      sticker.style.transform = `translate(-50%, -50%) rotate(${pos.rotate}deg)`;
+      dotLayer.appendChild(sticker);
+    });
+    cell.appendChild(dotLayer);
+
+    const note = demoState.dayNotes[day.iso];
+    if (note) {
+      const noteNode = document.createElement("span");
+      noteNode.className = "month-note";
+      noteNode.textContent = note;
+      cell.appendChild(noteNode);
+    }
+
+    marketingMonth.appendChild(cell);
   }
 }
 
@@ -648,6 +805,7 @@ function openPopover(isoDate, x, y) {
   }
   const shouldAnimateIn = popover.classList.contains("hidden");
   activePopover = { isoDate };
+  document.body.classList.add("popover-open");
   popover.innerHTML = "";
 
   const selectedIds = new Set(getDayDotIds(isoDate));
@@ -664,6 +822,9 @@ function openPopover(isoDate, x, y) {
     const node = popoverItemTemplate.content.firstElementChild.cloneNode(true);
     node.querySelector(".swatch").style.background = dotType.color;
     node.querySelector(".label").textContent = dotType.name;
+    if (selectedIds.has(dotType.id)) {
+      node.classList.add("selected");
+    }
 
     node.addEventListener("click", () => {
       const wasSelected = selectedIds.has(dotType.id);
@@ -725,6 +886,7 @@ function openPopover(isoDate, x, y) {
 
 function closePopover() {
   activePopover = null;
+  document.body.classList.remove("popover-open");
   if (popoverHideTimer) {
     clearTimeout(popoverHideTimer);
     popoverHideTimer = null;
@@ -936,18 +1098,6 @@ function loadState() {
   }
 }
 
-function showSettingsOnFirstLoad() {
-  if (!hasEnteredApp) return;
-  if (DEMO_MODE) return;
-  try {
-    if (localStorage.getItem(FIRST_LOAD_SETTINGS_KEY) === "1") return;
-    openSettingsModal();
-    localStorage.setItem(FIRST_LOAD_SETTINGS_KEY, "1");
-  } catch {
-    // Ignore storage access issues.
-  }
-}
-
 function showOnboardingIfNeeded() {
   if (!hasEnteredApp) return;
   if (DEMO_MODE) return;
@@ -963,6 +1113,9 @@ function showOnboardingIfNeeded() {
 function showOnboardingStep(step) {
   onboardingModal?.querySelectorAll(".onboarding-step").forEach((panel) => {
     panel.classList.toggle("hidden", panel.dataset.step !== step);
+  });
+  onboardingModal?.querySelectorAll(".onboarding-dot").forEach((dot) => {
+    dot.classList.toggle("active", dot.dataset.step === step);
   });
   if (step === "dots") {
     renderOnboardingLists();
@@ -980,6 +1133,9 @@ function completeOnboarding() {
     // ignore
   }
   closeOnboardingModal();
+  if (hasEnteredApp) {
+    openSettingsModal();
+  }
 }
 
 function renderOnboardingLists() {
@@ -987,25 +1143,35 @@ function renderOnboardingLists() {
   renderSuggestedDotTypes(onboardingSuggestedDotList);
 }
 
-function enterApp() {
+function enterApp({ skipOnboarding = false } = {}) {
   hasEnteredApp = true;
+  loginMode = false;
   marketingPage?.classList.add("hidden");
   appShell?.classList.remove("hidden");
-  showOnboardingIfNeeded();
+  if (skipOnboarding) {
+    try {
+      localStorage.setItem(ONBOARDING_KEY, "1");
+    } catch {
+      // ignore
+    }
+    closeOnboardingModal();
+  } else {
+    showOnboardingIfNeeded();
+  }
 }
 
 function createDemoState() {
   const now = new Date();
   const year = now.getFullYear();
   const dotTypes = [
-    { id: "demo-sex", name: "Sex", color: "#2F8CFA" },
-    { id: "demo-alcohol", name: "Alcohol", color: "#875436" },
-    { id: "demo-smoking", name: "Smoking", color: "#FF0000" },
-    { id: "demo-drugs", name: "Drugs", color: "#FFC700" },
     { id: "demo-exercise", name: "Exercise", color: "#15C771" },
-    { id: "demo-exploring", name: "Exploring", color: "#2F8CFA" },
-    { id: "demo-music", name: "Music", color: "#0F766E" },
-    { id: "demo-movie", name: "Movie", color: "#1D3557" }
+    { id: "demo-slept", name: "Slept Well", color: "#3A86FF" },
+    { id: "demo-reading", name: "Reading", color: "#FF7A59" },
+    { id: "demo-cooking", name: "Cooking", color: "#00A676" },
+    { id: "demo-social", name: "Social Media", color: "#0A66C2" },
+    { id: "demo-sugar", name: "Sugar", color: "#8338EC" },
+    { id: "demo-movie", name: "Movie", color: "#1D3557" },
+    { id: "demo-music", name: "Music", color: "#0F766E" }
   ];
   const noteBank = [
     "Great walk downtown",
@@ -1017,7 +1183,12 @@ function createDemoState() {
     "Felt grounded today",
     "Amazing ramen spot",
     "Park run",
-    "Stayed in tonight"
+    "Stayed in tonight",
+    "Museum afternoon",
+    "Long phone call",
+    "Quiet morning coffee",
+    "New recipe win",
+    "Rainy day focus"
   ];
   const dayDots = {};
   const dayNotes = {};
@@ -1025,23 +1196,40 @@ function createDemoState() {
   const start = new Date(year, 0, 1);
   const end = new Date(year, 11, 31);
 
+  const isoNotes = [];
   for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
     const iso = formatISODate(date);
-    const densitySeed = hash32(`${iso}|demo|density`) % 100;
-    const count = densitySeed < 45 ? 0 : densitySeed < 73 ? 1 : densitySeed < 90 ? 2 : 3;
-    if (count > 0) {
-      const ids = [];
-      let attempts = 0;
-      while (ids.length < count && attempts < 24) {
-        const pick = hash32(`${iso}|demo|pick|${attempts}`) % dotTypes.length;
-        const id = dotTypes[pick].id;
-        if (!ids.includes(id)) ids.push(id);
-        attempts += 1;
-      }
-      dayDots[iso] = ids;
+    isoNotes.push(iso);
+    const ids = [];
 
+    // Exercise 5 days a week (Mon-Fri)
+    if (date.getDay() >= 1 && date.getDay() <= 5) ids.push("demo-exercise");
+
+    // Slept well most nights (Sun-Thu)
+    if (date.getDay() !== 5 && date.getDay() !== 6) ids.push("demo-slept");
+
+    // Reading 4 nights a week (Mon, Tue, Thu, Sun)
+    if ([0, 1, 2, 4].includes(date.getDay())) ids.push("demo-reading");
+
+    // Cooking 3 nights a week (Mon, Wed, Sat)
+    if ([1, 3, 6].includes(date.getDay())) ids.push("demo-cooking");
+
+    // Social media every other day
+    if ((hash32(`${iso}|demo|social`) % 2) === 0) ids.push("demo-social");
+
+    // Sugar roughly 2x/week
+    if (hash32(`${iso}|demo|sugar`) % 7 <= 1) ids.push("demo-sugar");
+
+    // Movie on Fridays
+    if (date.getDay() === 5) ids.push("demo-movie");
+
+    // Music on weekends
+    if (date.getDay() === 0 || date.getDay() === 6) ids.push("demo-music");
+
+    if (ids.length > 0) {
+      dayDots[iso] = ids;
       for (const id of ids) {
-        const moved = hash32(`${iso}|${id}|demo|moved`) % 4 === 0;
+        const moved = hash32(`${iso}|${id}|demo|moved`) % 5 === 0;
         if (!moved) continue;
         if (!dotPositions[iso]) dotPositions[iso] = {};
         dotPositions[iso][id] = {
@@ -1050,11 +1238,13 @@ function createDemoState() {
         };
       }
     }
+  }
 
-    if (hash32(`${iso}|demo|note`) % 7 === 0) {
-      const note = noteBank[hash32(`${iso}|demo|note-text`) % noteBank.length];
-      dayNotes[iso] = normalizeNote(note);
-    }
+  const shuffledNotes = shuffleArray(noteBank);
+  const noteCount = Math.min(shuffledNotes.length, Math.floor(isoNotes.length / 7));
+  for (let i = 0; i < noteCount; i += 1) {
+    const iso = isoNotes[(i * 7 + 3) % isoNotes.length];
+    dayNotes[iso] = normalizeNote(shuffledNotes[i]);
   }
 
   return {
@@ -1132,6 +1322,17 @@ function stickerPositionMonth(isoDate, dotId) {
     left: 12 + (h1 % 76),
     top: 24 + (h2 % 64),
     rotate: -18 + (h3 % 37)
+  };
+}
+
+function getDemoDotPosition(demoState, isoDate, dotId) {
+  const stored = demoState.dotPositions?.[isoDate]?.[dotId];
+  const base = stickerPosition(isoDate, dotId);
+  if (!stored) return base;
+  return {
+    left: stored.left,
+    top: stored.top,
+    rotate: base.rotate
   };
 }
 
@@ -1369,8 +1570,8 @@ async function initSupabaseAuth() {
   if (!supabase) return;
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
-  if (!hasEnteredApp && AUTH_HASH.includes("access_token")) {
-    enterApp();
+  if (!hasEnteredApp && syncUser && !marketingPage?.classList.contains("hidden")) {
+    enterApp({ skipOnboarding: true });
   }
   updateAuthUI();
   if (syncUser) {
@@ -1378,8 +1579,8 @@ async function initSupabaseAuth() {
   }
   supabase.auth.onAuthStateChange(async (_event, session) => {
     syncUser = session?.user || null;
-    if (!hasEnteredApp && AUTH_HASH.includes("access_token")) {
-      enterApp();
+    if (!hasEnteredApp && syncUser && !marketingPage?.classList.contains("hidden")) {
+      enterApp({ skipOnboarding: true });
     }
     updateAuthUI();
     if (syncUser) {
@@ -1388,9 +1589,9 @@ async function initSupabaseAuth() {
   });
 }
 
-async function handleMagicLink() {
+async function handleMagicLink(overrideEmail) {
   if (!supabase) return;
-  const email = authEmailInput?.value?.trim();
+  const email = overrideEmail?.trim() || authEmailInput?.value?.trim();
   if (!email) {
     showToast("Enter an email first.");
     return;
