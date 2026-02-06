@@ -133,10 +133,6 @@ textarea {
   .marketing-sections {
     grid-template-columns: 1fr;
   }
-
-  .marketing-card h1 {
-    letter-spacing: -0.1rem;
-  }
 }
 
 .marketing-card {
@@ -156,6 +152,13 @@ textarea {
   font-size: clamp(34px, 6vw, 64px);
   line-height: 0.94;
   letter-spacing: -0.2rem;
+}
+
+@media (max-width: 680px) {
+  .marketing-card h1 {
+    letter-spacing: -0.1rem;
+  }
+
 }
 
 .marketing-card p {
@@ -619,7 +622,10 @@ button {
   .month-grid,
   .year-day,
   .month-day {
-    cursor: url("data:image/svg+xml;utf8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M8%2016C12.4183%2016%2016%2012.4183%2016%208C16%203.58172%2012.4183%200%208%200C3.58172%200%200%203.58172%200%208C0%2012.4183%203.58172%2016%208%2016Z%22%20fill%3D%22black%22/%3E%3Cpath%20d%3D%22M4.66669%208H11.3334%22%20stroke%3D%22white%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M8%204.66667V11.3333%22%20stroke%3D%22white%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E") 8 8, pointer;
+    cursor:
+      url("data:image/svg+xml;utf8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M8%2016C12.4183%2016%2016%2012.4183%2016%208C16%203.58172%2012.4183%200%208%200C3.58172%200%200%203.58172%200%208C0%2012.4183%203.58172%2016%208%2016Z%22%20fill%3D%22black%22/%3E%3Cpath%20d%3D%22M4.66669%208H11.3334%22%20stroke%3D%22white%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M8%204.66667V11.3333%22%20stroke%3D%22white%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E")
+        8 8,
+      pointer;
   }
 
   body.popover-open .calendar-area,
@@ -637,7 +643,10 @@ button {
   html[data-theme="dark"] .month-grid,
   html[data-theme="dark"] .year-day,
   html[data-theme="dark"] .month-day {
-    cursor: url("data:image/svg+xml;utf8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M8%2016C12.4183%2016%2016%2012.4183%2016%208C16%203.58172%2012.4183%200%208%200C3.58172%200%200%203.58172%200%208C0%2012.4183%203.58172%2016%208%2016Z%22%20fill%3D%22white%22/%3E%3Cpath%20d%3D%22M4.66669%208H11.3334%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M8%204.66667V11.3333%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E") 8 8, pointer;
+    cursor:
+      url("data:image/svg+xml;utf8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M8%2016C12.4183%2016%2016%2012.4183%2016%208C16%203.58172%2012.4183%200%208%200C3.58172%200%200%203.58172%200%208C0%2012.4183%203.58172%2016%208%2016Z%22%20fill%3D%22white%22/%3E%3Cpath%20d%3D%22M4.66669%208H11.3334%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M8%204.66667V11.3333%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E")
+        8 8,
+      pointer;
   }
 
   html[data-theme="dark"] body.popover-open .calendar-area,
@@ -857,9 +866,9 @@ button {
   box-sizing: border-box;
   padding: 0 8px;
   text-align: center;
-  font-family: "Brush Script MT", cursive;
+  font-family: "Borel", "Brush Script MT", cursive;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 10px;
   line-height: 1.05;
   color: var(--ink);
   white-space: normal;
@@ -946,7 +955,6 @@ button {
   inset: 0;
 }
 
-
 .day-note {
   position: absolute;
   left: 50%;
@@ -955,9 +963,9 @@ button {
   box-sizing: border-box;
   padding: 0 8px;
   text-align: center;
-  font-family: "Brush Script MT", cursive;
+  font-family: "Borel", "Brush Script MT", cursive;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 12px;
   line-height: 1.05;
   color: var(--ink);
   white-space: normal;
@@ -995,6 +1003,31 @@ button {
     opacity 180ms ease;
 }
 
+.popover-date {
+  margin: 6px 8px 4px;
+  font-size: 20px;
+  line-height: 1.05;
+}
+
+.popover-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+  z-index: 18;
+}
+
+.popover-scrim.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.popover-scrim.hidden {
+  display: none;
+}
+
 .popover.visible {
   opacity: 1;
   transform: translateY(0);
@@ -1012,6 +1045,36 @@ button {
   place-items: center;
   background: rgba(0, 0, 0, 0.22);
   z-index: 30;
+}
+
+.menu-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+  z-index: 900;
+}
+
+#mobile-menu-portal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+#mobile-menu-portal .dot-actions-menu {
+  pointer-events: auto;
+}
+
+.menu-scrim.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.menu-scrim.hidden {
+  display: none;
 }
 
 #settings-modal {
@@ -1041,6 +1104,17 @@ button {
 
 #delete-modal {
   z-index: 40;
+}
+
+#delete-modal .modal-card {
+  text-align: center;
+  width: min(360px, calc(100vw - 48px));
+  border-radius: 24px;
+  border: 2px solid var(--line);
+}
+
+#delete-modal .modal-actions {
+  justify-content: center;
 }
 
 .modal.hidden {
@@ -1106,6 +1180,7 @@ button {
   max-height: calc(100dvh - 24px);
   overflow: auto;
   text-align: left;
+  position: relative;
 }
 
 .settings-back {
@@ -1139,6 +1214,7 @@ button {
 
 .modal-card h3 {
   margin: 0 0 8px;
+  font-size: 22px;
 }
 
 .modal-card p {
@@ -1196,10 +1272,24 @@ button {
   border: 0;
   background: transparent;
   padding: 0;
-  font-family: "Brush Script MT", cursive;
-  font-size: 16px;
+  font-family: "Borel", "Brush Script MT", cursive;
+  font-size: 14px;
   outline: none;
   box-shadow: none;
+}
+
+.note-edit-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.note-editor {
+  outline: none;
+  border: 0;
+  background: transparent;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .toast {
@@ -1382,7 +1472,11 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .month-note {
-    font-size: 0.75rem;
+    font-size: 9px;
+  }
+
+  .marketing-sections {
+    grid-template-columns: 1fr;
   }
 
   /* Popover: full width bottom sheet */
@@ -1401,6 +1495,26 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     transform: translateY(0);
   }
 
+  .period-picker-menu,
+  .dot-actions-menu {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
+    top: auto;
+    width: 100%;
+    max-width: none;
+    max-height: 60vh;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    z-index: 1000;
+  }
+
+  .period-picker-menu.visible,
+  .dot-actions-menu.visible {
+    transform: translateY(0);
+  }
+
   /* Settings modal: nearly full screen */
   .settings-card {
     width: 100vw;
@@ -1416,6 +1530,12 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     border: 0;
     border-radius: 0;
     padding: 20px;
+  }
+
+  #delete-modal .modal-card {
+    width: calc(100vw - 48px);
+    border-radius: 24px;
+    border: 2px solid var(--line);
   }
 
   #settings-modal .modal-card {
@@ -1440,7 +1560,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .settings-section h5 {
-    font-size: 16px;
+    font-size: 20px;
   }
 
   /* Data action rows: stack vertically */
@@ -1454,8 +1574,9 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   /* Display row: stack on very narrow screens */
   .display-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+    align-items: start;
   }
 
   .color-mode-toggle {

@@ -47,6 +47,7 @@ const defaultState = {
 
 let state = DEMO_MODE ? createDemoState() : loadState();
 let activePopover = null;
+let activeNoteEdit = null;
 let pendingFocusDotId = null;
 let pendingDeleteDotTypeId = null;
 let pendingDeleteMode = "safe";
@@ -59,6 +60,7 @@ let toastHideTimer = null;
 let suppressDayOpenUntil = 0;
 let settingsModalHideTimer = null;
 let popoverHideTimer = null;
+let menuScrimHideTimer = null;
 const shuffledSuggestions = shuffleArray(SUGGESTED_DOT_TYPES);
 const YEAR_BATCH_SIZE = 10;
 const MOBILE_MONTH_BATCH_SIZE = 12;
@@ -105,6 +107,9 @@ const marketingLogin = document.querySelector("#marketing-login");
 const marketingCalendar = document.querySelector("#marketing-calendar");
 const marketingYear = document.querySelector("#marketing-year");
 const marketingMonth = document.querySelector("#marketing-month");
+const menuScrim = document.querySelector("#menu-scrim");
+const popoverScrim = document.querySelector("#popover-scrim");
+const mobileMenuPortal = document.querySelector("#mobile-menu-portal");
 const enterAppButton = document.querySelector("#enter-app");
 const openLoginButton = document.querySelector("#open-login");
 const loginEmailInput = document.querySelector("#login-email");
@@ -184,6 +189,13 @@ periodPickerToggle.addEventListener("click", (event) => {
     closePeriodMenu();
   }
 });
+menuScrim?.addEventListener("click", () => {
+  closePeriodMenu();
+  closeDotMenus();
+});
+popoverScrim?.addEventListener("click", () => {
+  closePopover();
+});
 periodPickerMenu.addEventListener("scroll", () => {
   if (periodPickerMenu.classList.contains("hidden")) return;
   const threshold = 24;
@@ -237,7 +249,7 @@ document.addEventListener("pointerdown", (event) => {
   if (!event.target.closest(".period-picker")) {
     closePeriodMenu();
   }
-  if (!event.target.closest(".dot-actions")) {
+  if (!event.target.closest(".dot-actions, .dot-actions-menu")) {
     closeDotMenus();
   }
   if (!settingsModal.classList.contains("hidden") && event.target === settingsModal) {
@@ -451,7 +463,9 @@ function renderYearGrid() {
       row.appendChild(dotLayer);
 
       const note = getDayNote(iso);
-      if (note) {
+      if (activeNoteEdit === iso) {
+        row.appendChild(buildNoteEditor(iso, "day-note"));
+      } else if (note) {
         const noteNode = document.createElement("span");
         noteNode.className = "day-note";
         noteNode.textContent = note;
@@ -460,6 +474,7 @@ function renderYearGrid() {
 
       row.addEventListener("click", (event) => {
         if (Date.now() < suppressDayOpenUntil) return;
+        if (activeNoteEdit === iso) return;
         if (activePopover && activePopover.isoDate !== iso) {
           closePopover();
           return;
@@ -511,7 +526,9 @@ function renderMonthGrid() {
     cell.appendChild(dotLayer);
 
     const note = getDayNote(day.iso);
-    if (note) {
+    if (activeNoteEdit === day.iso) {
+      cell.appendChild(buildNoteEditor(day.iso, "month-note"));
+    } else if (note) {
       const noteNode = document.createElement("span");
       noteNode.className = "month-note";
       noteNode.textContent = note;
@@ -520,6 +537,7 @@ function renderMonthGrid() {
 
     cell.addEventListener("click", (event) => {
       if (Date.now() < suppressDayOpenUntil) return;
+      if (activeNoteEdit === day.iso) return;
       if (activePopover && activePopover.isoDate !== day.iso) {
         closePopover();
         return;
@@ -729,6 +747,7 @@ function renderDotTypeList(targetList = dotTypeList) {
 
     const menu = document.createElement("div");
     menu.className = "dot-actions-menu hidden";
+    menu.dataset.portal = "dot-actions";
 
     const renameItem = document.createElement("button");
     renameItem.type = "button";
@@ -763,14 +782,26 @@ function renderDotTypeList(targetList = dotTypeList) {
       const opening = menu.classList.contains("hidden");
       closeDotMenus();
       item.classList.toggle("menu-open", opening);
-      if (opening) {
-        showAnimated(menu);
-        requestAnimationFrame(() => {
+    if (opening) {
+      showAnimated(menu);
+      requestAnimationFrame(() => {
+        if (!window.matchMedia("(max-width: 480px)").matches) {
           positionDotActionsMenu(menu);
-        });
-      } else {
-        menu.classList.add("hidden");
-      }
+        } else {
+          menu.style.removeProperty("--menu-offset-x");
+          menu.style.removeProperty("--menu-offset-y");
+          if (mobileMenuPortal && !menu.dataset.portalActive) {
+            menu.dataset.portalActive = "true";
+            menu._portalParent = actions;
+            mobileMenuPortal.appendChild(menu);
+          }
+        }
+        updateMenuScrim();
+      });
+    } else {
+      menu.classList.add("hidden");
+      updateMenuScrim();
+    }
     });
 
     if (inUse) {
@@ -815,10 +846,25 @@ function openPopover(isoDate, x, y) {
   }
   const shouldAnimateIn = popover.classList.contains("hidden");
   activePopover = { isoDate };
+  activeNoteEdit = null;
   document.body.classList.add("popover-open");
   popover.innerHTML = "";
 
   const selectedIds = new Set(getDayDotIds(isoDate));
+
+  if (window.matchMedia("(max-width: 480px)").matches) {
+    const header = document.createElement("h1");
+    header.className = "popover-date";
+    const date = new Date(isoDate);
+    const parts = new Intl.DateTimeFormat(undefined, {
+      weekday: "short",
+      day: "2-digit",
+      month: "short"
+    }).formatToParts(date);
+    const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    header.textContent = `${byType.weekday} ${byType.day} ${byType.month}`;
+    popover.appendChild(header);
+  }
 
   if (state.dotTypes.length === 0) {
     const empty = document.createElement("div");
@@ -851,29 +897,15 @@ function openPopover(isoDate, x, y) {
 
   const noteWrap = document.createElement("div");
   noteWrap.className = "popover-note";
-
-  const noteInput = document.createElement("input");
-  noteInput.type = "text";
-  noteInput.placeholder = "Add short note";
-  noteInput.value = getDayNote(isoDate);
-  noteInput.maxLength = 64;
-
-  const noteRow = document.createElement("div");
-  noteRow.className = "popover-note-row";
-  noteInput.addEventListener("input", () => {
-    setDayNote(isoDate, noteInput.value);
+  const noteButton = document.createElement("button");
+  noteButton.type = "button";
+  noteButton.className = "note-edit-button";
+  noteButton.textContent = getDayNote(isoDate) ? "Edit note" : "Add note";
+  noteButton.addEventListener("click", () => {
+    closePopover();
+    startNoteEdit(isoDate);
   });
-
-  noteInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      setDayNote(isoDate, noteInput.value);
-      closePopover();
-    }
-  });
-
-  noteRow.append(noteInput);
-  noteWrap.append(noteRow);
+  noteWrap.append(noteButton);
   popover.appendChild(noteWrap);
 
   popover.classList.remove("hidden");
@@ -892,6 +924,7 @@ function openPopover(isoDate, x, y) {
   } else {
     popover.classList.add("visible");
   }
+  showPopoverScrim();
 }
 
 function closePopover() {
@@ -906,6 +939,71 @@ function closePopover() {
     popover.classList.add("hidden");
     popoverHideTimer = null;
   }, POPOVER_ANIMATION_MS);
+  hidePopoverScrim();
+}
+
+function showPopoverScrim() {
+  if (!popoverScrim) return;
+  popoverScrim.classList.remove("hidden");
+  requestAnimationFrame(() => {
+    popoverScrim.classList.add("visible");
+  });
+}
+
+function hidePopoverScrim() {
+  if (!popoverScrim) return;
+  popoverScrim.classList.remove("visible");
+  window.setTimeout(() => {
+    popoverScrim.classList.add("hidden");
+  }, POPOVER_ANIMATION_MS);
+}
+
+function startNoteEdit(isoDate) {
+  activeNoteEdit = isoDate;
+  render();
+  requestAnimationFrame(() => {
+    const editor = document.querySelector(`[data-note-editor="${isoDate}"]`);
+    if (!editor) return;
+    editor.focus();
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection.addRange(range);
+    }
+  });
+}
+
+function finishNoteEdit(isoDate, editor) {
+  activeNoteEdit = null;
+  setDayNote(isoDate, editor.textContent || "");
+}
+
+function buildNoteEditor(isoDate, baseClass) {
+  const editor = document.createElement("div");
+  editor.className = `${baseClass} note-editor`;
+  editor.contentEditable = "true";
+  editor.spellcheck = true;
+  editor.dataset.noteEditor = isoDate;
+  editor.textContent = getDayNote(isoDate);
+  editor.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      finishNoteEdit(isoDate, editor);
+    }
+  });
+  editor.addEventListener("blur", () => {
+    finishNoteEdit(isoDate, editor);
+  });
+  editor.addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+  });
+  editor.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+  return editor;
 }
 
 function toggleDot(isoDate, dotId) {
@@ -944,7 +1042,7 @@ function promptDeleteDotType(dotId, dotName) {
   pendingDeleteDotTypeId = dotId;
   pendingDeleteDotTypeName = dotName;
   pendingDeleteMode = "safe";
-  deleteText.textContent = "You haven't used this dot yet in your Diary. Are you sure you want to delete it?";
+  deleteText.textContent = "You haven’t used this dot yet.";
   deleteModal.classList.remove("hidden");
 }
 
@@ -1000,10 +1098,12 @@ function openSettingsModal() {
 function closePeriodMenu() {
   periodPickerMenu.classList.remove("visible");
   periodPickerMenu.classList.add("hidden");
+  updateMenuScrim();
 }
 
 function openPeriodMenu() {
   showAnimated(periodPickerMenu);
+  updateMenuScrim();
 }
 
 function addSuggestedDotType(suggestion) {
@@ -1477,7 +1577,12 @@ function closeDotMenus() {
     menu.classList.add("hidden");
     menu.style.removeProperty("--menu-offset-x");
     menu.style.removeProperty("--menu-offset-y");
+    if (menu.dataset.portalActive === "true" && menu._portalParent) {
+      menu._portalParent.appendChild(menu);
+      menu.dataset.portalActive = "";
+    }
   });
+  updateMenuScrim();
 }
 
 function positionDotActionsMenu(menu) {
@@ -1504,6 +1609,30 @@ function positionDotActionsMenu(menu) {
 
   menu.style.setProperty("--menu-offset-x", `${offsetX}px`);
   menu.style.setProperty("--menu-offset-y", `${offsetY}px`);
+}
+
+function updateMenuScrim() {
+  if (!menuScrim) return;
+  const isMobileSheet = window.matchMedia("(max-width: 480px)").matches;
+  const hasDotMenu = Boolean(document.querySelector(".dot-actions-menu:not(.hidden)"));
+  const hasPeriodMenu = !periodPickerMenu.classList.contains("hidden");
+  const shouldShow = isMobileSheet && (hasDotMenu || hasPeriodMenu);
+  if (menuScrimHideTimer) {
+    clearTimeout(menuScrimHideTimer);
+    menuScrimHideTimer = null;
+  }
+  if (shouldShow) {
+    menuScrim.classList.remove("hidden");
+    requestAnimationFrame(() => {
+      menuScrim.classList.add("visible");
+    });
+    return;
+  }
+  menuScrim.classList.remove("visible");
+  menuScrimHideTimer = window.setTimeout(() => {
+    menuScrim.classList.add("hidden");
+    menuScrimHideTimer = null;
+  }, 180);
 }
 
 function showAnimated(element) {
