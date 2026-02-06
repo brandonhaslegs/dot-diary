@@ -880,7 +880,13 @@ button {
 }
 
 #onboarding-modal .modal-card {
-  width: min(520px, calc(100vw - 24px));
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  overflow: auto;
 }
 
 .onboarding-step.hidden {
