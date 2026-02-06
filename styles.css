@@ -179,6 +179,39 @@ textarea {
   padding: 18px;
 }
 
+.feature-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--foreground);
+  flex: 0 0 auto;
+  margin-top: -1px;
+}
+
+.feature-dot.dot-a {
+  background: #ff0000;
+}
+
+.feature-dot.dot-b {
+  background: #ffc700;
+}
+
+.feature-dot.dot-c {
+  background: #15c771;
+}
+
+.feature-dot.dot-d {
+  background: #2f8cfa;
+}
+
+.feature-dot.dot-e {
+  background: #b632cc;
+}
+
+.feature-dot.dot-f {
+  background: #875436;
+}
+
 .marketing-sections {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -192,11 +225,18 @@ textarea {
 
 .feature-bullets {
   margin: 0;
-  padding-left: 20px;
+  padding-left: 0;
+  list-style: none;
   display: grid;
   gap: 6px;
   font-size: 14px;
   line-height: 1.3;
+}
+
+.feature-bullets li {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .feature-item h4 {
@@ -208,6 +248,18 @@ textarea {
   margin: 0;
   font-size: 14px;
   line-height: 1.3;
+}
+
+.feature-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+}
+
+.feature-item h4,
+.feature-item p {
+  grid-column: 2;
 }
 
 .marketing-brand {
@@ -1473,6 +1525,52 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   .month-note {
     font-size: 9px;
+  }
+
+  .marketing-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketing-actions button {
+    width: 100%;
+  }
+
+  .auth-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .auth-row input,
+  .auth-row button {
+    width: 100%;
+  }
+
+  .auth-row button {
+    width: 100%;
+  }
+
+  .settings-back {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .data-action-row button {
+    width: 100%;
+  }
+
+  #reset-onboarding {
+    width: 100%;
+  }
+
+  .note-edit-button {
+    width: 100%;
+  }
+
+  .period-picker-item,
+  .dot-actions-item {
+    width: 100%;
   }
 
   .marketing-sections {
