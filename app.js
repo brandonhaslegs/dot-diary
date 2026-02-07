@@ -73,6 +73,7 @@ const MODAL_ANIMATION_MS = 280;
 const POPOVER_ANIMATION_MS = 180;
 const AUTH_HASH = window.location.hash || "";
 const AUTH_STATE_KEY = "dot-diary-authenticated";
+const DEV_HOSTS = new Set(["localhost", "127.0.0.1"]);
 const COLOR_PALETTE = [
   "#FF0000",
   "#FFC700",
@@ -167,7 +168,7 @@ loginBackButton?.addEventListener("click", () => {
   marketingLogin?.classList.add("hidden");
   marketingHero?.classList.remove("hidden");
 });
-loginSendButton?.addEventListener("click", () => handleMagicLink(loginEmailInput?.value));
+loginSendButton?.addEventListener("click", () => handleMagicLink(loginEmailInput?.value, loginSendButton));
 brandHomeButton?.addEventListener("click", () => {
   loginMode = false;
   marketingLogin?.classList.add("hidden");
@@ -175,7 +176,7 @@ brandHomeButton?.addEventListener("click", () => {
   marketingPage?.classList.remove("hidden");
   appShell?.classList.add("hidden");
 });
-authSendButton?.addEventListener("click", handleMagicLink);
+authSendButton?.addEventListener("click", () => handleMagicLink(undefined, authSendButton));
 authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsBackButton?.addEventListener("click", closeSettingsModal);
 resetOnboardingButton?.addEventListener("click", () => {
@@ -327,6 +328,7 @@ try {
 
 initSupabaseAuth();
 renderMarketingCalendar();
+setupDevAutoReload();
 
 const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 if (colorSchemeMedia && typeof colorSchemeMedia.addEventListener === "function") {
@@ -1523,6 +1525,36 @@ function hash32(text) {
   return hash >>> 0;
 }
 
+function setupDevAutoReload() {
+  const devHosts = new Set(["localhost", "127.0.0.1"]);
+  if (!devHosts.has(window.location.hostname)) return;
+  const files = ["index.html", "styles.css", "app.js"];
+  let lastHash = "";
+  const poll = async () => {
+    try {
+      const contents = await Promise.all(
+        files.map((file) =>
+          fetch(`${file}?t=${Date.now()}`, { cache: "no-store" })
+            .then((response) => (response.ok ? response.text() : ""))
+            .catch(() => "")
+        )
+      );
+      const combined = contents.join("||");
+      if (!combined) return;
+      const nextHash = String(hash32(combined));
+      if (lastHash && nextHash !== lastHash) {
+        window.location.reload();
+        return;
+      }
+      lastHash = nextHash;
+    } catch {
+      // ignore polling errors
+    }
+  };
+  poll();
+  window.setInterval(poll, 1000);
+}
+
 function stickerPosition(isoDate, dotId) {
   const h1 = hash32(`${isoDate}|${dotId}|x`);
   const h2 = hash32(`${isoDate}|${dotId}|y`);
@@ -1957,7 +1989,7 @@ async function initSupabaseAuth() {
   });
 }
 
-async function handleMagicLink(overrideEmail) {
+async function handleMagicLink(overrideEmail, sourceButton) {
   if (!supabase) return;
   const email = overrideEmail?.trim() || authEmailInput?.value?.trim();
   if (!email) {
@@ -1976,6 +2008,15 @@ async function handleMagicLink(overrideEmail) {
     console.error("Magic link error:", error);
   } else {
     showToast("Magic link sent. Check your email.");
+    if (sourceButton) {
+      if (!sourceButton.dataset.defaultLabel) {
+        sourceButton.dataset.defaultLabel = sourceButton.textContent || "";
+      }
+      sourceButton.textContent = "Sent!";
+      window.setTimeout(() => {
+        sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
+      }, 2000);
+    }
   }
 }
 
