@@ -1,4 +1,11 @@
-import { AUTH_STATE_KEY, ONBOARDING_KEY, STORAGE_KEY, SUPABASE_ANON_KEY, SUPABASE_URL } from "./constants.js";
+import {
+  AUTH_INTENT_KEY,
+  AUTH_STATE_KEY,
+  ONBOARDING_KEY,
+  STORAGE_KEY,
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL
+} from "./constants.js";
 import {
   authEmailInput,
   authRow,
@@ -27,7 +34,13 @@ import {
 import { normalizeNote } from "./utils.js";
 import { showToast } from "./toast.js";
 
-const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false
+  }
+});
 let syncUser = null;
 let syncTimer = null;
 let pendingSyncToast = false;
@@ -39,14 +52,29 @@ export async function initSupabaseAuth() {
   const accessToken = hashParams.get("access_token");
   const refreshToken = hashParams.get("refresh_token");
   if (accessToken && refreshToken) {
+    const hasIntent = (() => {
+      try {
+        return sessionStorage.getItem(AUTH_INTENT_KEY) === "1";
+      } catch {
+        return false;
+      }
+    })();
     try {
-      await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      });
-      history.replaceState(null, "", window.location.pathname + window.location.search);
+      if (hasIntent) {
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+      }
     } catch {
       // ignore session errors and continue
+    } finally {
+      try {
+        sessionStorage.removeItem(AUTH_INTENT_KEY);
+      } catch {
+        // ignore
+      }
+      history.replaceState(null, "", window.location.pathname + window.location.search);
     }
   }
   const { data } = await supabase.auth.getSession();
@@ -85,6 +113,11 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
   if (!email) {
     showToast("Enter an email first.");
     return;
+  }
+  try {
+    sessionStorage.setItem(AUTH_INTENT_KEY, "1");
+  } catch {
+    // ignore
   }
   const { error } = await supabase.auth.signInWithOtp({
     email,

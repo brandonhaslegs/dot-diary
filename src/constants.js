@@ -42,6 +42,7 @@ export const MOBILE_MONTH_BATCH_SIZE = 12;
 export const MODAL_ANIMATION_MS = 280;
 export const POPOVER_ANIMATION_MS = 180;
 export const AUTH_STATE_KEY = "dot-diary-authenticated";
+export const AUTH_INTENT_KEY = "dot-diary-auth-intent";
 export const DEV_HOSTS = new Set(["localhost", "127.0.0.1"]);
 export const COLOR_PALETTE = [
   "#FF0000",
