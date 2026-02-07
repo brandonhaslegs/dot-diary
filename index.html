@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <!-- Marketing / landing -->
     <section id="marketing-page" class="marketing-shell">
       <div class="marketing-background" aria-hidden="true">
         <div id="marketing-calendar" class="marketing-calendar">
@@ -21,10 +22,14 @@
           <div id="marketing-month" class="month-grid"></div>
         </div>
       </div>
+
       <div class="marketing-card" id="marketing-hero">
         <p class="marketing-brand"><span class="brand-mark" aria-hidden="true"></span>Dot Diary</p>
         <h1>Track your life in dots.</h1>
-        <p>Track things you want to do more of, or things you want to do less of. Simple but effective habit tracking. Free forever.</p>
+        <p>
+          Track things you want to do more of, or things you want to do less of. Simple but effective habit
+          tracking. Free forever.
+        </p>
         <div class="marketing-actions">
           <button id="enter-app" type="button">Get started</button>
           <button id="open-login" type="button" class="outline-button">Log in</button>
@@ -61,6 +66,7 @@
           </div>
         </div>
       </div>
+
       <div class="marketing-card hidden" id="marketing-login">
         <p class="marketing-brand"><span class="brand-mark" aria-hidden="true"></span>Dot Diary</p>
         <h1>Log in</h1>
@@ -84,6 +90,7 @@
       </div>
     </section>
 
+    <!-- App shell -->
     <div id="menu-scrim" class="menu-scrim hidden" aria-hidden="true"></div>
     <div id="popover-scrim" class="popover-scrim hidden" aria-hidden="true"></div>
     <div id="mobile-menu-portal"></div>
@@ -98,7 +105,13 @@
           <button id="period-picker-toggle" type="button" aria-label="Select period">
             <span id="period-picker-label"></span>
             <svg class="year-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M9.75 4.5L6 8.25L2.25 4.5" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path
+                d="M9.75 4.5L6 8.25L2.25 4.5"
+                stroke="black"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </button>
           <div id="period-picker-menu" class="period-picker-menu hidden"></div>
@@ -106,7 +119,7 @@
         <nav class="view-nav" aria-label="Sections">
           <button id="open-settings" type="button" class="icon-button" aria-label="Settings">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <circle cx="8" cy="8" r="7.25" stroke="black" stroke-width="1.5"/>
+              <circle cx="8" cy="8" r="7.25" stroke="black" stroke-width="1.5" />
             </svg>
             <span>Settings</span>
           </button>
@@ -121,31 +134,35 @@
 
     <div id="day-popover" class="popover hidden" role="dialog" aria-label="Pick a dot"></div>
 
+    <!-- Onboarding -->
     <div id="onboarding-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
       <div class="modal-card onboarding-card">
         <div class="onboarding-step" data-step="intro">
-				<div class="onboarding-demo" aria-hidden="true">
-			  <div class="demo-day">
-				<div class="demo-day-label">06 Tu</div>
-				<span class="demo-dot red"></span>
-				<span class="demo-dot blue"></span>
-				<div class="demo-note">Morning swim</div>
-			  </div>
-			  <div class="demo-day">
-				<div class="demo-day-label">07 We</div>
-				<span class="demo-dot green"></span>
-				<span class="demo-dot purple"></span>
-				<div class="demo-note">Date night</div>
-			  </div>
-			  <div class="demo-day">
-				<div class="demo-day-label">08 Th</div>
-				<span class="demo-dot yellow"></span>
-				<span class="demo-dot brown"></span>
-				<div class="demo-note">Late coffee</div>
-			  </div>
-			</div>
+          <div class="onboarding-demo" aria-hidden="true">
+            <div class="demo-day">
+              <div class="demo-day-label">06 Tu</div>
+              <span class="demo-dot red"></span>
+              <span class="demo-dot blue"></span>
+              <div class="demo-note">Morning swim</div>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">07 We</div>
+              <span class="demo-dot green"></span>
+              <span class="demo-dot purple"></span>
+              <div class="demo-note">Date night</div>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">08 Th</div>
+              <span class="demo-dot yellow"></span>
+              <span class="demo-dot brown"></span>
+              <div class="demo-note">Late coffee</div>
+            </div>
+          </div>
           <h1 id="onboarding-title">How it works</h1>
-          <p>Pick some dots you want to do more of, and some you want to do less of. Add them to days where you do those things. Track progress over time.</p>
+          <p>
+            Pick some dots you want to do more of, and some you want to do less of. Add them to days where you do
+            those things. Track progress over time.
+          </p>
           <div class="onboarding-actions">
             <button id="onboarding-skip-intro" type="button" class="outline-button">Skip</button>
             <div class="onboarding-dots" aria-hidden="true">
@@ -156,14 +173,13 @@
             <button id="onboarding-next" type="button">Get started</button>
           </div>
         </div>
+
         <div class="onboarding-step hidden" data-step="dots">
           <section class="settings-section suggestions">
             <h2>Your dot types</h2>
             <ul id="onboarding-dot-type-list" class="dot-type-list"></ul>
             <h2>Suggested dot types</h2>
-            <p class="muted">
-              It’s helpful to choose three you want to do more of, and three you want to do less of.
-            </p>
+            <p class="muted">It’s helpful to choose three you want to do more of, and three you want to do less of.</p>
             <div id="onboarding-suggested-dot-list" class="suggested-dot-list"></div>
           </section>
           <div class="onboarding-actions">
@@ -176,6 +192,7 @@
             <button id="onboarding-next-dots" type="button">Continue</button>
           </div>
         </div>
+
         <div class="onboarding-step hidden" data-step="sync">
           <div class="onboarding-split">
             <div class="onboarding-split-left" aria-hidden="true">
@@ -230,6 +247,7 @@
       </div>
     </div>
 
+    <!-- Modals -->
     <div id="delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="delete-title">
       <div class="modal-card">
         <h3 id="delete-title">Are you sure?</h3>
@@ -246,8 +264,20 @@
         <button id="settings-back" type="button" class="settings-back">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <g clip-path="url(#back_clip_1)">
-              <path d="M16.875 10H3.125" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-              <path d="M8.75 4.375L3.125 10L8.75 15.625" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              <path
+                d="M16.875 10H3.125"
+                stroke="black"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M8.75 4.375L3.125 10L8.75 15.625"
+                stroke="black"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </g>
             <defs>
               <clipPath id="back_clip_1">
@@ -258,13 +288,12 @@
           <span>Back to my diary</span>
         </button>
         <h3 id="settings-title" class="hidden">Settings</h3>
+
         <section class="settings-section suggestions">
           <h4>Your dot types</h4>
           <ul id="dot-type-list" class="dot-type-list"></ul>
           <h5>Suggested dot types</h5>
-          <p class="muted">
-            It’s helpful to choose three you want to do more of, and three you want to do less of.
-          </p>
+          <p class="muted">It’s helpful to choose three you want to do more of, and three you want to do less of.</p>
           <div id="suggested-dot-list" class="suggested-dot-list"></div>
         </section>
 
@@ -291,21 +320,21 @@
         </section>
 
         <hr />
-		
+
         <section class="settings-section">
           <h4>Cloud sync</h4>
           <div class="auth-row" id="auth-row">
             <input
               id="auth-email"
-				type="text"
-				placeholder="you@example.com"
-				autocomplete="email"
-				autocorrect="on"
-				spellcheck="true"
-				autocapitalize="none"
-				inputmode="email"
-				/>
-				<button id="auth-send" type="button">Send magic link</button>
+              type="text"
+              placeholder="you@example.com"
+              autocomplete="email"
+              autocorrect="on"
+              spellcheck="true"
+              autocapitalize="none"
+              inputmode="email"
+            />
+            <button id="auth-send" type="button">Send magic link</button>
           </div>
           <div class="auth-status" id="auth-status"></div>
           <div class="auth-status muted" id="sync-status"></div>
@@ -314,28 +343,30 @@
             <button id="auth-signout" type="button" class="hidden">Sign out</button>
           </div>
         </section>
-		
-		<hr />
 
-		<section class="settings-section">
-		  <h4>My data</h4>
-		  <div class="data-action-row">
-			<p class="muted">
-			  You can download all your dot names, colors, entries, positions, and preferences and upload them on another device.
-			</p>
-			<button id="download-data" type="button">Download</button>
-		  </div>
-		  <div class="data-action-row">
-			<p class="muted">
-			  Already downloaded your data from another device? Upload it here to keep going where you left off.
-			</p>
-			<button id="upload-data" type="button">Upload</button>
-		  </div>
-		  <input id="upload-data-input" type="file" accept="application/json,.json" class="hidden" />
-		</section>
-<!-- 
         <hr />
-		
+
+        <section class="settings-section">
+          <h4>My data</h4>
+          <div class="data-action-row">
+            <p class="muted">
+              You can download all your dot names, colors, entries, positions, and preferences and upload them on
+              another device.
+            </p>
+            <button id="download-data" type="button">Download</button>
+          </div>
+          <div class="data-action-row">
+            <p class="muted">
+              Already downloaded your data from another device? Upload it here to keep going where you left off.
+            </p>
+            <button id="upload-data" type="button">Upload</button>
+          </div>
+          <input id="upload-data-input" type="file" accept="application/json,.json" class="hidden" />
+        </section>
+
+        <!--
+        <hr />
+
         <section class="settings-section">
           <h4>Reset</h4>
           <p class="muted">Reopen onboarding and settings as if it’s your first time.</p>
@@ -343,10 +374,12 @@
             <p class="muted"></p>
             <button id="reset-onboarding" type="button">Reset onboarding</button>
           </div>
-        </section> -->
+        </section>
+        -->
       </div>
     </div>
 
+    <!-- Templates -->
     <template id="popover-item-template">
       <button class="popover-item" type="button">
         <span class="swatch"></span>
@@ -354,6 +387,7 @@
       </button>
     </template>
 
+    <!-- Toasts -->
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
