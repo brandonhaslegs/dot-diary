@@ -1913,6 +1913,20 @@ function normalizeImportedState(parsed) {
 
 async function initSupabaseAuth() {
   if (!supabase) return;
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const accessToken = hashParams.get("access_token");
+  const refreshToken = hashParams.get("refresh_token");
+  if (accessToken && refreshToken) {
+    try {
+      await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    } catch {
+      // ignore session errors and continue
+    }
+  }
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
   if (!hasEnteredApp && syncUser && !marketingPage?.classList.contains("hidden")) {

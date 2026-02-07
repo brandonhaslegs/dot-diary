@@ -66,6 +66,16 @@ textarea {
   overflow: hidden;
 }
 
+@media (max-width: 480px) {
+  .marketing-shell {
+    padding: 200px 40px;
+  }
+
+  #marketing-hero {
+    padding: 24px;
+  }
+}
+
 .marketing-background {
   position: absolute;
   inset: 0;
@@ -102,6 +112,18 @@ textarea {
 }
 
 @media (max-width: 920px) {
+  .app-shell {
+    grid-template-rows: 1fr auto;
+  }
+
+  .topbar {
+    order: 2;
+    border-bottom: 0;
+  }
+
+  .calendar-area {
+    margin-top: 4px;
+  }
   .marketing-background {
     padding: 12px;
   }
@@ -331,6 +353,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  transition: none;
 }
 
 .period-picker {
@@ -495,6 +518,13 @@ button {
 button:active {
   transform: scale(0.95);
   transition: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 921px) {
+  .brand-link:hover,
+  .brand-link:active {
+    transform: translateY(-50%) scale(1);
+  }
 }
 
 .dot-type-list {
