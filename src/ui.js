@@ -78,6 +78,7 @@ const shuffledSuggestions = shuffleArray(SUGGESTED_DOT_TYPES);
 
 let activePopover = null;
 let activeNoteEdit = null;
+let activeNoteEditMonthIso = null;
 let pendingFocusDotId = null;
 let pendingDeleteDotTypeId = null;
 let pendingDeleteMode = "safe";
@@ -358,7 +359,7 @@ export function renderYearGrid() {
           closePopover();
           return;
         }
-        openPopover(iso, event.clientX, event.clientY);
+        openPopover(iso, event.clientX, event.clientY, null);
       });
       column.appendChild(row);
     }
@@ -375,7 +376,7 @@ export function renderMonthGrid() {
   monthGrid.innerHTML = "";
   monthGrid.classList.add("month-scroll-list");
 
-  const buildMonthCell = (day) => {
+  const buildMonthCell = (day, monthIso) => {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "month-day";
@@ -409,7 +410,10 @@ export function renderMonthGrid() {
     cell.appendChild(dotLayer);
 
     const note = getDayNote(day.iso);
-    if (activeNoteEdit === day.iso) {
+    if (
+      activeNoteEdit === day.iso &&
+      (!activeNoteEditMonthIso || activeNoteEditMonthIso === monthIso)
+    ) {
       cell.appendChild(buildNoteEditor(day.iso, "month-note"));
     } else if (note) {
       const noteNode = document.createElement("span");
@@ -425,7 +429,7 @@ export function renderMonthGrid() {
         closePopover();
         return;
       }
-      openPopover(day.iso, event.clientX, event.clientY);
+      openPopover(day.iso, event.clientX, event.clientY, monthIso);
     });
     return cell;
   };
@@ -450,7 +454,7 @@ export function renderMonthGrid() {
     daysWrap.className = "month-scroll-days";
     const days = buildMonthCells(monthDate, state.weekStartsMonday);
     days.forEach((day) => {
-      daysWrap.appendChild(buildMonthCell(day));
+      daysWrap.appendChild(buildMonthCell(day, monthIso));
     });
     section.appendChild(daysWrap);
     monthSections.push(section);
@@ -864,13 +868,13 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
   targetList.appendChild(addNewChip);
 }
 
-export function openPopover(isoDate, x, y) {
+export function openPopover(isoDate, x, y, contextMonthIso = null) {
   if (popoverHideTimer) {
     clearTimeout(popoverHideTimer);
     popoverHideTimer = null;
   }
   const shouldAnimateIn = popover.classList.contains("hidden");
-  activePopover = { isoDate };
+  activePopover = { isoDate, contextMonthIso };
   activeNoteEdit = null;
   document.body.classList.add("popover-open");
   popover.innerHTML = "";
@@ -911,7 +915,7 @@ export function openPopover(isoDate, x, y) {
       const wasSelected = selectedIds.has(dotType.id);
       toggleDot(isoDate, dotType.id);
       if (wasSelected) {
-        openPopover(isoDate, x, y);
+        openPopover(isoDate, x, y, contextMonthIso);
       } else {
         closePopover();
       }
@@ -937,7 +941,7 @@ export function openPopover(isoDate, x, y) {
   noteButton.textContent = getDayNote(isoDate) ? "Edit note" : "Add note";
   noteButton.addEventListener("click", () => {
     closePopover();
-    startNoteEdit(isoDate);
+    startNoteEdit(isoDate, contextMonthIso);
   });
   noteWrap.append(addDotTypeButton, noteButton);
   popover.appendChild(noteWrap);
@@ -992,11 +996,16 @@ export function hidePopoverScrim() {
   }, POPOVER_ANIMATION_MS);
 }
 
-export function startNoteEdit(isoDate) {
+export function startNoteEdit(isoDate, contextMonthIso = null) {
   activeNoteEdit = isoDate;
+  activeNoteEditMonthIso = contextMonthIso;
   requestRender(() => {
     requestAnimationFrame(() => {
-      const editor = document.querySelector(`[data-note-editor="${isoDate}"]`);
+      const scopedSelector = contextMonthIso
+        ? `[data-month-iso="${contextMonthIso}"] [data-note-editor="${isoDate}"]`
+        : null;
+      const fallbackSelector = `[data-note-editor="${isoDate}"]`;
+      const editor = (scopedSelector && document.querySelector(scopedSelector)) || document.querySelector(fallbackSelector);
       if (!editor) return;
       editor.focus();
       const selection = window.getSelection();
@@ -1013,6 +1022,7 @@ export function startNoteEdit(isoDate) {
 
 export function finishNoteEdit(isoDate, editor) {
   activeNoteEdit = null;
+  activeNoteEditMonthIso = null;
   setDayNote(isoDate, editor.textContent || "");
 }
 
@@ -1368,7 +1378,7 @@ export function startDotDrag(event, { isoDate, dotId, sticker, mode }) {
     sticker.removeEventListener("pointercancel", onUp);
     if (moved && last) {
       saveDotPosition(isoDate, dotId, last.nextLeft, last.nextTop);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      saveAndRender();
       suppressDayOpenUntil = Date.now() + 250;
     }
   };
