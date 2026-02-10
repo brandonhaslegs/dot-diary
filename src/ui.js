@@ -1276,6 +1276,22 @@ export function handleGlobalPointerDown(event) {
 }
 
 export function handleGlobalKeyDown(event) {
+  const target = event.target;
+  const isEditableTarget =
+    target instanceof HTMLElement &&
+    (target.isContentEditable ||
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.tagName === "SELECT");
+
+  const isSettingsShortcut = (event.metaKey || event.ctrlKey) && event.key === ",";
+  if (isSettingsShortcut && !isEditableTarget) {
+    event.preventDefault();
+    closePopover();
+    openSettingsModal();
+    return;
+  }
+
   if (event.key !== "Escape") return;
   closePopover();
   closePeriodMenu();
