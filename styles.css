@@ -249,6 +249,28 @@ textarea {
   font-family: "Borel", "Brush Script MT", cursive;
 }
 
+.marketing-card .coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  width: fit-content;
+  height: 24px;
+  margin-bottom: 8px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  font-family: "Funnel Sans", "Avenir Next", "Trebuchet MS", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  background: var(--foreground);
+  color: var(--background);
+  text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+}
+
 .feature-bullets {
   margin: 0;
   padding-left: 0;
