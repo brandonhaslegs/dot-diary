@@ -38,34 +38,33 @@ const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, 
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false
+    detectSessionInUrl: true
   }
 });
 let syncUser = null;
 let syncTimer = null;
+let syncPollTimer = null;
 let pendingSyncToast = false;
 let lastSyncedAt = null;
+let syncInFlight = null;
+let syncInProgress = false;
+let authInitStarted = false;
+const SYNC_DEBOUNCE_MS = 250;
+const SYNC_POLL_MS = 5000;
 
 export async function initSupabaseAuth() {
+  if (authInitStarted) return;
+  authInitStarted = true;
   if (!supabase) return;
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const accessToken = hashParams.get("access_token");
   const refreshToken = hashParams.get("refresh_token");
   if (accessToken && refreshToken) {
-    const hasIntent = (() => {
-      try {
-        return sessionStorage.getItem(AUTH_INTENT_KEY) === "1";
-      } catch {
-        return false;
-      }
-    })();
     try {
-      if (hasIntent) {
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-      }
+      await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
     } catch {
       // ignore session errors and continue
     } finally {
@@ -85,6 +84,7 @@ export async function initSupabaseAuth() {
   updateAuthUI();
   if (syncUser) {
     await loadFromCloud();
+    startSyncPolling();
   }
   supabase.auth.onAuthStateChange(async (_event, session) => {
     syncUser = session?.user || null;
@@ -103,8 +103,12 @@ export async function initSupabaseAuth() {
     updateAuthUI();
     if (syncUser) {
       await loadFromCloud();
+      startSyncPolling();
+    } else {
+      stopSyncPolling();
     }
   });
+  document.addEventListener("visibilitychange", handleVisibilitySync);
 }
 
 export async function handleMagicLink(overrideEmail, sourceButton) {
@@ -122,7 +126,7 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: "https://dot-diary.com"
+      emailRedirectTo: getMagicLinkRedirectTo()
     }
   });
   if (error) {
@@ -146,6 +150,14 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
 export async function signOutSupabase() {
   if (!supabase) return;
   await supabase.auth.signOut();
+  if (syncTimer) {
+    clearTimeout(syncTimer);
+    syncTimer = null;
+  }
+  stopSyncPolling();
+  syncInFlight = null;
+  syncInProgress = false;
+  pendingSyncToast = false;
   syncUser = null;
   lastSyncedAt = null;
   try {
@@ -180,7 +192,7 @@ export function updateAuthUI() {
     authSignOutButton.classList.remove("hidden");
     if (authRow) authRow.classList.add("hidden");
     if (syncStatus) {
-      syncStatus.textContent = lastSyncedAt ? `Last synced ${formatSyncTime(lastSyncedAt)}.` : "Not synced yet.";
+      syncStatus.textContent = formatSyncStatus();
     }
   } else {
     authStatus.textContent = "Sign in to sync this diary across devices.";
@@ -197,10 +209,10 @@ export function scheduleSync() {
   pendingSyncToast = true;
   syncTimer = setTimeout(() => {
     syncToCloud();
-  }, 800);
+  }, SYNC_DEBOUNCE_MS);
 }
 
-async function loadFromCloud() {
+async function loadFromCloud({ silentError = false } = {}) {
   if (!supabase || !syncUser) return;
   const { data, error } = await supabase
     .from("user_data")
@@ -208,7 +220,7 @@ async function loadFromCloud() {
     .eq("user_id", syncUser.id)
     .maybeSingle();
   if (error) {
-    showToast("Cloud sync failed.");
+    if (!silentError) showToast("Cloud sync failed.");
     return;
   }
   if (!data?.data) {
@@ -222,7 +234,11 @@ async function loadFromCloud() {
     await syncToCloud();
     return;
   }
-  if (remoteTimestamp === localTimestamp) return;
+  if (remoteTimestamp === localTimestamp) {
+    lastSyncedAt = new Date().toISOString();
+    updateAuthUI();
+    return;
+  }
   const preferRemote = remoteTimestamp > localTimestamp;
   setState(mergeStates(state, remoteState, preferRemote));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -234,25 +250,64 @@ async function loadFromCloud() {
 
 async function syncToCloud() {
   if (!supabase || !syncUser) return;
+  if (syncInFlight) return syncInFlight;
+  syncInProgress = true;
+  updateAuthUI();
   const payload = {
     user_id: syncUser.id,
     data: state,
     updated_at: new Date().toISOString()
   };
-  const { error } = await supabase.from("user_data").upsert(payload);
-  if (error) {
-    showToast("Could not sync to cloud.");
-    pendingSyncToast = false;
-  } else {
-    lastSyncedAt = new Date().toISOString();
-    updateAuthUI();
-    if (pendingSyncToast) {
-      showToast("Synced.");
+  syncInFlight = (async () => {
+    const { error } = await supabase.from("user_data").upsert(payload);
+    if (error) {
+      showToast("Could not sync to cloud.");
       pendingSyncToast = false;
+    } else {
+      lastSyncedAt = new Date().toISOString();
+      if (pendingSyncToast) {
+        showToast("Synced.");
+        pendingSyncToast = false;
+      }
     }
+  })();
+  try {
+    await syncInFlight;
+  } finally {
+    syncInFlight = null;
+    syncInProgress = false;
+    updateAuthUI();
   }
 }
 
+function startSyncPolling() {
+  if (syncPollTimer || !syncUser) return;
+  syncPollTimer = window.setInterval(() => {
+    if (!document.hidden) {
+      loadFromCloud({ silentError: true });
+    }
+  }, SYNC_POLL_MS);
+}
+
+function stopSyncPolling() {
+  if (!syncPollTimer) return;
+  window.clearInterval(syncPollTimer);
+  syncPollTimer = null;
+}
+
+function handleVisibilitySync() {
+  if (document.hidden || !syncUser) return;
+  loadFromCloud({ silentError: true });
+}
+
+function getMagicLinkRedirectTo() {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+function formatSyncStatus() {
+  if (syncInProgress) return "Syncing...";
+  return lastSyncedAt ? `Last synced ${formatSyncTime(lastSyncedAt)}.` : "Signed in. Waiting to sync changes.";
+}
 function formatSyncTime(iso) {
   try {
     const date = new Date(iso);
@@ -267,107 +322,51 @@ function formatSyncTime(iso) {
   }
 }
 
-function mergeNotes(localNote, remoteNote) {
-  const local = (localNote || "").trim();
-  const remote = (remoteNote || "").trim();
-  if (!local) return remote;
-  if (!remote) return local;
-  if (local === remote) return local;
-  return normalizeNote(`${local} / ${remote}`);
-}
-
-function mergeDotTypes(localTypes, remoteTypes, preferRemote) {
-  const localById = new Map(localTypes.map((dot) => [dot.id, dot]));
-  const remoteById = new Map(remoteTypes.map((dot) => [dot.id, dot]));
-  const localByName = new Map(localTypes.map((dot) => [dot.name.toLowerCase(), dot]));
-  const remoteByName = new Map(remoteTypes.map((dot) => [dot.name.toLowerCase(), dot]));
-  const idRemap = new Map();
-  const merged = [];
-
-  const allNames = new Set([...localByName.keys(), ...remoteByName.keys()]);
-  allNames.forEach((name) => {
-    const local = localByName.get(name);
-    const remote = remoteByName.get(name);
-    if (local && remote) {
-      const chosen = preferRemote ? remote : local;
-      const other = preferRemote ? local : remote;
-      merged.push({ ...chosen });
-      if (other.id !== chosen.id) {
-        idRemap.set(other.id, chosen.id);
-      }
-    } else if (local) {
-      merged.push({ ...local });
-    } else if (remote) {
-      merged.push({ ...remote });
-    }
-  });
-
-  localById.forEach((dot, id) => {
-    if (!merged.some((item) => item.id === id) && !idRemap.has(id)) {
-      merged.push({ ...dot });
-    }
-  });
-  remoteById.forEach((dot, id) => {
-    if (!merged.some((item) => item.id === id) && !idRemap.has(id)) {
-      merged.push({ ...dot });
-    }
-  });
-
-  return { merged, idRemap };
-}
-
 function mergeStates(localState, remoteState, preferRemote) {
-  const { merged: dotTypes, idRemap } = mergeDotTypes(
-    localState.dotTypes || [],
-    remoteState.dotTypes || [],
-    preferRemote
-  );
-
+  const winner = preferRemote ? remoteState : localState;
+  const loser = preferRemote ? localState : remoteState;
+  const dotTypes = Array.isArray(winner.dotTypes) ? structuredClone(winner.dotTypes) : [];
+  const validDotIds = new Set(dotTypes.map((dot) => dot.id));
   const dayDots = {};
-  const allDays = new Set([
-    ...Object.keys(localState.dayDots || {}),
-    ...Object.keys(remoteState.dayDots || {})
-  ]);
-  allDays.forEach((iso) => {
-    const localIds = (localState.dayDots?.[iso] || []).map((id) => idRemap.get(id) || id);
-    const remoteIds = (remoteState.dayDots?.[iso] || []).map((id) => idRemap.get(id) || id);
-    const mergedIds = Array.from(new Set([...localIds, ...remoteIds]));
-    if (mergedIds.length > 0) dayDots[iso] = mergedIds;
+  const rawDayDots = winner.dayDots && typeof winner.dayDots === "object" ? winner.dayDots : {};
+  Object.entries(rawDayDots).forEach(([iso, ids]) => {
+    if (!Array.isArray(ids)) return;
+    const filtered = ids.filter((id) => validDotIds.has(id));
+    if (filtered.length > 0) dayDots[iso] = filtered;
   });
-
   const dotPositions = {};
-  allDays.forEach((iso) => {
-    const localPos = localState.dotPositions?.[iso] || {};
-    const remotePos = remoteState.dotPositions?.[iso] || {};
-    const mergedPos = {};
-    const allDotIds = new Set([...Object.keys(localPos), ...Object.keys(remotePos)]);
-    allDotIds.forEach((dotId) => {
-      const remapped = idRemap.get(dotId) || dotId;
-      if (localPos[dotId]) {
-        mergedPos[remapped] = localPos[dotId];
-      } else if (remotePos[dotId]) {
-        mergedPos[remapped] = remotePos[dotId];
-      }
+  const rawDotPositions = winner.dotPositions && typeof winner.dotPositions === "object" ? winner.dotPositions : {};
+  Object.entries(rawDotPositions).forEach(([iso, positions]) => {
+    if (!positions || typeof positions !== "object") return;
+    const filtered = {};
+    Object.entries(positions).forEach(([dotId, pos]) => {
+      if (validDotIds.has(dotId)) filtered[dotId] = pos;
     });
-    if (Object.keys(mergedPos).length > 0) dotPositions[iso] = mergedPos;
+    if (Object.keys(filtered).length > 0) dotPositions[iso] = filtered;
   });
-
   const dayNotes = {};
-  const allNotes = new Set([
-    ...Object.keys(localState.dayNotes || {}),
-    ...Object.keys(remoteState.dayNotes || {})
-  ]);
-  allNotes.forEach((iso) => {
-    const mergedNote = mergeNotes(localState.dayNotes?.[iso], remoteState.dayNotes?.[iso]);
-    if (mergedNote) dayNotes[iso] = mergedNote;
+  const rawDayNotes = winner.dayNotes && typeof winner.dayNotes === "object" ? winner.dayNotes : {};
+  Object.entries(rawDayNotes).forEach(([iso, note]) => {
+    const normalized = normalizeNote(note);
+    if (normalized) dayNotes[iso] = normalized;
   });
 
   return {
     ...localState,
-    monthCursor: remoteState.monthCursor || localState.monthCursor,
-    yearCursor: remoteState.yearCursor || localState.yearCursor,
-    weekStartsMonday: Boolean(remoteState.weekStartsMonday),
-    darkMode: typeof remoteState.darkMode === "boolean" ? remoteState.darkMode : localState.darkMode,
+    monthCursor: winner.monthCursor || loser.monthCursor || localState.monthCursor,
+    yearCursor: winner.yearCursor || loser.yearCursor || localState.yearCursor,
+    weekStartsMonday:
+      typeof winner.weekStartsMonday === "boolean"
+        ? winner.weekStartsMonday
+        : typeof loser.weekStartsMonday === "boolean"
+          ? loser.weekStartsMonday
+          : localState.weekStartsMonday,
+    darkMode:
+      typeof winner.darkMode === "boolean"
+        ? winner.darkMode
+        : typeof loser.darkMode === "boolean"
+          ? loser.darkMode
+          : localState.darkMode,
     dotTypes,
     dayDots,
     dotPositions,

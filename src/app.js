@@ -1,4 +1,4 @@
-import { AUTH_STATE_KEY, DEMO_MODE } from "./constants.js";
+import { APP_ENTRY_KEY, AUTH_STATE_KEY, DEMO_MODE } from "./constants.js";
 import {
   authSignOutButton,
   authSendButton,
@@ -157,14 +157,20 @@ document.addEventListener("pointerdown", handleGlobalPointerDown);
 document.addEventListener("keydown", handleGlobalKeyDown);
 
 render();
-showOnboardingIfNeeded();
 try {
-  if (!DEMO_MODE && localStorage.getItem(AUTH_STATE_KEY) === "1") {
-    enterApp({ skipOnboarding: true });
+  if (!DEMO_MODE) {
+    const hasAuthState = localStorage.getItem(AUTH_STATE_KEY) === "1";
+    const hasEnteredBefore = localStorage.getItem(APP_ENTRY_KEY) === "1";
+    if (hasAuthState) {
+      enterApp({ skipOnboarding: true });
+    } else if (hasEnteredBefore) {
+      enterApp();
+    }
   }
 } catch {
   // ignore storage access
 }
+showOnboardingIfNeeded();
 
 initSupabaseAuth();
 renderMarketingCalendar();

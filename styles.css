@@ -571,13 +571,11 @@ button:active {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dot-type-row:hover,
   .suggestion-chip:hover {
     transform: scale(1.03);
   }
 }
 
-.dot-type-row:active,
 .suggestion-chip:active {
   transform: scale(0.9);
 }

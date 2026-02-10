@@ -1,4 +1,5 @@
 import {
+  APP_ENTRY_KEY,
   AUTH_STATE_KEY,
   COLOR_PALETTE,
   DEMO_MODE,
@@ -123,6 +124,11 @@ export function showMarketingPage() {
 export function resetToLoggedOut() {
   hasEnteredApp = false;
   loginMode = false;
+  try {
+    localStorage.removeItem(APP_ENTRY_KEY);
+  } catch {
+    // ignore
+  }
   marketingLogin?.classList.add("hidden");
   marketingHero?.classList.remove("hidden");
   marketingPage?.classList.remove("hidden");
@@ -1106,6 +1112,11 @@ export function renderOnboardingLists() {
 export function enterApp({ skipOnboarding = false } = {}) {
   hasEnteredApp = true;
   loginMode = false;
+  try {
+    localStorage.setItem(APP_ENTRY_KEY, "1");
+  } catch {
+    // ignore
+  }
   marketingPage?.classList.add("hidden");
   appShell?.classList.remove("hidden");
   if (skipOnboarding) {
@@ -1186,6 +1197,10 @@ export function closeColorPickers() {
   document.querySelectorAll(".color-picker").forEach((picker) => {
     picker.classList.remove("visible");
     picker.classList.add("hidden");
+    if (picker._hostRow) {
+      picker._hostRow.classList.remove("menu-open");
+      picker._hostRow = null;
+    }
     if (picker.dataset.portalActive === "true" && picker._portalParent) {
       picker._portalParent.appendChild(picker);
       picker.dataset.portalActive = "";
@@ -1198,6 +1213,11 @@ export function openColorPicker(picker) {
   const opening = picker.classList.contains("hidden");
   closeColorPickers();
   if (!opening) return;
+  const hostRow = picker.closest(".dot-type-row");
+  if (hostRow) {
+    hostRow.classList.add("menu-open");
+    picker._hostRow = hostRow;
+  }
   if (picker._hexInput && picker._currentColor) {
     picker._hexInput.value = picker._currentColor();
   }

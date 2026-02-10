@@ -1,5 +1,6 @@
 export const STORAGE_KEY = "dot-diary-v1";
 export const ONBOARDING_KEY = "dot-diary-onboarding-v1";
+export const APP_ENTRY_KEY = "dot-diary-entered-app";
 export const DEMO_MODE = new URLSearchParams(window.location.search).get("demo") === "1";
 export const SUPABASE_URL = "https://onmrtxwqwyqyiicweffy.supabase.co";
 export const SUPABASE_ANON_KEY = "sb_publishable_E9ZgVOUfB3EWjP1Njm5PJQ_c-maFufE";
