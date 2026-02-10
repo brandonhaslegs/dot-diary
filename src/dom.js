@@ -8,6 +8,7 @@ export const settingsModal = document.querySelector("#settings-modal");
 export const periodPickerToggle = document.querySelector("#period-picker-toggle");
 export const periodPickerLabel = document.querySelector("#period-picker-label");
 export const periodPickerMenu = document.querySelector("#period-picker-menu");
+export const todayButton = document.querySelector("#today-button");
 export const weekStartMondayInput = document.querySelector("#week-start-monday");
 export const hideSuggestionsInput = document.querySelector("#hide-suggestions");
 export const colorModeLightButton = document.querySelector("#color-mode-light");

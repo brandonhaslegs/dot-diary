@@ -30,6 +30,7 @@ import {
   popoverScrim,
   resetOnboardingButton,
   settingsBackButton,
+  todayButton,
   uploadDataButton,
   uploadDataInput,
   weekStartMondayInput
@@ -55,8 +56,11 @@ import {
   registerAuthUpdater,
   render,
   renderMarketingCalendar,
+  scrollToToday,
   downloadDataExport,
+  dismissPopoverFromScrim,
   setupDevAutoReload,
+  setupMobileMonthScroll,
   showLogin,
   showMarketingHero,
   showMarketingPage,
@@ -93,6 +97,7 @@ openSettings?.addEventListener("click", () => {
   closePopover();
   openSettingsModal();
 });
+todayButton?.addEventListener("click", scrollToToday);
 resetOnboardingButton?.addEventListener("click", handleResetOnboarding);
 
 onboardingNextButton?.addEventListener("click", () => showOnboardingStep("dots"));
@@ -117,9 +122,7 @@ menuScrim?.addEventListener("click", () => {
   closeDotMenus();
   closeColorPickers();
 });
-popoverScrim?.addEventListener("click", () => {
-  closePopover();
-});
+popoverScrim?.addEventListener("pointerdown", dismissPopoverFromScrim);
 periodPickerMenu?.addEventListener("scroll", handlePeriodPickerScroll);
 
 deleteCancel?.addEventListener("click", closeDeleteModal);
@@ -181,6 +184,7 @@ showOnboardingIfNeeded();
 initSupabaseAuth();
 renderMarketingCalendar();
 setupDevAutoReload();
+setupMobileMonthScroll();
 
 const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 if (colorSchemeMedia && typeof colorSchemeMedia.addEventListener === "function") {

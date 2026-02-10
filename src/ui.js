@@ -40,6 +40,7 @@ import {
   settingsModal,
   suggestedDotContent,
   suggestedDotList,
+  todayButton,
   weekStartMondayInput,
   yearGrid
 } from "./dom.js";
@@ -81,9 +82,10 @@ let pendingDeleteDotTypeId = null;
 let pendingDeleteMode = "safe";
 let pendingDeleteDotTypeName = "";
 let loadedYearBatchCount = 1;
-let loadedMobileMonthCount = 12;
+let loadedMobileMonthCount = 24;
 let periodLoadInProgress = false;
 let suppressDayOpenUntil = 0;
+let monthScrollAttached = false;
 let settingsModalHideTimer = null;
 let popoverHideTimer = null;
 let menuScrimHideTimer = null;
@@ -148,6 +150,7 @@ export function render() {
   applyTheme();
   renderPeriodPicker();
   renderDiaryGrid();
+  updateTodayButtonVisibility();
   renderDotTypeList();
   if (weekStartMondayInput) weekStartMondayInput.checked = Boolean(state.weekStartsMonday);
   if (hideSuggestionsInput) hideSuggestionsInput.checked = !state.hideSuggestions;
@@ -160,6 +163,21 @@ export function render() {
   renderSuggestedDotTypes();
   renderOnboardingLists();
   updateAuthUIFn();
+}
+
+function isViewingTodayMonth() {
+  const selectedMonth = startOfMonth(new Date(state.monthCursor));
+  const currentMonth = startOfMonth(new Date());
+  return (
+    selectedMonth.getFullYear() === currentMonth.getFullYear() &&
+    selectedMonth.getMonth() === currentMonth.getMonth()
+  );
+}
+
+function updateTodayButtonVisibility() {
+  if (!todayButton) return;
+  const shouldShow = isMobileView() && !monthGrid.classList.contains("hidden") && !isViewingTodayMonth();
+  todayButton.classList.toggle("hidden", !shouldShow);
 }
 
 export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0) {
@@ -342,12 +360,14 @@ export function renderYearGrid() {
 }
 
 export function renderMonthGrid() {
-  const monthDate = new Date(state.monthCursor);
+  const selectedMonthDate = startOfMonth(new Date(state.monthCursor));
+  const currentMonthDate = startOfMonth(new Date());
   const todayIso = formatISODate(new Date());
+  const previousScrollTop = monthGrid.scrollTop;
   monthGrid.innerHTML = "";
-  const days = buildMonthCells(monthDate, state.weekStartsMonday);
+  monthGrid.classList.add("month-scroll-list");
 
-  for (const day of days) {
+  const buildMonthCell = (day) => {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "month-day";
@@ -399,8 +419,123 @@ export function renderMonthGrid() {
       }
       openPopover(day.iso, event.clientX, event.clientY);
     });
-    monthGrid.appendChild(cell);
+    return cell;
+  };
+
+  const monthsToRender = Math.max(loadedMobileMonthCount, monthDiff(currentMonthDate, selectedMonthDate) + 1);
+
+  const monthSections = [];
+  for (let i = 0; i < monthsToRender; i += 1) {
+    const monthDate = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() - i, 1);
+    const monthIso = startOfMonth(monthDate).toISOString();
+
+    const section = document.createElement("section");
+    section.className = "month-scroll-section";
+    section.dataset.monthIso = monthIso;
+
+    const title = document.createElement("h3");
+    title.className = "month-scroll-title";
+    title.textContent = monthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    section.appendChild(title);
+
+    const daysWrap = document.createElement("div");
+    daysWrap.className = "month-scroll-days";
+    const days = buildMonthCells(monthDate, state.weekStartsMonday);
+    days.forEach((day) => {
+      daysWrap.appendChild(buildMonthCell(day));
+    });
+    section.appendChild(daysWrap);
+    monthSections.push(section);
   }
+
+  for (let i = monthSections.length - 1; i >= 0; i -= 1) {
+    monthGrid.appendChild(monthSections[i]);
+  }
+
+  if (!monthGrid.dataset.scrollListenerAttached) {
+    monthGrid.dataset.scrollListenerAttached = "1";
+    monthGrid.addEventListener(
+      "scroll",
+      () => {
+        if (!isMobileView()) return;
+        const sections = monthGrid.querySelectorAll(".month-scroll-section");
+        const containerRect = monthGrid.getBoundingClientRect();
+        let nearest = null;
+        let nearestDistance = Number.POSITIVE_INFINITY;
+        sections.forEach((section) => {
+          const rect = section.getBoundingClientRect();
+          const distance = Math.abs(rect.top - containerRect.top);
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = section;
+          }
+        });
+        if (!nearest?.dataset.monthIso) return;
+        const monthDate = new Date(nearest.dataset.monthIso);
+        state.monthCursor = startOfMonth(monthDate).toISOString();
+        state.yearCursor = monthDate.getFullYear();
+        periodPickerLabel.textContent = monthDate.toLocaleDateString(undefined, {
+          month: "short",
+          year: "numeric"
+        });
+        updateTodayButtonVisibility();
+
+        const nearTop = monthGrid.scrollTop <= 80;
+        if (nearTop && !periodLoadInProgress) {
+          periodLoadInProgress = true;
+          const previousHeight = monthGrid.scrollHeight;
+          const previousTop = monthGrid.scrollTop;
+          loadedMobileMonthCount += MOBILE_MONTH_BATCH_SIZE;
+          requestRender(() => {
+            const addedHeight = monthGrid.scrollHeight - previousHeight;
+            monthGrid.scrollTop = previousTop + Math.max(0, addedHeight);
+            periodLoadInProgress = false;
+          });
+        }
+      },
+      { passive: true }
+    );
+  }
+
+  if (selectedMonthDate <= currentMonthDate) {
+    requestAnimationFrame(() => {
+      const target = monthGrid.querySelector(`[data-month-iso="${selectedMonthDate.toISOString()}"]`);
+      if (target) {
+        target.scrollIntoView({ block: "start" });
+      } else {
+        monthGrid.scrollTop = previousScrollTop;
+      }
+    });
+  } else {
+    monthGrid.scrollTop = previousScrollTop;
+  }
+}
+
+export function scrollToToday() {
+  const today = new Date();
+  const todayMonth = startOfMonth(today);
+
+  state.monthCursor = todayMonth.toISOString();
+  state.yearCursor = todayMonth.getFullYear();
+  closePeriodMenu();
+  periodPickerLabel.textContent = todayMonth.toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric"
+  });
+
+  if (isMobileView() && monthGrid?.classList.contains("month-scroll-list")) {
+    const lastSection = monthGrid.querySelector(".month-scroll-section:last-of-type");
+    if (lastSection) {
+      lastSection.scrollIntoView({ block: "end", behavior: "smooth" });
+    }
+    requestAnimationFrame(() => {
+      monthGrid.scrollTop = Math.max(0, monthGrid.scrollHeight - monthGrid.clientHeight);
+      updateTodayButtonVisibility();
+    });
+    return;
+  }
+
+  saveAndRender();
 }
 
 export function renderMarketingCalendar() {
@@ -1062,6 +1197,18 @@ export function handlePeriodPickerScroll() {
   });
 }
 
+export function setupMobileMonthScroll() {
+  if (monthScrollAttached || !monthGrid) return;
+  monthScrollAttached = true;
+}
+
+export function dismissPopoverFromScrim(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  closePopover();
+  suppressDayOpenUntil = Date.now() + 250;
+}
+
 export function handleGlobalPointerDown(event) {
   if (!event.target.closest(".period-picker")) {
     closePeriodMenu();
@@ -1444,7 +1591,7 @@ export async function handleDataImport(event) {
     const next = normalizeImportedState(parsed?.data ?? parsed);
     setState(next);
     loadedYearBatchCount = 1;
-    loadedMobileMonthCount = 12;
+    loadedMobileMonthCount = 24;
     closePeriodMenu();
     closeDotMenus();
     saveAndRender();
