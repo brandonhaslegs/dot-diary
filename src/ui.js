@@ -96,6 +96,39 @@ let menuScrimHideTimer = null;
 let hasEnteredApp = false;
 let loginMode = false;
 let updateAuthUIFn = () => {};
+const DOT_SPACING_BY_MODE = {
+  year: 9,
+  month: 11
+};
+const DOT_BOUNDS = {
+  minLeft: 6,
+  maxLeft: 94,
+  minTop: 12,
+  maxTop: 88
+};
+const DOT_CANDIDATE_OFFSETS = [
+  [0, 0],
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+  [1, 1],
+  [-1, 1],
+  [1, -1],
+  [-1, -1],
+  [2, 0],
+  [-2, 0],
+  [0, 2],
+  [0, -2],
+  [2, 1],
+  [-2, 1],
+  [2, -1],
+  [-2, -1],
+  [1, 2],
+  [-1, 2],
+  [1, -2],
+  [-1, -2]
+];
 
 export function registerAuthUpdater(fn) {
   updateAuthUIFn = fn;
@@ -324,13 +357,21 @@ export function renderYearGrid() {
 
       const dotLayer = document.createElement("div");
       dotLayer.className = "dot-layer";
-      getDayDotIds(iso).forEach((dotId) => {
+      const dayDotIds = getDayDotIds(iso);
+      const resolvedPositions = resolveDotPositionsForDay({
+        isoDate: iso,
+        dotIds: dayDotIds,
+        mode: "year",
+        getBasePosition: (dotId) => getDotPosition(iso, dotId, "year"),
+        isLocked: (dotId) => Boolean(state.dotPositions?.[iso]?.[dotId])
+      });
+      dayDotIds.forEach((dotId) => {
         const dotType = state.dotTypes.find((t) => t.id === dotId);
         if (!dotType) return;
         const sticker = document.createElement("span");
         sticker.className = "dot-sticker";
         sticker.style.background = dotType.color;
-        const pos = getDotPosition(iso, dotId, "year");
+        const pos = resolvedPositions.get(dotId) || getDotPosition(iso, dotId, "year");
         sticker.style.left = `${pos.left}%`;
         sticker.style.top = `${pos.top}%`;
         sticker.style.transform = `translate(-50%, -50%) rotate(${pos.rotate}deg)`;
@@ -391,13 +432,21 @@ export function renderMonthGrid() {
 
     const dotLayer = document.createElement("div");
     dotLayer.className = "dot-layer";
-    getDayDotIds(day.iso).forEach((dotId) => {
+    const dayDotIds = getDayDotIds(day.iso);
+    const resolvedPositions = resolveDotPositionsForDay({
+      isoDate: day.iso,
+      dotIds: dayDotIds,
+      mode: "month",
+      getBasePosition: (dotId) => getDotPosition(day.iso, dotId, "month"),
+      isLocked: (dotId) => Boolean(state.dotPositions?.[day.iso]?.[dotId])
+    });
+    dayDotIds.forEach((dotId) => {
       const dotType = state.dotTypes.find((t) => t.id === dotId);
       if (!dotType) return;
       const sticker = document.createElement("span");
       sticker.className = "dot-sticker";
       sticker.style.background = dotType.color;
-      const pos = getDotPosition(day.iso, dotId, "month");
+      const pos = resolvedPositions.get(dotId) || getDotPosition(day.iso, dotId, "month");
       sticker.style.left = `${pos.left}%`;
       sticker.style.top = `${pos.top}%`;
       sticker.style.transform = `translate(-50%, -50%) rotate(${pos.rotate}deg)`;
@@ -553,6 +602,69 @@ export function scrollToToday() {
   }
 
   saveAndRender();
+}
+
+function resolveDotPositionsForDay({ isoDate, dotIds, mode, getBasePosition, isLocked }) {
+  const resolved = new Map();
+  if (!Array.isArray(dotIds) || dotIds.length <= 1) return resolved;
+
+  const spacing = DOT_SPACING_BY_MODE[mode] || DOT_SPACING_BY_MODE.year;
+  const clamped = (left, top) => ({
+    left: clamp(left, DOT_BOUNDS.minLeft, DOT_BOUNDS.maxLeft),
+    top: clamp(top, DOT_BOUNDS.minTop, DOT_BOUNDS.maxTop)
+  });
+  const distanceToClosest = (candidate) => {
+    const points = [...resolved.values()];
+    if (points.length === 0) return Number.POSITIVE_INFINITY;
+    return points.reduce((min, placed) => {
+      const dx = placed.left - candidate.left;
+      const dy = placed.top - candidate.top;
+      return Math.min(min, Math.hypot(dx, dy));
+    }, Number.POSITIVE_INFINITY);
+  };
+
+  const makeCandidates = (base) =>
+    DOT_CANDIDATE_OFFSETS.map(([ox, oy]) => {
+      const point = clamped(base.left + ox * spacing, base.top + oy * spacing);
+      return { ...base, left: point.left, top: point.top };
+    });
+
+  dotIds.forEach((dotId) => {
+    if (!isLocked(dotId)) return;
+    resolved.set(dotId, getBasePosition(dotId));
+  });
+
+  dotIds.forEach((dotId) => {
+    if (resolved.has(dotId)) return;
+    const base = getBasePosition(dotId);
+    const candidates = makeCandidates(base);
+    let best = candidates[0];
+    let bestClearance = distanceToClosest(best);
+
+    candidates.forEach((candidate) => {
+      const clearance = distanceToClosest(candidate);
+      if (clearance >= spacing && bestClearance < spacing) {
+        best = candidate;
+        bestClearance = clearance;
+        return;
+      }
+      if ((clearance >= spacing && bestClearance >= spacing) || (clearance < spacing && bestClearance < spacing)) {
+        const bestDist = Math.hypot(best.left - base.left, best.top - base.top);
+        const candidateDist = Math.hypot(candidate.left - base.left, candidate.top - base.top);
+        if (
+          clearance > bestClearance + 0.01 ||
+          (Math.abs(clearance - bestClearance) < 0.01 && candidateDist < bestDist)
+        ) {
+          best = candidate;
+          bestClearance = clearance;
+        }
+      }
+    });
+
+    resolved.set(dotId, best);
+  });
+
+  return resolved;
 }
 
 export function renderMarketingCalendar() {
