@@ -87,6 +87,8 @@ let loadedMobileMonthCount = 24;
 let periodLoadInProgress = false;
 let suppressDayOpenUntil = 0;
 let monthScrollAttached = false;
+let hasInitializedMobileMonthScroll = false;
+let pendingMobileMonthAnchorIso = null;
 let settingsModalHideTimer = null;
 let popoverHideTimer = null;
 let menuScrimHideTimer = null;
@@ -222,6 +224,7 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
       item.addEventListener("click", () => {
         state.monthCursor = startOfMonth(optionDate).toISOString();
         state.yearCursor = optionYear;
+        pendingMobileMonthAnchorIso = state.monthCursor;
         closePeriodMenu();
         saveAndRender();
       });
@@ -265,8 +268,12 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
 
 export function renderDiaryGrid() {
   if (isMobileView()) {
+    const wasHidden = monthGrid.classList.contains("hidden");
     yearGrid.classList.add("hidden");
     monthGrid.classList.remove("hidden");
+    if (wasHidden) {
+      pendingMobileMonthAnchorIso = startOfMonth(new Date(state.monthCursor)).toISOString();
+    }
     renderMonthGrid();
   } else {
     monthGrid.classList.add("hidden");
@@ -498,14 +505,18 @@ export function renderMonthGrid() {
     );
   }
 
-  if (selectedMonthDate <= currentMonthDate) {
+  const initialAnchorIso = !hasInitializedMobileMonthScroll ? selectedMonthDate.toISOString() : null;
+  const targetAnchorIso = pendingMobileMonthAnchorIso || initialAnchorIso;
+  if (targetAnchorIso) {
     requestAnimationFrame(() => {
-      const target = monthGrid.querySelector(`[data-month-iso="${selectedMonthDate.toISOString()}"]`);
+      const target = monthGrid.querySelector(`[data-month-iso="${targetAnchorIso}"]`);
       if (target) {
         target.scrollIntoView({ block: "start" });
       } else {
         monthGrid.scrollTop = previousScrollTop;
       }
+      hasInitializedMobileMonthScroll = true;
+      pendingMobileMonthAnchorIso = null;
     });
   } else {
     monthGrid.scrollTop = previousScrollTop;
@@ -525,6 +536,7 @@ export function scrollToToday() {
   });
 
   if (isMobileView() && monthGrid?.classList.contains("month-scroll-list")) {
+    pendingMobileMonthAnchorIso = null;
     const lastSection = monthGrid.querySelector(".month-scroll-section:last-of-type");
     if (lastSection) {
       lastSection.scrollIntoView({ block: "end", behavior: "smooth" });
