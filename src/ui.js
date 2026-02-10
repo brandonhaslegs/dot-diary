@@ -1330,7 +1330,7 @@ export function buildColorPicker(dotType, swatch) {
 }
 
 export function positionDotActionsMenu(menu) {
-  const boundaryRect = menu.closest(".settings-card")?.getBoundingClientRect() || {
+  const boundaryRect = menu.closest(".settings-card, .modal-card")?.getBoundingClientRect() || {
     left: 8,
     top: 8,
     right: window.innerWidth - 8,

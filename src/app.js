@@ -1,7 +1,7 @@
 import { APP_ENTRY_KEY, AUTH_STATE_KEY, DEMO_MODE, VIEW_MODE_KEY } from "./constants.js";
 import {
-  authSignOutButton,
   authSendButton,
+  authSignOutButton,
   brandHomeButton,
   colorModeDarkButton,
   colorModeLightButton,
@@ -23,7 +23,6 @@ import {
   onboardingSendButton,
   onboardingSkipButton,
   onboardingSkipIntroButton,
-  onboardingUpgradeButton,
   openLoginButton,
   openSettings,
   periodPickerMenu,
@@ -103,9 +102,6 @@ onboardingBackSyncButton?.addEventListener("click", () => showOnboardingStep("do
 onboardingDoneButton?.addEventListener("click", completeOnboarding);
 onboardingSkipIntroButton?.addEventListener("click", completeOnboarding);
 onboardingSkipButton?.addEventListener("click", completeOnboarding);
-onboardingUpgradeButton?.addEventListener("click", () => {
-  window.open("mailto:hello@dot-diary.com?subject=Dot%20Diary%20Upgrade", "_blank");
-});
 onboardingSendButton?.addEventListener("click", () => handleMagicLink(onboardingEmailInput?.value));
 
 periodPickerToggle?.addEventListener("click", (event) => {

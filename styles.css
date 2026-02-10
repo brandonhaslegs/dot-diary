@@ -1408,9 +1408,13 @@ button:active {
 
 .onboarding-demo {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
   margin-top: 10px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
 }
 
 .onboarding-split {
@@ -1434,14 +1438,31 @@ button:active {
   padding: 0 24px;
 }
 
+.onboarding-sync-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 4px 0;
+}
+
+.onboarding-sync-panel h2 {
+  margin: 0;
+}
+
+.onboarding-auth-row {
+  margin-top: 0;
+}
+
 .demo-day {
   position: relative;
-  border: 2px solid var(--line);
-  border-radius: 12px;
-  min-height: 120px;
+  border-right: 2px solid var(--line);
+  min-height: 124px;
   padding: 8px;
-  overflow: hidden;
-  background: var(--card);
+  background: transparent;
+}
+
+.demo-day:last-child {
+  border-right: 0;
 }
 
 .demo-day-label {
@@ -1482,6 +1503,10 @@ button:active {
   left: 30%;
   top: 65%;
 }
+.demo-day:nth-child(1) .demo-dot.green {
+  left: 42%;
+  top: 34%;
+}
 .demo-day:nth-child(2) .demo-dot.green {
   left: 35%;
   top: 45%;
@@ -1490,13 +1515,37 @@ button:active {
   left: 65%;
   top: 60%;
 }
-.demo-day:nth-child(3) .demo-dot.yellow {
-  left: 35%;
-  top: 50%;
+.demo-day:nth-child(2) .demo-dot.yellow {
+  left: 48%;
+  top: 36%;
 }
 .demo-day:nth-child(3) .demo-dot.brown {
-  left: 65%;
-  top: 35%;
+  left: 62%;
+  top: 44%;
+}
+.demo-day:nth-child(3) .demo-dot.green {
+  left: 36%;
+  top: 52%;
+}
+.demo-day:nth-child(4) .demo-dot.green {
+  left: 35%;
+  top: 48%;
+}
+.demo-day:nth-child(4) .demo-dot.blue {
+  left: 62%;
+  top: 58%;
+}
+.demo-day:nth-child(4) .demo-dot.red {
+  left: 52%;
+  top: 34%;
+}
+.demo-day:nth-child(5) .demo-dot.yellow {
+  left: 52%;
+  top: 42%;
+}
+.demo-day:nth-child(5) .demo-dot.green {
+  left: 36%;
+  top: 55%;
 }
 
 .demo-note {
@@ -1542,7 +1591,9 @@ button:active {
 
 @media (max-width: 680px) {
   .onboarding-demo {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(5, minmax(140px, 1fr));
+    overflow-x: auto;
+    overflow-y: hidden;
   }
   .demo-day {
     min-height: 110px;
@@ -1582,6 +1633,7 @@ button:active {
 #onboarding-modal .onboarding-step {
   display: flex;
   flex-direction: column;
+  gap: 16px;
   min-height: 360px;
 }
 
@@ -1604,6 +1656,10 @@ button:active {
 
 #onboarding-modal .centered-actions {
   justify-content: center;
+}
+
+#onboarding-modal .onboarding-step[data-step="dots"] h2:first-of-type {
+  margin-top: 0;
 }
 
 .settings-card {

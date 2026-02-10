@@ -28,7 +28,6 @@ import {
   closeSettingsModal,
   enterApp,
   getHasEnteredApp,
-  render,
   resetToLoggedOut
 } from "./ui.js";
 import { normalizeNote } from "./utils.js";

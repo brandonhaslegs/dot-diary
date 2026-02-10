@@ -26,7 +26,6 @@ export const onboardingBackSyncButton = document.querySelector("#onboarding-back
 export const onboardingDoneButton = document.querySelector("#onboarding-done");
 export const onboardingSkipIntroButton = document.querySelector("#onboarding-skip-intro");
 export const onboardingSkipButton = document.querySelector("#onboarding-skip");
-export const onboardingUpgradeButton = document.querySelector("#onboarding-upgrade");
 export const onboardingEmailInput = document.querySelector("#onboarding-email");
 export const onboardingSendButton = document.querySelector("#onboarding-send");
 export const onboardingDotTypeList = document.querySelector("#onboarding-dot-type-list");
