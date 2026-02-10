@@ -41,6 +41,7 @@ export const SUGGESTED_DOT_TYPES = [
 ];
 export const YEAR_BATCH_SIZE = 10;
 export const MOBILE_MONTH_BATCH_SIZE = 12;
+export const DOT_NAME_MAX_LENGTH = 24;
 export const MODAL_ANIMATION_MS = 280;
 export const POPOVER_ANIMATION_MS = 180;
 export const AUTH_STATE_KEY = "dot-diary-authenticated";

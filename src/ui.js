@@ -3,6 +3,7 @@ import {
   AUTH_STATE_KEY,
   COLOR_PALETTE,
   DEMO_MODE,
+  DOT_NAME_MAX_LENGTH,
   MOBILE_MONTH_BATCH_SIZE,
   MODAL_ANIMATION_MS,
   ONBOARDING_KEY,
@@ -681,6 +682,7 @@ export function renderDotTypeList(targetList = dotTypeList) {
     const nameInput = document.createElement("input");
     nameInput.type = "text";
     nameInput.value = dotType.name;
+    nameInput.maxLength = DOT_NAME_MAX_LENGTH;
     nameInput.setAttribute("aria-label", "Dot meaning");
     nameInput.className = "dot-name-input";
     syncDotTypeInputSize(nameInput);
@@ -694,9 +696,10 @@ export function renderDotTypeList(targetList = dotTypeList) {
       nameInput.select();
     });
     nameInput.addEventListener("change", () => {
-      const nextName = nameInput.value.trim() || dotType.name;
+      const nextName = normalizeDotTypeName(nameInput.value) || dotType.name;
       const changed = nextName !== dotType.name;
       dotType.name = nextName;
+      nameInput.value = nextName;
       syncDotTypeInputSize(nameInput);
       saveAndRender();
       if (changed) {
@@ -1163,8 +1166,14 @@ export function addNewDotType() {
 }
 
 export function hasDotTypeName(name) {
-  const target = name.trim().toLowerCase();
-  return state.dotTypes.some((dot) => dot.name.trim().toLowerCase() === target);
+  const target = normalizeDotTypeName(name).toLowerCase();
+  return state.dotTypes.some((dot) => normalizeDotTypeName(dot.name).toLowerCase() === target);
+}
+
+function normalizeDotTypeName(name) {
+  return String(name || "")
+    .trim()
+    .slice(0, DOT_NAME_MAX_LENGTH);
 }
 
 export function getNextSuggestedColor() {

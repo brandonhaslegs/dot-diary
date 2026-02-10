@@ -1,4 +1,4 @@
-import { DEMO_MODE, STORAGE_KEY } from "./constants.js";
+import { DEMO_MODE, DOT_NAME_MAX_LENGTH, STORAGE_KEY } from "./constants.js";
 import { formatISODate, hash32, normalizeNote, shuffleArray, startOfMonth } from "./utils.js";
 
 export const defaultState = {
@@ -74,7 +74,7 @@ export function loadState() {
       hideSuggestions: Boolean(parsed.hideSuggestions),
       darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
       lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : new Date().toISOString(),
-      dotTypes: Array.isArray(parsed.dotTypes) ? parsed.dotTypes : structuredClone(defaultState.dotTypes),
+      dotTypes: normalizeDotTypes(parsed.dotTypes),
       dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
       dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
       dayNotes: parsed.dayNotes && typeof parsed.dayNotes === "object" ? parsed.dayNotes : {}
@@ -333,11 +333,27 @@ export function normalizeImportedState(parsed) {
     hideSuggestions: Boolean(parsed.hideSuggestions),
     darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
     lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : new Date().toISOString(),
-    dotTypes: Array.isArray(parsed.dotTypes) ? parsed.dotTypes : [],
+    dotTypes: normalizeDotTypes(parsed.dotTypes),
     dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
     dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
     dayNotes: parsed.dayNotes && typeof parsed.dayNotes === "object" ? parsed.dayNotes : {}
   };
+}
+
+function normalizeDotTypes(dotTypes) {
+  if (!Array.isArray(dotTypes)) return [];
+  return dotTypes
+    .filter((dot) => dot && typeof dot === "object")
+    .map((dot) => ({
+      ...dot,
+      name: normalizeDotTypeName(dot.name)
+    }));
+}
+
+function normalizeDotTypeName(name) {
+  return String(name || "")
+    .trim()
+    .slice(0, DOT_NAME_MAX_LENGTH);
 }
 
 export function getStateTimestamp() {
