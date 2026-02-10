@@ -1099,6 +1099,7 @@ button:active {
   grid-template-rows: auto minmax(0, 1fr);
   gap: 6px;
   margin: 0;
+  padding-top: 12px;
 }
 
 .month-scroll-title {
