@@ -139,7 +139,7 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
       if (!sourceButton.dataset.defaultLabel) {
         sourceButton.dataset.defaultLabel = sourceButton.textContent || "";
       }
-      sourceButton.textContent = "Sent!";
+      sourceButton.textContent = "Check your email";
       window.setTimeout(() => {
         sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
       }, 2000);
@@ -255,7 +255,7 @@ async function syncToCloud() {
   updateAuthUI();
   const payload = {
     user_id: syncUser.id,
-    data: state,
+    data: getCloudStateSnapshot(state),
     updated_at: new Date().toISOString()
   };
   syncInFlight = (async () => {
@@ -305,7 +305,6 @@ function getMagicLinkRedirectTo() {
 }
 
 function formatSyncStatus() {
-  if (syncInProgress) return "Syncing...";
   return lastSyncedAt ? `Last synced ${formatSyncTime(lastSyncedAt)}.` : "Signed in. Waiting to sync changes.";
 }
 function formatSyncTime(iso) {
@@ -361,12 +360,7 @@ function mergeStates(localState, remoteState, preferRemote) {
         : typeof loser.weekStartsMonday === "boolean"
           ? loser.weekStartsMonday
           : localState.weekStartsMonday,
-    darkMode:
-      typeof winner.darkMode === "boolean"
-        ? winner.darkMode
-        : typeof loser.darkMode === "boolean"
-          ? loser.darkMode
-          : localState.darkMode,
+    darkMode: localState.darkMode,
     dotTypes,
     dayDots,
     dotPositions,
@@ -375,4 +369,10 @@ function mergeStates(localState, remoteState, preferRemote) {
       Math.max(getStateTimestamp(), new Date(remoteState.lastModified || 0).getTime())
     ).toISOString()
   };
+}
+
+function getCloudStateSnapshot(sourceState) {
+  const snapshot = structuredClone(sourceState);
+  delete snapshot.darkMode;
+  return snapshot;
 }

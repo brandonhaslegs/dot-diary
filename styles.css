@@ -919,11 +919,15 @@ button:active {
 }
 
 .signout-row {
+  margin-top: 8px;
   margin-bottom: 0;
 }
 
 .signout-row .muted {
   margin: 0;
+  height: 0;
+  line-height: 0;
+  visibility: hidden;
 }
 
 .data-action-row .muted {
@@ -955,6 +959,30 @@ button:active {
 
 .auth-status.muted {
   color: var(--muted);
+}
+
+.cloud-sync-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 12px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.cloud-sync-info {
+  min-width: 0;
+}
+
+.cloud-sync-info .auth-status {
+  margin-top: 0;
+}
+
+.cloud-sync-info .auth-status + .auth-status {
+  margin-top: 8px;
+}
+
+#auth-signout {
+  align-self: start;
 }
 
 .display-row {
