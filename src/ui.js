@@ -1033,7 +1033,11 @@ export function buildNoteEditor(isoDate, baseClass) {
   editor.spellcheck = true;
   editor.dataset.noteEditor = isoDate;
   editor.textContent = getDayNote(isoDate);
+  editor.addEventListener("input", (event) => {
+    event.stopPropagation();
+  });
   editor.addEventListener("keydown", (event) => {
+    event.stopPropagation();
     if (event.key === "Enter") {
       event.preventDefault();
       finishNoteEdit(isoDate, editor);
