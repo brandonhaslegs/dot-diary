@@ -677,6 +677,18 @@ export function renderDotTypeList(targetList = dotTypeList) {
     item.append(swatch, inputWrap, colorPicker);
     targetList.appendChild(item);
   });
+
+  if (targetList === dotTypeList && state.hideSuggestions) {
+    const addItem = document.createElement("li");
+    addItem.className = "dot-type-add-item";
+    const addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "suggestion-chip add-new";
+    addButton.textContent = "Add New";
+    addButton.addEventListener("click", addNewDotType);
+    addItem.appendChild(addButton);
+    targetList.appendChild(addItem);
+  }
 }
 
 export function renderSuggestedDotTypes(targetList = suggestedDotList) {
@@ -760,6 +772,15 @@ export function openPopover(isoDate, x, y) {
 
   const noteWrap = document.createElement("div");
   noteWrap.className = "popover-note";
+  const addDotTypeButton = document.createElement("button");
+  addDotTypeButton.type = "button";
+  addDotTypeButton.className = "note-edit-button";
+  addDotTypeButton.textContent = "Add dot type";
+  addDotTypeButton.addEventListener("click", () => {
+    closePopover();
+    addNewDotType();
+    openSettingsModal();
+  });
   const noteButton = document.createElement("button");
   noteButton.type = "button";
   noteButton.className = "note-edit-button";
@@ -768,7 +789,7 @@ export function openPopover(isoDate, x, y) {
     closePopover();
     startNoteEdit(isoDate);
   });
-  noteWrap.append(noteButton);
+  noteWrap.append(addDotTypeButton, noteButton);
   popover.appendChild(noteWrap);
 
   popover.classList.remove("hidden");

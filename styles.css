@@ -1050,6 +1050,10 @@ button:active {
   height: 16px;
 }
 
+.dot-type-add-item {
+  display: inline-flex;
+}
+
 .calendar-header {
   display: flex;
   align-items: center;
