@@ -1,4 +1,4 @@
-import { APP_ENTRY_KEY, AUTH_STATE_KEY, DEMO_MODE } from "./constants.js";
+import { APP_ENTRY_KEY, AUTH_STATE_KEY, DEMO_MODE, VIEW_MODE_KEY } from "./constants.js";
 import {
   authSignOutButton,
   authSendButton,
@@ -159,9 +159,12 @@ document.addEventListener("keydown", handleGlobalKeyDown);
 render();
 try {
   if (!DEMO_MODE) {
+    const lastView = localStorage.getItem(VIEW_MODE_KEY);
     const hasAuthState = localStorage.getItem(AUTH_STATE_KEY) === "1";
     const hasEnteredBefore = localStorage.getItem(APP_ENTRY_KEY) === "1";
-    if (hasAuthState) {
+    if (lastView === "marketing") {
+      showMarketingPage();
+    } else if (hasAuthState) {
       enterApp({ skipOnboarding: true });
     } else if (hasEnteredBefore) {
       enterApp();

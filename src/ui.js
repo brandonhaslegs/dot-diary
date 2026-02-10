@@ -9,6 +9,7 @@ import {
   POPOVER_ANIMATION_MS,
   SUGGESTED_DOT_TYPES,
   STORAGE_KEY,
+  VIEW_MODE_KEY,
   YEAR_BATCH_SIZE
 } from "./constants.js";
 import {
@@ -117,6 +118,11 @@ export function showMarketingHero() {
 }
 
 export function showMarketingPage() {
+  try {
+    localStorage.setItem(VIEW_MODE_KEY, "marketing");
+  } catch {
+    // ignore
+  }
   marketingPage?.classList.remove("hidden");
   appShell?.classList.add("hidden");
 }
@@ -126,6 +132,7 @@ export function resetToLoggedOut() {
   loginMode = false;
   try {
     localStorage.removeItem(APP_ENTRY_KEY);
+    localStorage.setItem(VIEW_MODE_KEY, "marketing");
   } catch {
     // ignore
   }
@@ -1114,6 +1121,7 @@ export function enterApp({ skipOnboarding = false } = {}) {
   loginMode = false;
   try {
     localStorage.setItem(APP_ENTRY_KEY, "1");
+    localStorage.setItem(VIEW_MODE_KEY, "app");
   } catch {
     // ignore
   }
