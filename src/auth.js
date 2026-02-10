@@ -48,6 +48,7 @@ let pendingSyncToast = false;
 let lastSyncedAt = null;
 let syncInFlight = null;
 let syncInProgress = false;
+let signOutInProgress = false;
 let authInitStarted = false;
 const SYNC_DEBOUNCE_MS = 250;
 const SYNC_POLL_MS = 5000;
@@ -118,6 +119,13 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
     showToast("Enter an email first.");
     return;
   }
+  if (sourceButton) {
+    if (!sourceButton.dataset.defaultLabel) {
+      sourceButton.dataset.defaultLabel = sourceButton.textContent || "";
+    }
+    sourceButton.disabled = true;
+    sourceButton.textContent = "Sending...";
+  }
   try {
     sessionStorage.setItem(AUTH_INTENT_KEY, "1");
   } catch {
@@ -133,13 +141,15 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
     const message = error?.message ? `Magic link failed: ${error.message}` : "Could not send magic link.";
     showToast(message);
     console.error("Magic link error:", error);
+    if (sourceButton) {
+      sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
+      sourceButton.disabled = false;
+    }
   } else {
     showToast("Magic link sent. Check your email.");
     if (sourceButton) {
-      if (!sourceButton.dataset.defaultLabel) {
-        sourceButton.dataset.defaultLabel = sourceButton.textContent || "";
-      }
       sourceButton.textContent = "Check your email";
+      sourceButton.disabled = false;
       window.setTimeout(() => {
         sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
       }, 2000);
@@ -148,33 +158,46 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
 }
 
 export async function signOutSupabase() {
-  if (!supabase) return;
-  await supabase.auth.signOut();
-  if (syncTimer) {
-    clearTimeout(syncTimer);
-    syncTimer = null;
-  }
-  stopSyncPolling();
-  syncInFlight = null;
-  syncInProgress = false;
-  pendingSyncToast = false;
-  syncUser = null;
-  lastSyncedAt = null;
+  if (signOutInProgress) return;
+  signOutInProgress = true;
+  if (authSignOutButton) authSignOutButton.disabled = true;
+  if (syncStatus) syncStatus.textContent = "Signing out...";
   try {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(ONBOARDING_KEY);
-    localStorage.removeItem(AUTH_STATE_KEY);
-  } catch {
-    // ignore
+    if (supabase) {
+      // Local scope avoids network dependency and signs out this device reliably.
+      await supabase.auth.signOut({ scope: "local" });
+    }
+  } catch (error) {
+    console.warn("Supabase sign out failed, continuing local sign out:", error);
+  } finally {
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
+    }
+    stopSyncPolling();
+    syncInFlight = null;
+    syncInProgress = false;
+    pendingSyncToast = false;
+    syncUser = null;
+    lastSyncedAt = null;
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(ONBOARDING_KEY);
+      localStorage.removeItem(AUTH_STATE_KEY);
+    } catch {
+      // ignore
+    }
+    setState(structuredClone(defaultState));
+    closePopover();
+    closeSettingsModal();
+    closeDeleteModal();
+    resetToLoggedOut();
+    requestRender();
+    updateAuthUI();
+    showToast("Signed out.");
+    signOutInProgress = false;
+    if (authSignOutButton) authSignOutButton.disabled = false;
   }
-  setState(structuredClone(defaultState));
-  closePopover();
-  closeSettingsModal();
-  closeDeleteModal();
-  resetToLoggedOut();
-  requestRender();
-  updateAuthUI();
-  showToast("Signed out.");
 }
 
 export function updateAuthUI() {
@@ -214,6 +237,13 @@ export function scheduleSync() {
 
 async function loadFromCloud({ silentError = false } = {}) {
   if (!supabase || !syncUser) return;
+  const hasLocalSnapshot = (() => {
+    try {
+      return Boolean(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      return false;
+    }
+  })();
   const { data, error } = await supabase
     .from("user_data")
     .select("data, updated_at")
@@ -224,12 +254,14 @@ async function loadFromCloud({ silentError = false } = {}) {
     return;
   }
   if (!data?.data) {
-    await syncToCloud();
+    if (hasLocalSnapshot) {
+      await syncToCloud();
+    }
     return;
   }
   const remoteState = normalizeImportedState(data.data);
   const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime();
-  const localTimestamp = getStateTimestamp();
+  const localTimestamp = hasLocalSnapshot ? getStateTimestamp() : 0;
   if (!remoteTimestamp && localTimestamp) {
     await syncToCloud();
     return;
@@ -239,7 +271,7 @@ async function loadFromCloud({ silentError = false } = {}) {
     updateAuthUI();
     return;
   }
-  const preferRemote = remoteTimestamp > localTimestamp;
+  const preferRemote = !hasLocalSnapshot || remoteTimestamp > localTimestamp;
   setState(mergeStates(state, remoteState, preferRemote));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   requestRender();

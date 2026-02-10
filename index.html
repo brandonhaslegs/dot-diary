@@ -292,9 +292,18 @@
         <section class="settings-section suggestions">
           <h4>Your dot types</h4>
           <ul id="dot-type-list" class="dot-type-list"></ul>
-          <h5>Suggested dot types</h5>
-          <p class="muted">It’s helpful to choose three you want to do more of, and three you want to do less of.</p>
-          <div id="suggested-dot-list" class="suggested-dot-list"></div>
+          <div id="suggested-dot-section">
+            <div class="suggested-header-row">
+              <h5>Suggested dot types</h5>
+              <label class="settings-toggle compact-toggle">
+                <input id="hide-suggestions" type="checkbox" />
+              </label>
+            </div>
+            <div id="suggested-dot-content">
+              <p class="muted">It’s helpful to choose three you want to do more of, and three you want to do less of.</p>
+              <div id="suggested-dot-list" class="suggested-dot-list"></div>
+            </div>
+          </div>
         </section>
 
         <hr />

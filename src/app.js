@@ -9,6 +9,7 @@ import {
   deleteConfirm,
   downloadDataButton,
   enterAppButton,
+  hideSuggestionsInput,
   loginBackButton,
   loginEmailInput,
   loginSendButton,
@@ -132,6 +133,12 @@ weekStartMondayInput?.addEventListener("change", () => {
   state.weekStartsMonday = weekStartMondayInput.checked;
   saveAndRender();
   showToast(state.weekStartsMonday ? "Weeks now start on Monday." : "Weeks now start on Sunday.");
+});
+
+hideSuggestionsInput?.addEventListener("change", () => {
+  state.hideSuggestions = !hideSuggestionsInput.checked;
+  saveAndRender();
+  showToast(state.hideSuggestions ? "Suggestions hidden." : "Suggestions shown.");
 });
 
 colorModeLightButton?.addEventListener("click", () => {

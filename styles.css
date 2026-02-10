@@ -904,6 +904,21 @@ button:active {
   margin-top: 14px;
 }
 
+.suggested-header-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 10px 12px;
+}
+
+.suggested-header-row h5 {
+  margin: 14px 0 0;
+}
+
+.suggested-header-row .compact-toggle {
+  margin-top: 14px;
+}
+
 .settings-card hr {
   border: 0;
   border-top: 2px solid var(--line);

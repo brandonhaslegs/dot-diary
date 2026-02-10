@@ -19,6 +19,7 @@ import {
   deleteModal,
   deleteText,
   dotTypeList,
+  hideSuggestionsInput,
   marketingCalendar,
   marketingHero,
   marketingLogin,
@@ -37,6 +38,7 @@ import {
   popoverItemTemplate,
   popoverScrim,
   settingsModal,
+  suggestedDotContent,
   suggestedDotList,
   weekStartMondayInput,
   yearGrid
@@ -148,6 +150,10 @@ export function render() {
   renderDiaryGrid();
   renderDotTypeList();
   if (weekStartMondayInput) weekStartMondayInput.checked = Boolean(state.weekStartsMonday);
+  if (hideSuggestionsInput) hideSuggestionsInput.checked = !state.hideSuggestions;
+  if (suggestedDotContent) {
+    suggestedDotContent.classList.toggle("hidden", Boolean(state.hideSuggestions));
+  }
   const darkModeEnabled = isDarkModeEnabled();
   colorModeLightButton?.classList.toggle("active", !darkModeEnabled);
   colorModeDarkButton?.classList.toggle("active", darkModeEnabled);
