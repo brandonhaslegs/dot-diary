@@ -1404,6 +1404,21 @@ export function handleGlobalKeyDown(event) {
     return;
   }
 
+  const isNoteShortcut =
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !isEditableTarget &&
+    activePopover &&
+    event.key.toLowerCase() === "t";
+  if (isNoteShortcut) {
+    event.preventDefault();
+    const { isoDate, contextMonthIso } = activePopover;
+    closePopover();
+    startNoteEdit(isoDate, contextMonthIso || null);
+    return;
+  }
+
   if (event.key !== "Escape") return;
   closePopover();
   closePeriodMenu();
