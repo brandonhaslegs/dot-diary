@@ -88,6 +88,7 @@ let suppressDayOpenUntil = 0;
 let monthScrollAttached = false;
 let hasInitializedMobileMonthScroll = false;
 let pendingMobileMonthAnchorIso = null;
+let lastObservedMobileMonthIso = null;
 let settingsModalHideTimer = null;
 let popoverHideTimer = null;
 let menuScrimHideTimer = null;
@@ -217,7 +218,12 @@ function isViewingTodayMonth() {
 
 function updateTodayButtonVisibility() {
   if (!todayButton) return;
-  const shouldShow = isMobileView() && !monthGrid.classList.contains("hidden") && !isViewingTodayMonth();
+  const isMobileMonthView = isMobileView() && !monthGrid.classList.contains("hidden");
+  let shouldShow = false;
+  if (isMobileMonthView) {
+    const nearBottom = monthGrid.scrollTop + monthGrid.clientHeight >= monthGrid.scrollHeight - 28;
+    shouldShow = !nearBottom && !isViewingTodayMonth();
+  }
   todayButton.classList.toggle("hidden", !shouldShow);
 }
 
@@ -528,24 +534,30 @@ export function renderMonthGrid() {
         if (!isMobileView()) return;
         const sections = monthGrid.querySelectorAll(".month-scroll-section");
         const containerRect = monthGrid.getBoundingClientRect();
+        const containerCenter = containerRect.top + containerRect.height / 2;
         let nearest = null;
         let nearestDistance = Number.POSITIVE_INFINITY;
         sections.forEach((section) => {
           const rect = section.getBoundingClientRect();
-          const distance = Math.abs(rect.top - containerRect.top);
+          const sectionCenter = rect.top + rect.height / 2;
+          const distance = Math.abs(sectionCenter - containerCenter);
           if (distance < nearestDistance) {
             nearestDistance = distance;
             nearest = section;
           }
         });
         if (!nearest?.dataset.monthIso) return;
-        const monthDate = new Date(nearest.dataset.monthIso);
-        state.monthCursor = startOfMonth(monthDate).toISOString();
-        state.yearCursor = monthDate.getFullYear();
-        periodPickerLabel.textContent = monthDate.toLocaleDateString(undefined, {
-          month: "short",
-          year: "numeric"
-        });
+        const nearestMonthIso = nearest.dataset.monthIso;
+        if (nearestMonthIso !== lastObservedMobileMonthIso) {
+          lastObservedMobileMonthIso = nearestMonthIso;
+          const monthDate = new Date(nearestMonthIso);
+          state.monthCursor = startOfMonth(monthDate).toISOString();
+          state.yearCursor = monthDate.getFullYear();
+          periodPickerLabel.textContent = monthDate.toLocaleDateString(undefined, {
+            month: "short",
+            year: "numeric"
+          });
+        }
         updateTodayButtonVisibility();
 
         const nearTop = monthGrid.scrollTop <= 80;
@@ -567,6 +579,7 @@ export function renderMonthGrid() {
 
   const initialAnchorIso = !hasInitializedMobileMonthScroll ? selectedMonthDate.toISOString() : null;
   const targetAnchorIso = pendingMobileMonthAnchorIso || initialAnchorIso;
+  lastObservedMobileMonthIso = targetAnchorIso || selectedMonthDate.toISOString();
   if (targetAnchorIso) {
     requestAnimationFrame(() => {
       const target = monthGrid.querySelector(`[data-month-iso="${targetAnchorIso}"]`);
@@ -577,9 +590,11 @@ export function renderMonthGrid() {
       }
       hasInitializedMobileMonthScroll = true;
       pendingMobileMonthAnchorIso = null;
+      updateTodayButtonVisibility();
     });
   } else {
     monthGrid.scrollTop = previousScrollTop;
+    updateTodayButtonVisibility();
   }
 }
 
@@ -597,14 +612,11 @@ export function scrollToToday() {
 
   if (isMobileView() && monthGrid?.classList.contains("month-scroll-list")) {
     pendingMobileMonthAnchorIso = null;
-    const lastSection = monthGrid.querySelector(".month-scroll-section:last-of-type");
-    if (lastSection) {
-      lastSection.scrollIntoView({ block: "end", behavior: "smooth" });
-    }
-    requestAnimationFrame(() => {
-      monthGrid.scrollTop = Math.max(0, monthGrid.scrollHeight - monthGrid.clientHeight);
-      updateTodayButtonVisibility();
+    monthGrid.scrollTo({
+      top: Math.max(0, monthGrid.scrollHeight - monthGrid.clientHeight),
+      behavior: "smooth"
     });
+    requestAnimationFrame(() => updateTodayButtonVisibility());
     return;
   }
 
