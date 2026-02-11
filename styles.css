@@ -1203,6 +1203,10 @@ button:active {
   pointer-events: none;
 }
 
+.month-day.current-day .month-note {
+  color: var(--background);
+}
+
 .year-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -1298,6 +1302,10 @@ button:active {
   transform: translate(-50%, -50%) rotate(-5deg);
   transform-origin: center;
   pointer-events: none;
+}
+
+.year-day.current-day .day-note {
+  color: var(--background);
 }
 
 .dot-sticker {
@@ -1842,6 +1850,11 @@ button:active {
   cursor: text;
   -webkit-user-select: text;
   user-select: text;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  color: inherit;
+  caret-color: currentColor;
 }
 
 .toast {

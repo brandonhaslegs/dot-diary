@@ -80,7 +80,13 @@ registerRender(render);
 registerScheduleSync(scheduleSync);
 registerAuthUpdater(updateAuthUI);
 
-window.addEventListener("resize", render);
+window.addEventListener("resize", () => {
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && active.classList.contains("note-editor")) {
+    return;
+  }
+  render();
+});
 
 enterAppButton?.addEventListener("click", () => enterApp());
 openLoginButton?.addEventListener("click", showLogin);

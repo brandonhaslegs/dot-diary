@@ -344,8 +344,9 @@ export function renderYearGrid() {
 
       const date = new Date(year, monthIndex, dayNum);
       const iso = formatISODate(date);
-      const row = document.createElement("button");
-      row.type = "button";
+      const isEditingThisDay = activeNoteEdit === iso;
+      const row = document.createElement(isEditingThisDay ? "div" : "button");
+      if (!isEditingThisDay) row.type = "button";
       row.className = "year-day";
       if (iso === todayIso) row.classList.add("current-day");
       row.dataset.date = iso;
@@ -385,7 +386,7 @@ export function renderYearGrid() {
 
       const note = getDayNote(iso);
       if (activeNoteEdit === iso) {
-        row.appendChild(buildNoteEditor(iso, "day-note"));
+        row.appendChild(buildNoteEditor(iso, "day-note", null));
       } else if (note) {
         const noteNode = document.createElement("span");
         noteNode.className = "day-note";
@@ -393,15 +394,16 @@ export function renderYearGrid() {
         row.appendChild(noteNode);
       }
 
-      row.addEventListener("click", (event) => {
-        if (Date.now() < suppressDayOpenUntil) return;
-        if (activeNoteEdit === iso) return;
-        if (activePopover && activePopover.isoDate !== iso) {
-          closePopover();
-          return;
-        }
-        openPopover(iso, event.clientX, event.clientY, null);
-      });
+      if (!isEditingThisDay) {
+        row.addEventListener("click", (event) => {
+          if (Date.now() < suppressDayOpenUntil) return;
+          if (activePopover && activePopover.isoDate !== iso) {
+            closePopover();
+            return;
+          }
+          openPopover(iso, event.clientX, event.clientY, null);
+        });
+      }
       column.appendChild(row);
     }
 
@@ -418,8 +420,11 @@ export function renderMonthGrid() {
   monthGrid.classList.add("month-scroll-list");
 
   const buildMonthCell = (day, monthIso) => {
-    const cell = document.createElement("button");
-    cell.type = "button";
+    const isEditingThisDay =
+      activeNoteEdit === day.iso &&
+      (!activeNoteEditMonthIso || activeNoteEditMonthIso === monthIso);
+    const cell = document.createElement(isEditingThisDay ? "div" : "button");
+    if (!isEditingThisDay) cell.type = "button";
     cell.className = "month-day";
     if (day.iso === todayIso) cell.classList.add("current-day");
     if (!day.inCurrentMonth) cell.classList.add("muted-day");
@@ -459,11 +464,8 @@ export function renderMonthGrid() {
     cell.appendChild(dotLayer);
 
     const note = getDayNote(day.iso);
-    if (
-      activeNoteEdit === day.iso &&
-      (!activeNoteEditMonthIso || activeNoteEditMonthIso === monthIso)
-    ) {
-      cell.appendChild(buildNoteEditor(day.iso, "month-note"));
+    if (isEditingThisDay) {
+      cell.appendChild(buildNoteEditor(day.iso, "month-note", monthIso));
     } else if (note) {
       const noteNode = document.createElement("span");
       noteNode.className = "month-note";
@@ -471,15 +473,16 @@ export function renderMonthGrid() {
       cell.appendChild(noteNode);
     }
 
-    cell.addEventListener("click", (event) => {
-      if (Date.now() < suppressDayOpenUntil) return;
-      if (activeNoteEdit === day.iso) return;
-      if (activePopover && activePopover.isoDate !== day.iso) {
-        closePopover();
-        return;
-      }
-      openPopover(day.iso, event.clientX, event.clientY, monthIso);
-    });
+    if (!isEditingThisDay) {
+      cell.addEventListener("click", (event) => {
+        if (Date.now() < suppressDayOpenUntil) return;
+        if (activePopover && activePopover.isoDate !== day.iso) {
+          closePopover();
+          return;
+        }
+        openPopover(day.iso, event.clientX, event.clientY, monthIso);
+      });
+    }
     return cell;
   };
 
@@ -1114,10 +1117,15 @@ export function startNoteEdit(isoDate, contextMonthIso = null) {
   requestRender(() => {
     requestAnimationFrame(() => {
       const scopedSelector = contextMonthIso
-        ? `[data-month-iso="${contextMonthIso}"] [data-note-editor="${isoDate}"]`
+        ? `[data-note-editor="${isoDate}"][data-note-month="${contextMonthIso}"]`
         : null;
+      const visibleContainer = isMobileView() ? monthGrid : yearGrid;
+      const containerSelector = `[data-note-editor="${isoDate}"]`;
       const fallbackSelector = `[data-note-editor="${isoDate}"]`;
-      const editor = (scopedSelector && document.querySelector(scopedSelector)) || document.querySelector(fallbackSelector);
+      const editor =
+        (scopedSelector && document.querySelector(scopedSelector)) ||
+        visibleContainer?.querySelector(containerSelector) ||
+        document.querySelector(fallbackSelector);
       if (!editor) return;
       editor.focus();
       const selection = window.getSelection();
@@ -1138,12 +1146,13 @@ export function finishNoteEdit(isoDate, editor) {
   setDayNote(isoDate, editor.textContent || "");
 }
 
-export function buildNoteEditor(isoDate, baseClass) {
+export function buildNoteEditor(isoDate, baseClass, monthIso = null) {
   const editor = document.createElement("div");
   editor.className = `${baseClass} note-editor`;
   editor.contentEditable = "true";
   editor.spellcheck = true;
   editor.dataset.noteEditor = isoDate;
+  if (monthIso) editor.dataset.noteMonth = monthIso;
   editor.textContent = getDayNote(isoDate);
   editor.addEventListener("input", (event) => {
     event.stopPropagation();
@@ -1410,7 +1419,7 @@ export function handleGlobalKeyDown(event) {
     !event.altKey &&
     !isEditableTarget &&
     activePopover &&
-    event.key.toLowerCase() === "t";
+    event.key.toLowerCase() === "n";
   if (isNoteShortcut) {
     event.preventDefault();
     const { isoDate, contextMonthIso } = activePopover;
