@@ -387,11 +387,13 @@ textarea {
 .period-picker {
   position: relative;
   display: inline-flex;
+  min-width: 0;
 }
 
 #period-picker-toggle {
   display: inline-flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 8px;
   border: 0;
   background: transparent;
@@ -401,12 +403,21 @@ textarea {
   color: var(--ink);
   padding: 6px 12px;
   min-height: 40px;
+  max-width: 100%;
   cursor: pointer;
   border-radius: 999px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+#period-picker-label {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .year-caret {
   font-size: 1rem;
+  flex: 0 0 auto;
 }
 
 .period-picker-menu {
