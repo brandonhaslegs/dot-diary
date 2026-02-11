@@ -1115,7 +1115,7 @@ export function hidePopoverScrim() {
   }, POPOVER_ANIMATION_MS);
 }
 
-export function startNoteEdit(isoDate, contextMonthIso = null) {
+export function startNoteEdit(isoDate, contextMonthIso = null, initialText = "") {
   activeNoteEdit = isoDate;
   activeNoteEditMonthIso = contextMonthIso;
   requestRender(() => {
@@ -1139,6 +1139,17 @@ export function startNoteEdit(isoDate, contextMonthIso = null) {
         range.selectNodeContents(editor);
         range.collapse(false);
         selection.addRange(range);
+      }
+      if (initialText) {
+        editor.textContent = `${editor.textContent || ""}${initialText}`;
+        const selectionAfterSeed = window.getSelection();
+        if (selectionAfterSeed) {
+          selectionAfterSeed.removeAllRanges();
+          const rangeAfterSeed = document.createRange();
+          rangeAfterSeed.selectNodeContents(editor);
+          rangeAfterSeed.collapse(false);
+          selectionAfterSeed.addRange(rangeAfterSeed);
+        }
       }
     });
   });
@@ -1418,18 +1429,19 @@ export function handleGlobalKeyDown(event) {
     return;
   }
 
-  const isNoteShortcut =
+  const isTypeToStartNote =
     !event.metaKey &&
     !event.ctrlKey &&
     !event.altKey &&
     !isEditableTarget &&
     activePopover &&
-    event.key.toLowerCase() === "n";
-  if (isNoteShortcut) {
+    event.key.length === 1 &&
+    event.key !== " ";
+  if (isTypeToStartNote) {
     event.preventDefault();
     const { isoDate, contextMonthIso } = activePopover;
     closePopover();
-    startNoteEdit(isoDate, contextMonthIso || null);
+    startNoteEdit(isoDate, contextMonthIso || null, event.key);
     return;
   }
 
