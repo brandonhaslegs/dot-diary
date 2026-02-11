@@ -184,6 +184,10 @@ export function resetToLoggedOut() {
 }
 
 export function render() {
+  const active = document.activeElement;
+  const editingNote = active instanceof HTMLElement && active.classList.contains("note-editor");
+  if (editingNote) return;
+
   applyTheme();
   renderPeriodPicker();
   renderDiaryGrid();

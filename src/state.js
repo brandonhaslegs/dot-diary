@@ -29,7 +29,14 @@ export function requestRender(callback) {
   }
   if (renderQueued) return;
   renderQueued = true;
-  requestAnimationFrame(() => {
+  const flushRender = () => {
+    const active = document.activeElement;
+    const editingNote = active instanceof HTMLElement && active.classList.contains("note-editor");
+    if (editingNote) {
+      requestAnimationFrame(flushRender);
+      return;
+    }
+
     renderQueued = false;
     renderFn();
     if (renderCallbacks.length > 0) {
@@ -37,7 +44,8 @@ export function requestRender(callback) {
       renderCallbacks = [];
       callbacks.forEach((fn) => fn());
     }
-  });
+  };
+  requestAnimationFrame(flushRender);
 }
 
 export function registerScheduleSync(fn) {
