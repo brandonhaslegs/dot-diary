@@ -1166,6 +1166,7 @@ export function buildNoteEditor(isoDate, baseClass, monthIso = null) {
     if (event.key === "Enter") {
       event.preventDefault();
       finishNoteEdit(isoDate, editor);
+      editor.blur();
     }
   });
   editor.addEventListener("blur", () => {
