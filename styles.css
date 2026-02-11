@@ -509,6 +509,24 @@ html.hide-keyboard-hints #settings-modal .shortcut-list .key-hint {
   display: inline-flex !important;
 }
 
+@media (max-width: 920px) {
+  #settings-modal .settings-section.shortcuts {
+    display: none;
+  }
+
+  .key-hint {
+    display: none !important;
+  }
+
+  #settings-modal .shortcut-list .key-hint {
+    display: inline-flex !important;
+  }
+
+  html.hide-keyboard-hints #settings-modal .shortcut-list .key-hint {
+    display: none !important;
+  }
+}
+
 #period-picker-toggle .topbar-key,
 #open-settings .topbar-key {
   margin-left: 2px;
