@@ -2,6 +2,7 @@ import {
   AUTH_INTENT_KEY,
   AUTH_STATE_KEY,
   ONBOARDING_KEY,
+  SYNC_DIRTY_KEY,
   STORAGE_KEY,
   SUPABASE_ANON_KEY,
   SUPABASE_URL
@@ -82,10 +83,11 @@ export async function initSupabaseAuth() {
   }
   updateAuthUI();
   if (syncUser) {
-    await loadFromCloud();
+    await loadFromCloud({ fromAuthBootstrap: true });
     startSyncPolling();
   }
   supabase.auth.onAuthStateChange(async (_event, session) => {
+    const wasSignedIn = Boolean(syncUser);
     syncUser = session?.user || null;
     if (!getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden")) {
       enterApp({ skipOnboarding: true });
@@ -101,7 +103,7 @@ export async function initSupabaseAuth() {
     }
     updateAuthUI();
     if (syncUser) {
-      await loadFromCloud();
+      await loadFromCloud({ fromAuthBootstrap: !wasSignedIn });
       startSyncPolling();
     } else {
       stopSyncPolling();
@@ -168,32 +170,37 @@ export async function signOutSupabase() {
   } catch (error) {
     console.warn("Supabase sign out failed, continuing local sign out:", error);
   } finally {
-    if (syncTimer) {
-      clearTimeout(syncTimer);
-      syncTimer = null;
-    }
-    stopSyncPolling();
-    syncInFlight = null;
-    syncInProgress = false;
-    syncUser = null;
-    lastSyncedAt = null;
     try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(ONBOARDING_KEY);
-      localStorage.removeItem(AUTH_STATE_KEY);
-    } catch {
-      // ignore
+      if (syncTimer) {
+        clearTimeout(syncTimer);
+        syncTimer = null;
+      }
+      stopSyncPolling();
+      syncInFlight = null;
+      syncInProgress = false;
+      syncUser = null;
+      lastSyncedAt = null;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(ONBOARDING_KEY);
+        localStorage.removeItem(AUTH_STATE_KEY);
+        localStorage.removeItem(SYNC_DIRTY_KEY);
+      } catch {
+        // ignore
+      }
+      setState(structuredClone(defaultState));
+      closePopover();
+      closeSettingsModal();
+      closeDeleteModal();
+      resetToLoggedOut();
+      requestRender();
+      updateAuthUI();
+      showToast("Signed out.");
+    } finally {
+      signOutInProgress = false;
+      if (authSignOutButton) authSignOutButton.disabled = false;
+      if (syncStatus) syncStatus.textContent = "";
     }
-    setState(structuredClone(defaultState));
-    closePopover();
-    closeSettingsModal();
-    closeDeleteModal();
-    resetToLoggedOut();
-    requestRender();
-    updateAuthUI();
-    showToast("Signed out.");
-    signOutInProgress = false;
-    if (authSignOutButton) authSignOutButton.disabled = false;
   }
 }
 
@@ -226,12 +233,13 @@ export function updateAuthUI() {
 export function scheduleSync() {
   if (!supabase || !syncUser) return;
   if (syncTimer) clearTimeout(syncTimer);
+  markSyncDirty(true);
   syncTimer = setTimeout(() => {
     syncToCloud();
   }, SYNC_DEBOUNCE_MS);
 }
 
-async function loadFromCloud({ silentError = false } = {}) {
+async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } = {}) {
   if (!supabase || !syncUser) return;
   const hasLocalSnapshot = (() => {
     try {
@@ -250,14 +258,21 @@ async function loadFromCloud({ silentError = false } = {}) {
     return;
   }
   if (!data?.data) {
-    if (hasLocalSnapshot) {
-      await syncToCloud();
+    if (fromAuthBootstrap) {
+      setState(structuredClone(defaultState));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      requestRender();
+      lastSyncedAt = null;
+      updateAuthUI();
+      return;
     }
+    if (hasLocalSnapshot) await syncToCloud();
     return;
   }
   const remoteState = normalizeImportedState(data.data);
   const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime();
   const localTimestamp = hasLocalSnapshot ? getStateTimestamp() : 0;
+  const localDirty = isSyncDirty();
   if (!remoteTimestamp && localTimestamp) {
     await syncToCloud();
     return;
@@ -267,7 +282,13 @@ async function loadFromCloud({ silentError = false } = {}) {
     updateAuthUI();
     return;
   }
-  const preferRemote = !hasLocalSnapshot || remoteTimestamp > localTimestamp;
+  const preferRemote = fromAuthBootstrap
+    ? true
+    : !hasLocalSnapshot
+      ? true
+      : localDirty
+        ? false
+        : remoteTimestamp > localTimestamp;
   setState(mergeStates(state, remoteState, preferRemote));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   requestRender();
@@ -292,6 +313,7 @@ async function syncToCloud() {
       showToast("Could not sync to cloud.");
     } else {
       lastSyncedAt = new Date().toISOString();
+      markSyncDirty(false);
     }
   })();
   try {
@@ -325,6 +347,23 @@ function handleVisibilitySync() {
 
 function getMagicLinkRedirectTo() {
   return `${window.location.origin}${window.location.pathname}`;
+}
+
+function markSyncDirty(value) {
+  try {
+    if (value) localStorage.setItem(SYNC_DIRTY_KEY, "1");
+    else localStorage.removeItem(SYNC_DIRTY_KEY);
+  } catch {
+    // ignore storage access
+  }
+}
+
+function isSyncDirty() {
+  try {
+    return localStorage.getItem(SYNC_DIRTY_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 function formatSyncStatus() {

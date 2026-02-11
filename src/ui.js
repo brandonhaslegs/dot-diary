@@ -38,6 +38,7 @@ import {
   popover,
   popoverItemTemplate,
   popoverScrim,
+  showKeyboardHintsInput,
   settingsModal,
   suggestedDotContent,
   suggestedDotList,
@@ -52,7 +53,6 @@ import {
   hash32,
   isMobileView,
   monthDiff,
-  shuffleArray,
   startOfMonth,
   weekdayShort
 } from "./utils.js";
@@ -73,8 +73,6 @@ import {
   state
 } from "./state.js";
 import { showToast } from "./toast.js";
-
-const shuffledSuggestions = shuffleArray(SUGGESTED_DOT_TYPES);
 
 let activePopover = null;
 let activeNoteEdit = null;
@@ -195,6 +193,8 @@ export function render() {
   renderDotTypeList();
   if (weekStartMondayInput) weekStartMondayInput.checked = Boolean(state.weekStartsMonday);
   if (hideSuggestionsInput) hideSuggestionsInput.checked = !state.hideSuggestions;
+  if (showKeyboardHintsInput) showKeyboardHintsInput.checked = Boolean(state.showKeyboardHints);
+  document.documentElement.classList.toggle("hide-keyboard-hints", !state.showKeyboardHints);
   if (suggestedDotContent) {
     suggestedDotContent.classList.toggle("hidden", Boolean(state.hideSuggestions));
   }
@@ -968,7 +968,7 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
   if (!targetList) return;
   targetList.innerHTML = "";
 
-  shuffledSuggestions.forEach((suggestion) => {
+  SUGGESTED_DOT_TYPES.forEach((suggestion) => {
     if (hasDotTypeName(suggestion.name)) return;
 
     const chip = document.createElement("button");
@@ -1000,19 +1000,17 @@ export function openPopover(isoDate, x, y, contextMonthIso = null) {
 
   const selectedIds = new Set(getDayDotIds(isoDate));
 
-  if (window.matchMedia("(max-width: 480px)").matches) {
-    const header = document.createElement("h1");
-    header.className = "popover-date";
-    const date = new Date(isoDate);
-    const parts = new Intl.DateTimeFormat(undefined, {
-      weekday: "short",
-      day: "2-digit",
-      month: "short"
-    }).formatToParts(date);
-    const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-    header.textContent = `${byType.weekday} ${byType.day} ${byType.month}`;
-    popover.appendChild(header);
-  }
+  const header = document.createElement("h1");
+  header.className = "popover-date";
+  const date = new Date(isoDate);
+  const parts = new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    day: "2-digit",
+    month: "short"
+  }).formatToParts(date);
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  header.textContent = `${byType.weekday} ${byType.day} ${byType.month}`;
+  popover.appendChild(header);
 
   if (state.dotTypes.length === 0) {
     const empty = document.createElement("div");
@@ -1048,7 +1046,7 @@ export function openPopover(isoDate, x, y, contextMonthIso = null) {
   const addDotTypeButton = document.createElement("button");
   addDotTypeButton.type = "button";
   addDotTypeButton.className = "note-edit-button";
-  addDotTypeButton.textContent = "Add dot type";
+  setButtonLabelWithShortcut(addDotTypeButton, "Add dot type", "D");
   addDotTypeButton.addEventListener("click", () => {
     closePopover();
     addNewDotType();
@@ -1057,7 +1055,7 @@ export function openPopover(isoDate, x, y, contextMonthIso = null) {
   const noteButton = document.createElement("button");
   noteButton.type = "button";
   noteButton.className = "note-edit-button";
-  noteButton.textContent = getDayNote(isoDate) ? "Edit note" : "Add note";
+  setButtonLabelWithShortcut(noteButton, getDayNote(isoDate) ? "Edit note" : "Add note", "N");
   noteButton.addEventListener("click", () => {
     closePopover();
     startNoteEdit(isoDate, contextMonthIso, "", true);
@@ -1306,9 +1304,76 @@ export function closePeriodMenu() {
   updateMenuScrim();
 }
 
+function getPeriodPickerItems() {
+  return Array.from(periodPickerMenu.querySelectorAll(".period-picker-item"));
+}
+
+function getFocusedPeriodPickerIndex(items) {
+  const activeElement = document.activeElement;
+  if (activeElement instanceof HTMLElement) {
+    const focusedIndex = items.indexOf(activeElement);
+    if (focusedIndex >= 0) return focusedIndex;
+  }
+  return items.findIndex((item) => item.classList.contains("active"));
+}
+
+function focusPeriodPickerItem(items, index) {
+  if (!items.length) return;
+  const clampedIndex = clamp(index, 0, items.length - 1);
+  const item = items[clampedIndex];
+  item.focus({ preventScroll: true });
+  item.scrollIntoView({ block: "nearest" });
+}
+
+function getFocusableElements(container) {
+  if (!container) return [];
+  const selector = [
+    "a[href]",
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    "[tabindex]:not([tabindex='-1'])"
+  ].join(", ");
+  return Array.from(container.querySelectorAll(selector)).filter((element) => {
+    if (!(element instanceof HTMLElement)) return false;
+    if (element.getAttribute("aria-hidden") === "true") return false;
+    if (element.closest(".hidden")) return false;
+    return element.offsetParent !== null;
+  });
+}
+
+function getPopoverDotItems() {
+  return Array.from(popover.querySelectorAll(".popover-item"));
+}
+
+function getFocusedPopoverDotIndex(items) {
+  const activeElement = document.activeElement;
+  if (activeElement instanceof HTMLElement) {
+    const focusedIndex = items.indexOf(activeElement);
+    if (focusedIndex >= 0) return focusedIndex;
+  }
+  const selectedIndex = items.findIndex((item) => item.classList.contains("selected"));
+  return selectedIndex >= 0 ? selectedIndex : 0;
+}
+
+function focusPopoverDotItem(items, index) {
+  if (!items.length) return;
+  const clampedIndex = clamp(index, 0, items.length - 1);
+  const item = items[clampedIndex];
+  item.focus({ preventScroll: true });
+  item.scrollIntoView({ block: "nearest" });
+}
+
 export function openPeriodMenu() {
   showAnimated(periodPickerMenu);
   updateMenuScrim();
+  requestAnimationFrame(() => {
+    const items = getPeriodPickerItems();
+    if (!items.length) return;
+    const currentIndex = getFocusedPeriodPickerIndex(items);
+    focusPeriodPickerItem(items, currentIndex >= 0 ? currentIndex : 0);
+  });
 }
 
 export function addSuggestedDotType(suggestion) {
@@ -1344,6 +1409,51 @@ function normalizeDotTypeName(name) {
   return String(name || "")
     .trim()
     .slice(0, DOT_NAME_MAX_LENGTH);
+}
+
+function setButtonLabelWithShortcut(button, label, shortcut) {
+  button.textContent = "";
+  const text = document.createElement("span");
+  text.className = "button-label";
+  text.textContent = label;
+  const hint = document.createElement("span");
+  hint.className = "key-hint";
+  hint.setAttribute("aria-hidden", "true");
+  hint.textContent = shortcut;
+  button.append(text, hint);
+  button.setAttribute("aria-label", `${label} (${shortcut})`);
+}
+
+function normalizeDotTypeColorInput(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+
+  const hexBody = raw.startsWith("#") ? raw.slice(1) : raw;
+  if (/^[0-9a-fA-F]{3}$/.test(hexBody)) {
+    const expanded = hexBody
+      .split("")
+      .map((char) => char + char)
+      .join("")
+      .toUpperCase();
+    return `#${expanded}`;
+  }
+
+  if (/^[0-9a-fA-F]{6}$/.test(hexBody)) {
+    return `#${hexBody.toUpperCase()}`;
+  }
+
+  const namedColor = raw.toLowerCase();
+  if (!/^[a-z]+$/.test(namedColor)) return null;
+
+  if (typeof CSS !== "undefined" && typeof CSS.supports === "function") {
+    if (CSS.supports("color", namedColor)) return namedColor;
+    return null;
+  }
+
+  const probe = document.createElement("span");
+  probe.style.color = "";
+  probe.style.color = namedColor;
+  return probe.style.color ? namedColor : null;
 }
 
 export function getNextSuggestedColor() {
@@ -1427,12 +1537,139 @@ export function handleGlobalKeyDown(event) {
       target.tagName === "INPUT" ||
       target.tagName === "TEXTAREA" ||
       target.tagName === "SELECT");
+  const isPlainShortcutKey = !event.metaKey && !event.ctrlKey && !event.altKey;
+  const key = String(event.key || "").toLowerCase();
+  const isPeriodMenuOpen = !periodPickerMenu.classList.contains("hidden");
+  const isSettingsOpen = !settingsModal.classList.contains("hidden");
+  const isDotPopoverOpen = Boolean(activePopover) && !popover.classList.contains("hidden");
 
-  const isSettingsShortcut = (event.metaKey || event.ctrlKey) && event.key === ",";
-  if (isSettingsShortcut && !isEditableTarget) {
+  if (isDotPopoverOpen && event.key === "Tab") {
+    const focusable = getFocusableElements(popover);
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const activeElement = document.activeElement;
+    const activeIndex = focusable.indexOf(activeElement);
+    if (activeIndex === -1) {
+      event.preventDefault();
+      (event.shiftKey ? focusable[focusable.length - 1] : focusable[0]).focus();
+      return;
+    }
+    if (!event.shiftKey && activeIndex === focusable.length - 1) {
+      event.preventDefault();
+      focusable[0].focus();
+      return;
+    }
+    if (event.shiftKey && activeIndex === 0) {
+      event.preventDefault();
+      focusable[focusable.length - 1].focus();
+      return;
+    }
+  }
+
+  if (isDotPopoverOpen && !isEditableTarget) {
+    const dotItems = getPopoverDotItems();
+    const isArrowNavKey =
+      event.key === "ArrowDown" ||
+      event.key === "ArrowUp" ||
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowRight";
+    if (dotItems.length > 0 && isArrowNavKey) {
+      event.preventDefault();
+      const currentIndex = getFocusedPopoverDotIndex(dotItems);
+      const direction = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : -1;
+      focusPopoverDotItem(dotItems, currentIndex + direction);
+      return;
+    }
+  }
+
+  if (isSettingsOpen && event.key === "Tab") {
+    const focusable = getFocusableElements(settingsModal);
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const activeElement = document.activeElement;
+    const activeIndex = focusable.indexOf(activeElement);
+    if (activeIndex === -1) {
+      event.preventDefault();
+      (event.shiftKey ? focusable[focusable.length - 1] : focusable[0]).focus();
+      return;
+    }
+    if (!event.shiftKey && activeIndex === focusable.length - 1) {
+      event.preventDefault();
+      focusable[0].focus();
+      return;
+    }
+    if (event.shiftKey && activeIndex === 0) {
+      event.preventDefault();
+      focusable[focusable.length - 1].focus();
+      return;
+    }
+  }
+
+  if (isPeriodMenuOpen && !isEditableTarget) {
+    const items = getPeriodPickerItems();
+    if (items.length > 0 && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      event.preventDefault();
+      const currentIndex = getFocusedPeriodPickerIndex(items);
+      const startIndex = currentIndex >= 0 ? currentIndex : 0;
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      focusPeriodPickerItem(items, startIndex + direction);
+      return;
+    }
+    if (items.length > 0 && event.key === "Home") {
+      event.preventDefault();
+      focusPeriodPickerItem(items, 0);
+      return;
+    }
+    if (items.length > 0 && event.key === "End") {
+      event.preventDefault();
+      focusPeriodPickerItem(items, items.length - 1);
+      return;
+    }
+    if (items.length > 0 && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      const currentIndex = getFocusedPeriodPickerIndex(items);
+      const target = items[currentIndex >= 0 ? currentIndex : 0];
+      target.click();
+      return;
+    }
+  }
+
+  const isQuestionSettingsShortcut = isPlainShortcutKey && !isEditableTarget && event.key === "?";
+  if (isQuestionSettingsShortcut) {
     event.preventDefault();
     closePopover();
     openSettingsModal();
+    return;
+  }
+
+  const isYearShortcut = isPlainShortcutKey && !isEditableTarget && key === "y";
+  if (isYearShortcut) {
+    event.preventDefault();
+    closePopover();
+    if (periodPickerMenu.classList.contains("hidden")) openPeriodMenu();
+    else closePeriodMenu();
+    return;
+  }
+
+  const isAddDotTypeShortcut = isPlainShortcutKey && !isEditableTarget && activePopover && key === "d";
+  if (isAddDotTypeShortcut) {
+    event.preventDefault();
+    closePopover();
+    addNewDotType();
+    openSettingsModal();
+    return;
+  }
+
+  const isAddNoteShortcut = isPlainShortcutKey && !isEditableTarget && activePopover && key === "n";
+  if (isAddNoteShortcut) {
+    event.preventDefault();
+    const { isoDate, contextMonthIso } = activePopover;
+    closePopover();
+    startNoteEdit(isoDate, contextMonthIso || null, "", true);
     return;
   }
 
@@ -1657,7 +1894,7 @@ export function buildColorPicker(dotType, swatch) {
   const hexInput = document.createElement("input");
   hexInput.type = "text";
   hexInput.value = dotType.color;
-  hexInput.placeholder = "#RRGGBB";
+  hexInput.placeholder = "#RRGGBB or red";
   hexInput.className = "color-hex-input";
   picker._hexInput = hexInput;
 
@@ -1666,10 +1903,9 @@ export function buildColorPicker(dotType, swatch) {
   applyButton.textContent = "Apply";
   applyButton.className = "color-apply";
   applyButton.addEventListener("click", () => {
-    const raw = hexInput.value.trim();
-    const normalized = raw.startsWith("#") ? raw : `#${raw}`;
-    if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) {
-      showToast("Enter a valid hex color.");
+    const normalized = normalizeDotTypeColorInput(hexInput.value);
+    if (!normalized) {
+      showToast("Enter a valid color name or hex color.");
       return;
     }
     const changed = dotType.color.toLowerCase() !== normalized.toLowerCase();

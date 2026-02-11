@@ -30,6 +30,7 @@ import {
   popoverScrim,
   resetOnboardingButton,
   settingsBackButton,
+  showKeyboardHintsInput,
   todayButton,
   uploadDataButton,
   uploadDataInput,
@@ -144,6 +145,12 @@ hideSuggestionsInput?.addEventListener("change", () => {
   state.hideSuggestions = !hideSuggestionsInput.checked;
   saveAndRender();
   showToast(state.hideSuggestions ? "Suggestions hidden." : "Suggestions shown.");
+});
+
+showKeyboardHintsInput?.addEventListener("change", () => {
+  state.showKeyboardHints = Boolean(showKeyboardHintsInput.checked);
+  saveAndRender();
+  showToast(state.showKeyboardHints ? "Keyboard hints shown." : "Keyboard hints hidden.");
 });
 
 colorModeLightButton?.addEventListener("click", () => {

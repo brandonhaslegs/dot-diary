@@ -104,6 +104,7 @@
         <div class="period-picker">
           <button id="period-picker-toggle" type="button" aria-label="Select period">
             <span id="period-picker-label"></span>
+            <span class="key-hint topbar-key" aria-hidden="true">Y</span>
             <svg class="year-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
               <path
                 d="M9.75 4.5L6 8.25L2.25 4.5"
@@ -122,7 +123,8 @@
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <circle cx="8" cy="8" r="7.25" stroke="black" stroke-width="1.5" />
             </svg>
-            <span>Settings</span>
+            <span class="icon-button-label">Settings</span>
+            <span class="key-hint topbar-key" aria-hidden="true">?</span>
           </button>
         </nav>
       </header>
@@ -141,42 +143,104 @@
         <div class="onboarding-step" data-step="intro">
           <div class="onboarding-demo" aria-hidden="true">
             <div class="demo-day">
+              <div class="demo-day-label">04 Su</div>
+              <span class="demo-dot green" style="left: 34%; top: 46%"></span>
+              <span class="demo-dot blue" style="left: 62%; top: 58%"></span>
+              <span class="demo-dot yellow" style="left: 54%; top: 34%"></span>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">05 Mo</div>
+              <span class="demo-dot green" style="left: 38%; top: 42%"></span>
+              <span class="demo-dot red" style="left: 63%; top: 54%"></span>
+              <div class="demo-note">Busy day</div>
+            </div>
+            <div class="demo-day">
               <div class="demo-day-label">06 Tu</div>
-              <span class="demo-dot green"></span>
-              <span class="demo-dot red"></span>
-              <span class="demo-dot blue"></span>
+              <span class="demo-dot green" style="left: 48%; top: 40%"></span>
+              <span class="demo-dot red" style="left: 70%; top: 48%"></span>
+              <span class="demo-dot blue" style="left: 36%; top: 62%"></span>
               <div class="demo-note">Morning swim</div>
             </div>
             <div class="demo-day">
               <div class="demo-day-label">07 We</div>
-              <span class="demo-dot green"></span>
-              <span class="demo-dot purple"></span>
-              <span class="demo-dot yellow"></span>
+              <span class="demo-dot green" style="left: 42%; top: 54%"></span>
+              <span class="demo-dot purple" style="left: 68%; top: 66%"></span>
+              <span class="demo-dot yellow" style="left: 58%; top: 42%"></span>
               <div class="demo-note">Date night</div>
             </div>
             <div class="demo-day">
               <div class="demo-day-label">08 Th</div>
-              <span class="demo-dot green"></span>
-              <span class="demo-dot brown"></span>
+              <span class="demo-dot green" style="left: 42%; top: 56%"></span>
+              <span class="demo-dot brown" style="left: 64%; top: 46%"></span>
             </div>
             <div class="demo-day">
               <div class="demo-day-label">09 Fr</div>
-              <span class="demo-dot green"></span>
-              <span class="demo-dot blue"></span>
-              <span class="demo-dot red"></span>
+              <span class="demo-dot green" style="left: 40%; top: 50%"></span>
+              <span class="demo-dot blue" style="left: 68%; top: 60%"></span>
+              <span class="demo-dot red" style="left: 56%; top: 36%"></span>
               <div class="demo-note">Gym + reading</div>
             </div>
             <div class="demo-day">
               <div class="demo-day-label">10 Sa</div>
-              <span class="demo-dot green"></span>
-              <span class="demo-dot yellow"></span>
+              <span class="demo-dot green" style="left: 40%; top: 54%"></span>
+              <span class="demo-dot yellow" style="left: 58%; top: 42%"></span>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">11 Su</div>
+              <span class="demo-dot green" style="left: 40%; top: 46%"></span>
+              <span class="demo-dot blue" style="left: 66%; top: 60%"></span>
+              <div class="demo-note">Long walk</div>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">12 Mo</div>
+              <span class="demo-dot green" style="left: 36%; top: 48%"></span>
+              <span class="demo-dot brown" style="left: 62%; top: 44%"></span>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">13 Tu</div>
+              <span class="demo-dot green" style="left: 40%; top: 52%"></span>
+              <span class="demo-dot yellow" style="left: 60%; top: 40%"></span>
+              <span class="demo-dot purple" style="left: 70%; top: 62%"></span>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">14 We</div>
+              <span class="demo-dot green" style="left: 36%; top: 44%"></span>
+              <span class="demo-dot red" style="left: 58%; top: 56%"></span>
+              <div class="demo-note">Quick lift</div>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">15 Th</div>
+              <span class="demo-dot green" style="left: 42%; top: 50%"></span>
+              <span class="demo-dot blue" style="left: 66%; top: 58%"></span>
+              <span class="demo-dot yellow" style="left: 56%; top: 36%"></span>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">16 Fr</div>
+              <span class="demo-dot green" style="left: 38%; top: 48%"></span>
+              <span class="demo-dot red" style="left: 60%; top: 40%"></span>
+              <span class="demo-dot blue" style="left: 66%; top: 62%"></span>
+              <div class="demo-note">Great flow</div>
+            </div>
+            <div class="demo-day">
+              <div class="demo-day-label">17 Sa</div>
+              <span class="demo-dot green" style="left: 38%; top: 52%"></span>
+              <span class="demo-dot yellow" style="left: 58%; top: 44%"></span>
             </div>
           </div>
+          <div class="onboarding-demo-legend" aria-hidden="true">
+            <span class="demo-legend-item"><span class="demo-legend-swatch red"></span>Outside</span>
+            <span class="demo-legend-item"><span class="demo-legend-swatch blue"></span>Reading</span>
+            <span class="demo-legend-item"><span class="demo-legend-swatch green"></span>Exercise</span>
+            <span class="demo-legend-item"><span class="demo-legend-swatch yellow"></span>Coffee</span>
+            <span class="demo-legend-item"><span class="demo-legend-swatch purple"></span>Social media</span>
+            <span class="demo-legend-item"><span class="demo-legend-swatch brown"></span>Screen time</span>
+          </div>
           <h1 id="onboarding-title">How it works</h1>
-          <p>
-            Pick some dots you want to do more of, and some you want to do less of. Add them to days where you do
-            those things. Track progress over time.
-          </p>
+          <ol class="onboarding-steps-list">
+            <li>Choose things you want to do more or less of.</li>
+            <li>Add dots to the days those things happen.</li>
+            <li>Track your progress over time.</li>
+          </ol>
           <div class="onboarding-actions">
             <button id="onboarding-skip-intro" type="button" class="outline-button">Skip</button>
             <div class="onboarding-dots" aria-hidden="true">
@@ -209,8 +273,45 @@
 
         <div class="onboarding-step hidden" data-step="sync">
           <div class="onboarding-sync-panel">
+            <div class="onboarding-sync-graphic" aria-hidden="true">
+              <div class="sync-device sync-laptop">
+                <div class="sync-screen">
+                  <span class="sync-dot sync-dot-red"></span>
+                  <span class="sync-dot sync-dot-yellow"></span>
+                  <span class="sync-dot sync-dot-green"></span>
+                  <span class="sync-dot sync-dot-blue"></span>
+                  <span class="sync-dot sync-dot-purple"></span>
+                </div>
+                <div class="sync-base"></div>
+              </div>
+              <div class="sync-transfer">
+                <span class="sync-travel-dot sync-dot-red"></span>
+                <span class="sync-travel-dot sync-dot-yellow"></span>
+                <span class="sync-travel-dot sync-dot-green"></span>
+                <span class="sync-travel-dot sync-dot-blue"></span>
+                <span class="sync-note-chip">Morning run</span>
+                <span class="sync-note-chip">Date night</span>
+                <span class="sync-note-chip">Read 30m</span>
+                <span class="sync-note-chip">Therapy</span>
+                <span class="sync-note-chip">No sugar</span>
+                <span class="sync-note-chip">Movie night</span>
+                <span class="sync-note-chip">Cooked</span>
+                <span class="sync-note-chip">Journaled</span>
+                <span class="sync-note-chip">Family time</span>
+              </div>
+              <div class="sync-device sync-phone">
+                <div class="sync-screen">
+                  <span class="sync-dot sync-dot-red"></span>
+                  <span class="sync-dot sync-dot-yellow"></span>
+                  <span class="sync-dot sync-dot-green"></span>
+                  <span class="sync-dot sync-dot-blue"></span>
+                  <span class="sync-dot sync-dot-purple"></span>
+                </div>
+                <div class="sync-home-indicator"></div>
+              </div>
+            </div>
             <h2>Keep your data safe</h2>
-            <p class="muted">Add your email and we’ll send a magic link so your dots sync across devices.</p>
+            <p class="muted">Enter your email and we’ll send a magic link so your dots sync across devices.</p>
             <div class="auth-row onboarding-auth-row">
               <input
                 id="onboarding-email"
@@ -224,7 +325,7 @@
               />
               <button id="onboarding-send" type="button">Send magic link</button>
             </div>
-            <p class="muted">You can also set this up later in Settings.</p>
+            <p class="muted">Note: Your stuff is still saved on this device if you don't do this.</p>
           </div>
           <div class="onboarding-actions">
             <button id="onboarding-back-sync" type="button">Back</button>
@@ -294,8 +395,8 @@
                 <input id="hide-suggestions" type="checkbox" />
               </label>
             </div>
+            <p class="muted">It’s helpful to choose three you want to do more of, and three you want to do less of.</p>
             <div id="suggested-dot-content">
-              <p class="muted">It’s helpful to choose three you want to do more of, and three you want to do less of.</p>
               <div id="suggested-dot-list" class="suggested-dot-list"></div>
             </div>
           </div>
@@ -321,6 +422,36 @@
               <button id="color-mode-dark" type="button">Dark</button>
             </div>
           </div>
+        </section>
+
+        <hr />
+
+        <section class="settings-section">
+          <h4>Keyboard shortcuts</h4>
+          <div class="display-row">
+            <div>Show keyboard hints</div>
+            <label class="settings-toggle">
+              <input id="show-keyboard-hints" type="checkbox" />
+            </label>
+          </div>
+          <ul class="shortcut-list" aria-label="Keyboard shortcuts">
+            <li class="shortcut-row">
+              <span>Add a note to a day</span>
+              <span class="shortcut-keys"><span class="key-hint" aria-hidden="true">N</span></span>
+            </li>
+            <li class="shortcut-row">
+              <span>Add dot type from the day menu</span>
+              <span class="shortcut-keys"><span class="key-hint" aria-hidden="true">D</span></span>
+            </li>
+            <li class="shortcut-row">
+              <span>Open year picker</span>
+              <span class="shortcut-keys"><span class="key-hint" aria-hidden="true">Y</span></span>
+            </li>
+            <li class="shortcut-row">
+              <span>Open settings</span>
+              <span class="shortcut-keys"><span class="key-hint" aria-hidden="true">?</span></span>
+            </li>
+          </ul>
         </section>
 
         <hr />

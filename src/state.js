@@ -6,6 +6,7 @@ export const defaultState = {
   yearCursor: new Date().getFullYear(),
   weekStartsMonday: false,
   hideSuggestions: false,
+  showKeyboardHints: true,
   darkMode: null,
   lastModified: new Date().toISOString(),
   dotTypes: [],
@@ -65,8 +66,8 @@ export function saveAndRender() {
   }
   state.lastModified = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  requestRender();
   scheduleSyncFn();
+  requestRender();
 }
 
 export function loadState() {
@@ -80,6 +81,8 @@ export function loadState() {
       yearCursor: Number.isInteger(parsed.yearCursor) ? parsed.yearCursor : yearFromMonthCursor || defaultState.yearCursor,
       weekStartsMonday: Boolean(parsed.weekStartsMonday),
       hideSuggestions: Boolean(parsed.hideSuggestions),
+      showKeyboardHints:
+        typeof parsed.showKeyboardHints === "boolean" ? parsed.showKeyboardHints : defaultState.showKeyboardHints,
       darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
       lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : new Date().toISOString(),
       dotTypes: normalizeDotTypes(parsed.dotTypes),
@@ -261,6 +264,7 @@ export function createDemoState() {
     yearCursor: year,
     weekStartsMonday: false,
     hideSuggestions: false,
+    showKeyboardHints: true,
     darkMode: null,
     lastModified: new Date().toISOString(),
     dotTypes,
@@ -339,6 +343,8 @@ export function normalizeImportedState(parsed) {
     yearCursor: Number.isInteger(parsed.yearCursor) ? parsed.yearCursor : yearFromMonthCursor || defaultState.yearCursor,
     weekStartsMonday: Boolean(parsed.weekStartsMonday),
     hideSuggestions: Boolean(parsed.hideSuggestions),
+    showKeyboardHints:
+      typeof parsed.showKeyboardHints === "boolean" ? parsed.showKeyboardHints : defaultState.showKeyboardHints,
     darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
     lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : new Date().toISOString(),
     dotTypes: normalizeDotTypes(parsed.dotTypes),

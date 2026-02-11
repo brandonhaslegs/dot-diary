@@ -11,6 +11,7 @@ export const periodPickerMenu = document.querySelector("#period-picker-menu");
 export const todayButton = document.querySelector("#today-button");
 export const weekStartMondayInput = document.querySelector("#week-start-monday");
 export const hideSuggestionsInput = document.querySelector("#hide-suggestions");
+export const showKeyboardHintsInput = document.querySelector("#show-keyboard-hints");
 export const colorModeLightButton = document.querySelector("#color-mode-light");
 export const colorModeDarkButton = document.querySelector("#color-mode-dark");
 export const downloadDataButton = document.querySelector("#download-data");
