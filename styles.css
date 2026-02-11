@@ -2449,25 +2449,37 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   /* Topbar: switch from absolute-positioned items to a proper flex row */
   .topbar {
-    padding: 10px 12px;
-    gap: 8px;
+    justify-content: space-between;
+    padding: 8px 10px;
+    gap: 6px;
   }
 
   .brand-link {
     position: static;
     transform: none;
     font-size: 16px;
+    min-height: 34px;
+    padding: 4px 8px;
     flex-shrink: 0;
   }
 
   .period-picker {
-    flex: 1;
-    justify-content: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  #period-picker-toggle {
+    min-height: 34px;
+    padding: 4px 8px;
+    gap: 6px;
+    font-size: 16px;
   }
 
   .view-nav {
     position: static;
     transform: none;
+    gap: 6px;
     flex-shrink: 0;
     align-items: center;
   }
@@ -2478,8 +2490,14 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .today-button {
-    padding: 5px 10px;
+    padding: 4px 8px;
     font-size: 13px;
+  }
+
+  .icon-button {
+    min-height: 34px;
+    padding: 4px 8px;
+    gap: 5px;
   }
 
   /* Month grid: tighter gap, better cell sizing */
