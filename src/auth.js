@@ -2,7 +2,6 @@ import {
   AUTH_INTENT_KEY,
   AUTH_STATE_KEY,
   ONBOARDING_KEY,
-  SYNC_DIRTY_KEY,
   STORAGE_KEY,
   SUPABASE_ANON_KEY,
   SUPABASE_URL
@@ -29,9 +28,9 @@ import {
   closeSettingsModal,
   enterApp,
   getHasEnteredApp,
+  showMarketingPage,
   resetToLoggedOut
 } from "./ui.js";
-import { normalizeNote } from "./utils.js";
 import { showToast } from "./toast.js";
 
 const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -107,6 +106,10 @@ export async function initSupabaseAuth() {
       startSyncPolling();
     } else {
       stopSyncPolling();
+      setState(structuredClone(defaultState));
+      requestRender();
+      showMarketingPage();
+      resetToLoggedOut();
     }
   });
   document.addEventListener("visibilitychange", handleVisibilitySync);
@@ -184,7 +187,6 @@ export async function signOutSupabase() {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(ONBOARDING_KEY);
         localStorage.removeItem(AUTH_STATE_KEY);
-        localStorage.removeItem(SYNC_DIRTY_KEY);
       } catch {
         // ignore
       }
@@ -222,7 +224,7 @@ export function updateAuthUI() {
       syncStatus.textContent = formatSyncStatus();
     }
   } else {
-    authStatus.textContent = "Sign in to sync this diary across devices.";
+    authStatus.textContent = "Sign in to store this diary in the cloud.";
     authStatus.classList.add("muted");
     authSignOutButton.classList.add("hidden");
     if (authRow) authRow.classList.remove("hidden");
@@ -231,23 +233,16 @@ export function updateAuthUI() {
 }
 
 export function scheduleSync() {
-  if (!supabase || !syncUser) return;
+  if (!supabase || !syncUser) return false;
   if (syncTimer) clearTimeout(syncTimer);
-  markSyncDirty(true);
   syncTimer = setTimeout(() => {
     syncToCloud();
   }, SYNC_DEBOUNCE_MS);
+  return true;
 }
 
 async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } = {}) {
   if (!supabase || !syncUser) return;
-  const hasLocalSnapshot = (() => {
-    try {
-      return Boolean(localStorage.getItem(STORAGE_KEY));
-    } catch {
-      return false;
-    }
-  })();
   const { data, error } = await supabase
     .from("user_data")
     .select("data, updated_at")
@@ -258,42 +253,21 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
     return;
   }
   if (!data?.data) {
-    if (fromAuthBootstrap) {
-      setState(structuredClone(defaultState));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      requestRender();
-      lastSyncedAt = null;
-      updateAuthUI();
-      return;
-    }
-    if (hasLocalSnapshot) await syncToCloud();
+    // Cloud-only mode: initialize row from current in-memory state once.
+    await syncToCloud();
+    if (!fromAuthBootstrap) showToast("Cloud data initialized.");
     return;
   }
   const remoteState = normalizeImportedState(data.data);
-  const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime();
-  const localTimestamp = hasLocalSnapshot ? getStateTimestamp() : 0;
-  const localDirty = isSyncDirty();
-  if (!remoteTimestamp && localTimestamp) {
-    await syncToCloud();
-    return;
-  }
-  if (remoteTimestamp === localTimestamp) {
+  const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime() || 0;
+  const localTimestamp = getStateTimestamp() || 0;
+  if (remoteTimestamp >= localTimestamp) {
+    setState(remoteState);
+    requestRender();
     lastSyncedAt = new Date().toISOString();
     updateAuthUI();
     return;
   }
-  const preferRemote = fromAuthBootstrap
-    ? true
-    : !hasLocalSnapshot
-      ? true
-      : localDirty
-        ? false
-        : remoteTimestamp > localTimestamp;
-  setState(mergeStates(state, remoteState, preferRemote));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  requestRender();
-  lastSyncedAt = new Date().toISOString();
-  updateAuthUI();
   await syncToCloud();
 }
 
@@ -313,7 +287,6 @@ async function syncToCloud() {
       showToast("Could not sync to cloud.");
     } else {
       lastSyncedAt = new Date().toISOString();
-      markSyncDirty(false);
     }
   })();
   try {
@@ -349,25 +322,8 @@ function getMagicLinkRedirectTo() {
   return `${window.location.origin}${window.location.pathname}`;
 }
 
-function markSyncDirty(value) {
-  try {
-    if (value) localStorage.setItem(SYNC_DIRTY_KEY, "1");
-    else localStorage.removeItem(SYNC_DIRTY_KEY);
-  } catch {
-    // ignore storage access
-  }
-}
-
-function isSyncDirty() {
-  try {
-    return localStorage.getItem(SYNC_DIRTY_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 function formatSyncStatus() {
-  return lastSyncedAt ? `Last synced ${formatSyncTime(lastSyncedAt)}.` : "Signed in. Waiting to sync changes.";
+  return lastSyncedAt ? `Saved to cloud ${formatSyncTime(lastSyncedAt)}.` : "Signed in. Saving changes to cloud.";
 }
 function formatSyncTime(iso) {
   try {
@@ -381,56 +337,6 @@ function formatSyncTime(iso) {
   } catch {
     return "just now";
   }
-}
-
-function mergeStates(localState, remoteState, preferRemote) {
-  const winner = preferRemote ? remoteState : localState;
-  const loser = preferRemote ? localState : remoteState;
-  const dotTypes = Array.isArray(winner.dotTypes) ? structuredClone(winner.dotTypes) : [];
-  const validDotIds = new Set(dotTypes.map((dot) => dot.id));
-  const dayDots = {};
-  const rawDayDots = winner.dayDots && typeof winner.dayDots === "object" ? winner.dayDots : {};
-  Object.entries(rawDayDots).forEach(([iso, ids]) => {
-    if (!Array.isArray(ids)) return;
-    const filtered = ids.filter((id) => validDotIds.has(id));
-    if (filtered.length > 0) dayDots[iso] = filtered;
-  });
-  const dotPositions = {};
-  const rawDotPositions = winner.dotPositions && typeof winner.dotPositions === "object" ? winner.dotPositions : {};
-  Object.entries(rawDotPositions).forEach(([iso, positions]) => {
-    if (!positions || typeof positions !== "object") return;
-    const filtered = {};
-    Object.entries(positions).forEach(([dotId, pos]) => {
-      if (validDotIds.has(dotId)) filtered[dotId] = pos;
-    });
-    if (Object.keys(filtered).length > 0) dotPositions[iso] = filtered;
-  });
-  const dayNotes = {};
-  const rawDayNotes = winner.dayNotes && typeof winner.dayNotes === "object" ? winner.dayNotes : {};
-  Object.entries(rawDayNotes).forEach(([iso, note]) => {
-    const normalized = normalizeNote(note);
-    if (normalized) dayNotes[iso] = normalized;
-  });
-
-  return {
-    ...localState,
-    monthCursor: winner.monthCursor || loser.monthCursor || localState.monthCursor,
-    yearCursor: winner.yearCursor || loser.yearCursor || localState.yearCursor,
-    weekStartsMonday:
-      typeof winner.weekStartsMonday === "boolean"
-        ? winner.weekStartsMonday
-        : typeof loser.weekStartsMonday === "boolean"
-          ? loser.weekStartsMonday
-          : localState.weekStartsMonday,
-    darkMode: localState.darkMode,
-    dotTypes,
-    dayDots,
-    dotPositions,
-    dayNotes,
-    lastModified: new Date(
-      Math.max(getStateTimestamp(), new Date(remoteState.lastModified || 0).getTime())
-    ).toISOString()
-  };
 }
 
 function getCloudStateSnapshot(sourceState) {

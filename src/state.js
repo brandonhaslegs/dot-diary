@@ -1,4 +1,4 @@
-import { DEMO_MODE, DOT_NAME_MAX_LENGTH, STORAGE_KEY } from "./constants.js";
+import { DEMO_MODE, DOT_NAME_MAX_LENGTH } from "./constants.js";
 import { formatISODate, hash32, normalizeNote, shuffleArray, startOfMonth } from "./utils.js";
 
 export const defaultState = {
@@ -65,34 +65,12 @@ export function saveAndRender() {
     return;
   }
   state.lastModified = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   scheduleSyncFn();
   requestRender();
 }
 
 export function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return structuredClone(defaultState);
-    const parsed = JSON.parse(raw);
-    const yearFromMonthCursor = parsed.monthCursor ? new Date(parsed.monthCursor).getFullYear() : null;
-    return {
-      monthCursor: parsed.monthCursor || defaultState.monthCursor,
-      yearCursor: Number.isInteger(parsed.yearCursor) ? parsed.yearCursor : yearFromMonthCursor || defaultState.yearCursor,
-      weekStartsMonday: Boolean(parsed.weekStartsMonday),
-      hideSuggestions: Boolean(parsed.hideSuggestions),
-      showKeyboardHints:
-        typeof parsed.showKeyboardHints === "boolean" ? parsed.showKeyboardHints : defaultState.showKeyboardHints,
-      darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
-      lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : new Date().toISOString(),
-      dotTypes: normalizeDotTypes(parsed.dotTypes),
-      dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
-      dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
-      dayNotes: parsed.dayNotes && typeof parsed.dayNotes === "object" ? parsed.dayNotes : {}
-    };
-  } catch {
-    return structuredClone(defaultState);
-  }
+  return structuredClone(defaultState);
 }
 
 export function getDayDotIds(isoDate) {

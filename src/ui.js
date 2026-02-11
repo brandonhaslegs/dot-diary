@@ -1712,6 +1712,11 @@ export function showOnboardingIfNeeded() {
   if (!hasEnteredApp) return;
   if (DEMO_MODE) return;
   try {
+    if (localStorage.getItem(AUTH_STATE_KEY) !== "1") return;
+  } catch {
+    return;
+  }
+  try {
     if (localStorage.getItem(ONBOARDING_KEY) === "1") return;
     showOnboardingStep("intro");
     onboardingModal?.classList.remove("hidden");
@@ -1751,6 +1756,21 @@ export function renderOnboardingLists() {
 }
 
 export function enterApp({ skipOnboarding = false } = {}) {
+  if (!DEMO_MODE) {
+    try {
+      if (localStorage.getItem(AUTH_STATE_KEY) !== "1") {
+        showMarketingPage();
+        showLogin();
+        showToast("Sign in to access your diary.");
+        return false;
+      }
+    } catch {
+      showMarketingPage();
+      showLogin();
+      showToast("Sign in to access your diary.");
+      return false;
+    }
+  }
   hasEnteredApp = true;
   loginMode = false;
   try {
@@ -1771,6 +1791,7 @@ export function enterApp({ skipOnboarding = false } = {}) {
   } else {
     showOnboardingIfNeeded();
   }
+  return true;
 }
 
 export function startDotDrag(event, { isoDate, dotId, sticker, mode }) {
