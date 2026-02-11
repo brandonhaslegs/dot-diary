@@ -43,7 +43,6 @@ const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, 
 let syncUser = null;
 let syncTimer = null;
 let syncPollTimer = null;
-let pendingSyncToast = false;
 let lastSyncedAt = null;
 let syncInFlight = null;
 let syncInProgress = false;
@@ -176,7 +175,6 @@ export async function signOutSupabase() {
     stopSyncPolling();
     syncInFlight = null;
     syncInProgress = false;
-    pendingSyncToast = false;
     syncUser = null;
     lastSyncedAt = null;
     try {
@@ -228,7 +226,6 @@ export function updateAuthUI() {
 export function scheduleSync() {
   if (!supabase || !syncUser) return;
   if (syncTimer) clearTimeout(syncTimer);
-  pendingSyncToast = true;
   syncTimer = setTimeout(() => {
     syncToCloud();
   }, SYNC_DEBOUNCE_MS);
@@ -293,13 +290,8 @@ async function syncToCloud() {
     const { error } = await supabase.from("user_data").upsert(payload);
     if (error) {
       showToast("Could not sync to cloud.");
-      pendingSyncToast = false;
     } else {
       lastSyncedAt = new Date().toISOString();
-      if (pendingSyncToast) {
-        showToast("Synced.");
-        pendingSyncToast = false;
-      }
     }
   })();
   try {

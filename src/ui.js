@@ -1060,7 +1060,7 @@ export function openPopover(isoDate, x, y, contextMonthIso = null) {
   noteButton.textContent = getDayNote(isoDate) ? "Edit note" : "Add note";
   noteButton.addEventListener("click", () => {
     closePopover();
-    startNoteEdit(isoDate, contextMonthIso);
+    startNoteEdit(isoDate, contextMonthIso, "", true);
   });
   noteWrap.append(addDotTypeButton, noteButton);
   popover.appendChild(noteWrap);
@@ -1115,42 +1115,49 @@ export function hidePopoverScrim() {
   }, POPOVER_ANIMATION_MS);
 }
 
-export function startNoteEdit(isoDate, contextMonthIso = null, initialText = "") {
+export function startNoteEdit(isoDate, contextMonthIso = null, initialText = "", immediateFocus = false) {
   activeNoteEdit = isoDate;
   activeNoteEditMonthIso = contextMonthIso;
+  const applyInitialText = (editor) => {
+    if (!initialText) return;
+    editor.textContent = `${editor.textContent || ""}${initialText}`;
+  };
+  const focusEditor = (editor) => {
+    if (!editor) return false;
+    applyInitialText(editor);
+    editor.focus();
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection.addRange(range);
+    }
+    return true;
+  };
+  const findEditor = () => {
+    const scopedSelector = contextMonthIso
+      ? `[data-note-editor="${isoDate}"][data-note-month="${contextMonthIso}"]`
+      : null;
+    const visibleContainer = isMobileView() ? monthGrid : yearGrid;
+    const containerSelector = `[data-note-editor="${isoDate}"]`;
+    const fallbackSelector = `[data-note-editor="${isoDate}"]`;
+    return (
+      (scopedSelector && document.querySelector(scopedSelector)) ||
+      visibleContainer?.querySelector(containerSelector) ||
+      document.querySelector(fallbackSelector)
+    );
+  };
+
+  if (immediateFocus) {
+    render();
+    if (focusEditor(findEditor())) return;
+  }
+
   requestRender(() => {
     requestAnimationFrame(() => {
-      const scopedSelector = contextMonthIso
-        ? `[data-note-editor="${isoDate}"][data-note-month="${contextMonthIso}"]`
-        : null;
-      const visibleContainer = isMobileView() ? monthGrid : yearGrid;
-      const containerSelector = `[data-note-editor="${isoDate}"]`;
-      const fallbackSelector = `[data-note-editor="${isoDate}"]`;
-      const editor =
-        (scopedSelector && document.querySelector(scopedSelector)) ||
-        visibleContainer?.querySelector(containerSelector) ||
-        document.querySelector(fallbackSelector);
-      if (!editor) return;
-      editor.focus();
-      const selection = window.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
-        selection.addRange(range);
-      }
-      if (initialText) {
-        editor.textContent = `${editor.textContent || ""}${initialText}`;
-        const selectionAfterSeed = window.getSelection();
-        if (selectionAfterSeed) {
-          selectionAfterSeed.removeAllRanges();
-          const rangeAfterSeed = document.createRange();
-          rangeAfterSeed.selectNodeContents(editor);
-          rangeAfterSeed.collapse(false);
-          selectionAfterSeed.addRange(rangeAfterSeed);
-        }
-      }
+      focusEditor(findEditor());
     });
   });
 }
