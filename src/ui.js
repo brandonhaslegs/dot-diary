@@ -310,6 +310,21 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
   }
 }
 
+export function shiftYearBy(delta) {
+  if (isMobileView()) return;
+  const amount = Number(delta) || 0;
+  if (!amount) return;
+  const currentYear = new Date().getFullYear();
+  const nextYear = Math.min(currentYear, state.yearCursor + amount);
+  if (nextYear === state.yearCursor) return;
+  state.yearCursor = nextYear;
+  const monthDate = new Date(state.monthCursor);
+  monthDate.setFullYear(nextYear);
+  state.monthCursor = startOfMonth(monthDate).toISOString();
+  closePeriodMenu();
+  saveAndRender();
+}
+
 export function renderDiaryGrid() {
   if (isMobileView()) {
     const wasHidden = monthGrid.classList.contains("hidden");
@@ -1655,6 +1670,24 @@ export function handleGlobalKeyDown(event) {
     event.preventDefault();
     closePopover();
     openSettingsModal();
+    return;
+  }
+
+  const isDesktopYearView =
+    !isMobileView() &&
+    !appShell.classList.contains("hidden") &&
+    !yearGrid.classList.contains("hidden") &&
+    monthGrid.classList.contains("hidden");
+  const isYearArrowShortcut =
+    isPlainShortcutKey &&
+    !isEditableTarget &&
+    !isPeriodMenuOpen &&
+    !isSettingsOpen &&
+    !isDotPopoverOpen &&
+    (event.key === "ArrowLeft" || event.key === "ArrowRight");
+  if (isDesktopYearView && isYearArrowShortcut) {
+    event.preventDefault();
+    shiftYearBy(event.key === "ArrowRight" ? 1 : -1);
     return;
   }
 
