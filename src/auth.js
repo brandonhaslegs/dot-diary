@@ -262,10 +262,15 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
   const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime() || 0;
   const localTimestamp = getStateTimestamp() || 0;
   if (fromAuthBootstrap) {
-    setState(remoteState);
+    const shouldPreferLocalSettings = localTimestamp > remoteTimestamp;
+    const nextState = shouldPreferLocalSettings ? mergeSettingsFromLocal(remoteState, state) : remoteState;
+    setState(nextState);
     requestRender();
     lastSyncedAt = new Date().toISOString();
     updateAuthUI();
+    if (shouldPreferLocalSettings) {
+      await syncToCloud();
+    }
     return;
   }
   if (remoteTimestamp >= localTimestamp) {
@@ -348,4 +353,17 @@ function formatSyncTime(iso) {
 
 function getCloudStateSnapshot(sourceState) {
   return structuredClone(sourceState);
+}
+
+function mergeSettingsFromLocal(baseState, localState) {
+  return {
+    ...baseState,
+    weekStartsMonday: Boolean(localState.weekStartsMonday),
+    hideSuggestions: Boolean(localState.hideSuggestions),
+    showKeyboardHints:
+      typeof localState.showKeyboardHints === "boolean"
+        ? localState.showKeyboardHints
+        : baseState.showKeyboardHints,
+    darkMode: typeof localState.darkMode === "boolean" ? localState.darkMode : baseState.darkMode
+  };
 }

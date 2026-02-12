@@ -1,4 +1,4 @@
-import { DEMO_MODE, DOT_NAME_MAX_LENGTH } from "./constants.js";
+import { DEMO_MODE, DOT_NAME_MAX_LENGTH, STORAGE_KEY } from "./constants.js";
 import { formatISODate, hash32, normalizeNote, shuffleArray, startOfMonth } from "./utils.js";
 
 export const defaultState = {
@@ -65,12 +65,20 @@ export function saveAndRender() {
     return;
   }
   state.lastModified = new Date().toISOString();
+  persistStateToLocal(state);
   scheduleSyncFn();
   requestRender();
 }
 
 export function loadState() {
-  return structuredClone(defaultState);
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return structuredClone(defaultState);
+    const parsed = JSON.parse(raw);
+    return normalizeImportedState(parsed?.data ?? parsed);
+  } catch {
+    return structuredClone(defaultState);
+  }
 }
 
 export function getDayDotIds(isoDate) {
@@ -350,4 +358,12 @@ function normalizeDotTypeName(name) {
 
 export function getStateTimestamp() {
   return new Date(state.lastModified || 0).getTime();
+}
+
+function persistStateToLocal(sourceState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: sourceState }));
+  } catch {
+    // ignore storage errors
+  }
 }
