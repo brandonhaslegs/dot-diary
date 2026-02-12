@@ -340,7 +340,5 @@ function formatSyncTime(iso) {
 }
 
 function getCloudStateSnapshot(sourceState) {
-  const snapshot = structuredClone(sourceState);
-  delete snapshot.darkMode;
-  return snapshot;
+  return structuredClone(sourceState);
 }
