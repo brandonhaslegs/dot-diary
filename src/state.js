@@ -8,7 +8,7 @@ export const defaultState = {
   hideSuggestions: false,
   showKeyboardHints: true,
   darkMode: null,
-  lastModified: new Date().toISOString(),
+  lastModified: null,
   dotTypes: [],
   dayDots: {},
   dotPositions: {},
@@ -324,7 +324,7 @@ export function normalizeImportedState(parsed) {
     showKeyboardHints:
       typeof parsed.showKeyboardHints === "boolean" ? parsed.showKeyboardHints : defaultState.showKeyboardHints,
     darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
-    lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : new Date().toISOString(),
+    lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : defaultState.lastModified,
     dotTypes: normalizeDotTypes(parsed.dotTypes),
     dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
     dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},

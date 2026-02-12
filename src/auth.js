@@ -261,6 +261,13 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
   const remoteState = normalizeImportedState(data.data);
   const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime() || 0;
   const localTimestamp = getStateTimestamp() || 0;
+  if (fromAuthBootstrap) {
+    setState(remoteState);
+    requestRender();
+    lastSyncedAt = new Date().toISOString();
+    updateAuthUI();
+    return;
+  }
   if (remoteTimestamp >= localTimestamp) {
     setState(remoteState);
     requestRender();
