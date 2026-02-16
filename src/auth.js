@@ -261,26 +261,36 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
   const remoteState = normalizeImportedState(data.data);
   const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime() || 0;
   const localTimestamp = getStateTimestamp() || 0;
+  const preferLocalConflicts = localTimestamp >= remoteTimestamp;
+  const mergedState = mergeDiaryStates(state, remoteState, {
+    preferLocalSettings: preferLocalConflicts,
+    preferLocalConflicts
+  });
+  const localDiffersFromMerged = !areStatesEqual(state, mergedState);
+  const remoteDiffersFromMerged = !areStatesEqual(remoteState, mergedState);
+
   if (fromAuthBootstrap) {
-    const shouldPreferLocalSettings = localTimestamp > remoteTimestamp;
-    const nextState = shouldPreferLocalSettings ? mergeSettingsFromLocal(remoteState, state) : remoteState;
-    setState(nextState);
-    requestRender();
+    if (localDiffersFromMerged) {
+      setState(mergedState);
+      requestRender();
+    }
     lastSyncedAt = new Date().toISOString();
     updateAuthUI();
-    if (shouldPreferLocalSettings) {
+    if (remoteDiffersFromMerged) {
       await syncToCloud();
     }
     return;
   }
-  if (remoteTimestamp >= localTimestamp) {
-    setState(remoteState);
+
+  if (localDiffersFromMerged) {
+    setState(mergedState);
     requestRender();
-    lastSyncedAt = new Date().toISOString();
-    updateAuthUI();
-    return;
   }
-  await syncToCloud();
+  lastSyncedAt = new Date().toISOString();
+  updateAuthUI();
+  if (remoteDiffersFromMerged) {
+    await syncToCloud();
+  }
 }
 
 async function syncToCloud() {
@@ -366,4 +376,124 @@ function mergeSettingsFromLocal(baseState, localState) {
         : baseState.showKeyboardHints,
     darkMode: typeof localState.darkMode === "boolean" ? localState.darkMode : baseState.darkMode
   };
+}
+
+function mergeDiaryStates(localState, remoteState, { preferLocalSettings, preferLocalConflicts }) {
+  const preferredState = preferLocalConflicts ? localState : remoteState;
+  const fallbackState = preferLocalConflicts ? remoteState : localState;
+  const settingsMerged = preferLocalSettings
+    ? mergeSettingsFromLocal(remoteState, localState)
+    : mergeSettingsFromLocal(localState, remoteState);
+  const localTimestamp = new Date(localState.lastModified || 0).getTime() || 0;
+  const remoteTimestamp = new Date(remoteState.lastModified || 0).getTime() || 0;
+  const latestTimestamp = Math.max(localTimestamp, remoteTimestamp);
+
+  return {
+    ...settingsMerged,
+    monthCursor: preferredState.monthCursor || fallbackState.monthCursor,
+    yearCursor: Number.isInteger(preferredState.yearCursor)
+      ? preferredState.yearCursor
+      : fallbackState.yearCursor,
+    lastModified: latestTimestamp > 0 ? new Date(latestTimestamp).toISOString() : null,
+    dotTypes: mergeDotTypes(localState.dotTypes, remoteState.dotTypes, preferLocalConflicts),
+    dayDots: mergeDayDots(localState.dayDots, remoteState.dayDots, preferLocalConflicts),
+    dotPositions: mergeDotPositions(localState.dotPositions, remoteState.dotPositions, preferLocalConflicts),
+    dayNotes: mergeDayNotes(localState.dayNotes, remoteState.dayNotes, preferLocalConflicts)
+  };
+}
+
+function mergeDotTypes(localDotTypes, remoteDotTypes, preferLocalConflicts) {
+  const merged = [];
+  const indexes = new Map();
+  const primary = preferLocalConflicts ? localDotTypes || [] : remoteDotTypes || [];
+  const secondary = preferLocalConflicts ? remoteDotTypes || [] : localDotTypes || [];
+
+  const upsert = (dot, isPreferredSource) => {
+    if (!dot || typeof dot !== "object") return;
+    const key = getDotTypeKey(dot);
+    const existingIndex = indexes.get(key);
+    if (existingIndex == null) {
+      indexes.set(key, merged.length);
+      merged.push(dot);
+      return;
+    }
+    if (isPreferredSource) {
+      merged[existingIndex] = dot;
+    }
+  };
+
+  primary.forEach((dot) => upsert(dot, true));
+  secondary.forEach((dot) => upsert(dot, false));
+  return merged;
+}
+
+function getDotTypeKey(dot) {
+  if (typeof dot.id === "string" && dot.id.length > 0) return `id:${dot.id}`;
+  const name = typeof dot.name === "string" ? dot.name : "";
+  const color = typeof dot.color === "string" ? dot.color : "";
+  return `anon:${name}|${color}`;
+}
+
+function mergeDayDots(localDayDots, remoteDayDots, preferLocalConflicts) {
+  const merged = {};
+  const allDates = new Set([...Object.keys(remoteDayDots || {}), ...Object.keys(localDayDots || {})]);
+  for (const isoDate of allDates) {
+    const primary = preferLocalConflicts ? localDayDots?.[isoDate] : remoteDayDots?.[isoDate];
+    const secondary = preferLocalConflicts ? remoteDayDots?.[isoDate] : localDayDots?.[isoDate];
+    const dotIds = dedupeDotIds([...(primary || []), ...(secondary || [])]);
+    if (dotIds.length > 0) {
+      merged[isoDate] = dotIds;
+    }
+  }
+  return merged;
+}
+
+function dedupeDotIds(dotIds) {
+  const seen = new Set();
+  const deduped = [];
+  dotIds.forEach((dotId) => {
+    if (typeof dotId !== "string" || seen.has(dotId)) return;
+    seen.add(dotId);
+    deduped.push(dotId);
+  });
+  return deduped;
+}
+
+function mergeDotPositions(localPositions, remotePositions, preferLocalConflicts) {
+  const merged = {};
+  const allDates = new Set([...Object.keys(remotePositions || {}), ...Object.keys(localPositions || {})]);
+  for (const isoDate of allDates) {
+    const localDay = localPositions?.[isoDate] && typeof localPositions[isoDate] === "object" ? localPositions[isoDate] : {};
+    const remoteDay =
+      remotePositions?.[isoDate] && typeof remotePositions[isoDate] === "object" ? remotePositions[isoDate] : {};
+    const nextDay = preferLocalConflicts ? { ...remoteDay, ...localDay } : { ...localDay, ...remoteDay };
+    if (Object.keys(nextDay).length > 0) {
+      merged[isoDate] = nextDay;
+    }
+  }
+  return merged;
+}
+
+function mergeDayNotes(localNotes, remoteNotes, preferLocalConflicts) {
+  const merged = {};
+  const allDates = new Set([...Object.keys(remoteNotes || {}), ...Object.keys(localNotes || {})]);
+  for (const isoDate of allDates) {
+    const localNote = typeof localNotes?.[isoDate] === "string" ? localNotes[isoDate] : "";
+    const remoteNote = typeof remoteNotes?.[isoDate] === "string" ? remoteNotes[isoDate] : "";
+    const primary = preferLocalConflicts ? localNote : remoteNote;
+    const secondary = preferLocalConflicts ? remoteNote : localNote;
+    const nextNote = primary || secondary;
+    if (nextNote) {
+      merged[isoDate] = nextNote;
+    }
+  }
+  return merged;
+}
+
+function areStatesEqual(a, b) {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
 }
