@@ -77,10 +77,12 @@ import {
 } from "./auth.js";
 import { showToast } from "./toast.js";
 
+// Wire cross-module callbacks so `state` can request UI work and cloud sync.
 registerRender(render);
 registerScheduleSync(scheduleSync);
 registerAuthUpdater(updateAuthUI);
 
+// Re-render on window resize unless the user is actively typing in a note editor.
 window.addEventListener("resize", () => {
   const active = document.activeElement;
   if (active instanceof HTMLElement && active.classList.contains("note-editor")) {
@@ -89,6 +91,7 @@ window.addEventListener("resize", () => {
   render();
 });
 
+// Marketing/login navigation.
 enterAppButton?.addEventListener("click", () => enterApp());
 openLoginButton?.addEventListener("click", showLogin);
 loginBackButton?.addEventListener("click", showMarketingHero);
@@ -107,6 +110,7 @@ openSettings?.addEventListener("click", () => {
 todayButton?.addEventListener("click", scrollToToday);
 resetOnboardingButton?.addEventListener("click", handleResetOnboarding);
 
+// Onboarding step controls.
 onboardingNextButton?.addEventListener("click", () => showOnboardingStep("dots"));
 onboardingBackButton?.addEventListener("click", () => showOnboardingStep("intro"));
 onboardingNextDotsButton?.addEventListener("click", () => showOnboardingStep("sync"));
@@ -116,6 +120,7 @@ onboardingSkipIntroButton?.addEventListener("click", completeOnboarding);
 onboardingSkipButton?.addEventListener("click", completeOnboarding);
 onboardingSendButton?.addEventListener("click", () => handleMagicLink(onboardingEmailInput?.value));
 
+// Period picker open/close and related dismiss behavior.
 periodPickerToggle?.addEventListener("click", (event) => {
   event.stopPropagation();
   if (periodPickerMenu.classList.contains("hidden")) {
@@ -135,6 +140,7 @@ periodPickerMenu?.addEventListener("scroll", handlePeriodPickerScroll);
 deleteCancel?.addEventListener("click", closeDeleteModal);
 deleteConfirm?.addEventListener("click", confirmDeleteDotType);
 
+// Persist settings toggles and give user feedback.
 weekStartMondayInput?.addEventListener("change", () => {
   state.weekStartsMonday = weekStartMondayInput.checked;
   saveAndRender();
@@ -164,6 +170,7 @@ colorModeDarkButton?.addEventListener("click", () => {
   showToast("Dark mode on.");
 });
 
+// Export/import controls.
 downloadDataButton?.addEventListener("click", () => {
   downloadDataExport();
 });
@@ -175,6 +182,7 @@ uploadDataInput?.addEventListener("change", handleDataImport);
 document.addEventListener("pointerdown", handleGlobalPointerDown);
 document.addEventListener("keydown", handleGlobalKeyDown);
 
+// Initial render and first-view routing.
 render();
 try {
   if (!DEMO_MODE) {
@@ -193,6 +201,7 @@ try {
 }
 showOnboardingIfNeeded();
 
+// Startup services and background listeners.
 initSupabaseAuth();
 renderMarketingCalendar();
 setupDevAutoReload();

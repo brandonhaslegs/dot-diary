@@ -16,12 +16,13 @@ import {
 } from "./dom.js";
 import {
   defaultState,
-  getStateTimestamp,
   normalizeImportedState,
   requestRender,
   setState,
   state
 } from "./state.js";
+import { startOfMonth } from "./utils.js";
+import { areStatesEqual, pickLatestCloudRow } from "./sync-core.mjs";
 import {
   closeDeleteModal,
   closePopover,
@@ -48,9 +49,11 @@ let syncInFlight = null;
 let syncInProgress = false;
 let signOutInProgress = false;
 let authInitStarted = false;
+let lastSyncError = "";
 const SYNC_DEBOUNCE_MS = 250;
 const SYNC_POLL_MS = 5000;
 
+// initSupabaseAuth: Initializes Supabase auth, restores sessions, and wires auth listeners.
 export async function initSupabaseAuth() {
   if (authInitStarted) return;
   authInitStarted = true;
@@ -58,6 +61,16 @@ export async function initSupabaseAuth() {
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const accessToken = hashParams.get("access_token");
   const refreshToken = hashParams.get("refresh_token");
+  const hadMagicLinkTokens = Boolean(accessToken && refreshToken);
+  const shouldFocusTodayOnEntry =
+    hadMagicLinkTokens ||
+    (() => {
+      try {
+        return sessionStorage.getItem(AUTH_INTENT_KEY) === "1";
+      } catch {
+        return false;
+      }
+    })();
   if (accessToken && refreshToken) {
     try {
       await supabase.auth.setSession({
@@ -77,18 +90,24 @@ export async function initSupabaseAuth() {
   }
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
-  if (!getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden")) {
+  const enteredFromMarketing = !getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden");
+  if (enteredFromMarketing) {
     enterApp({ skipOnboarding: true });
   }
   updateAuthUI();
   if (syncUser) {
     await loadFromCloud({ fromAuthBootstrap: true });
+    if (enteredFromMarketing && shouldFocusTodayOnEntry) {
+      focusPeriodToToday();
+      clearAuthIntent();
+    }
     startSyncPolling();
   }
   supabase.auth.onAuthStateChange(async (_event, session) => {
     const wasSignedIn = Boolean(syncUser);
     syncUser = session?.user || null;
-    if (!getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden")) {
+    const enteredFromMarketingNow = !getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden");
+    if (enteredFromMarketingNow) {
       enterApp({ skipOnboarding: true });
     }
     try {
@@ -103,8 +122,13 @@ export async function initSupabaseAuth() {
     updateAuthUI();
     if (syncUser) {
       await loadFromCloud({ fromAuthBootstrap: !wasSignedIn });
+      if (enteredFromMarketingNow && shouldFocusTodayOnEntry) {
+        focusPeriodToToday();
+        clearAuthIntent();
+      }
       startSyncPolling();
     } else {
+      lastSyncError = "";
       stopSyncPolling();
       setState(structuredClone(defaultState));
       requestRender();
@@ -115,6 +139,22 @@ export async function initSupabaseAuth() {
   document.addEventListener("visibilitychange", handleVisibilitySync);
 }
 
+function focusPeriodToToday() {
+  const todayMonth = startOfMonth(new Date());
+  state.monthCursor = todayMonth.toISOString();
+  state.yearCursor = todayMonth.getFullYear();
+  requestRender();
+}
+
+function clearAuthIntent() {
+  try {
+    sessionStorage.removeItem(AUTH_INTENT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+// handleMagicLink: Requests a magic-link email sign-in and updates button feedback states.
 export async function handleMagicLink(overrideEmail, sourceButton) {
   if (!supabase) return;
   const email = overrideEmail?.trim() || authEmailInput?.value?.trim();
@@ -160,6 +200,7 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
   }
 }
 
+// signOutSupabase: Signs the current user out and resets local app state to logged-out defaults.
 export async function signOutSupabase() {
   if (signOutInProgress) return;
   signOutInProgress = true;
@@ -183,6 +224,7 @@ export async function signOutSupabase() {
       syncInProgress = false;
       syncUser = null;
       lastSyncedAt = null;
+      lastSyncError = "";
       try {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(ONBOARDING_KEY);
@@ -206,6 +248,7 @@ export async function signOutSupabase() {
   }
 }
 
+// updateAuthUI: Updates auth-related labels, buttons, and sync status text.
 export function updateAuthUI() {
   if (!authStatus || !authSignOutButton) return;
   if (!supabase) {
@@ -222,16 +265,21 @@ export function updateAuthUI() {
     if (authRow) authRow.classList.add("hidden");
     if (syncStatus) {
       syncStatus.textContent = formatSyncStatus();
+      syncStatus.classList.toggle("muted", !lastSyncError);
     }
   } else {
     authStatus.textContent = "Sign in to store this diary in the cloud.";
     authStatus.classList.add("muted");
     authSignOutButton.classList.add("hidden");
     if (authRow) authRow.classList.remove("hidden");
-    if (syncStatus) syncStatus.textContent = "";
+    if (syncStatus) {
+      syncStatus.textContent = "";
+      syncStatus.classList.add("muted");
+    }
   }
 }
 
+// scheduleSync: Handles schedule sync.
 export function scheduleSync() {
   if (!supabase || !syncUser) return false;
   if (syncTimer) clearTimeout(syncTimer);
@@ -243,54 +291,41 @@ export function scheduleSync() {
 
 async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } = {}) {
   if (!supabase || !syncUser) return;
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("user_data")
     .select("data, updated_at")
     .eq("user_id", syncUser.id)
-    .maybeSingle();
+    .order("updated_at", { ascending: false })
+    .limit(25);
   if (error) {
-    if (!silentError) showToast("Cloud sync failed.");
+    // Fallback for schemas that do not expose `updated_at`.
+    const fallback = await supabase.from("user_data").select("data").eq("user_id", syncUser.id).limit(200);
+    data = fallback.data;
+    error = fallback.error;
+  }
+  if (error) {
+    lastSyncError = error.message || "Cloud read failed.";
+    if (!silentError) showToast(`Cloud sync failed: ${lastSyncError}`);
+    updateAuthUI();
     return;
   }
-  if (!data?.data) {
-    // Cloud-only mode: initialize row from current in-memory state once.
+  const latest = pickLatestCloudRow(data);
+  if (!latest?.data) {
+    // Initialize cloud row once if this account has no cloud data yet.
     await syncToCloud();
     if (!fromAuthBootstrap) showToast("Cloud data initialized.");
     return;
   }
-  const remoteState = normalizeImportedState(data.data);
-  const remoteTimestamp = new Date(data.updated_at || remoteState.lastModified || 0).getTime() || 0;
-  const localTimestamp = getStateTimestamp() || 0;
-  const preferLocalConflicts = localTimestamp >= remoteTimestamp;
-  const mergedState = mergeDiaryStates(state, remoteState, {
-    preferLocalSettings: preferLocalConflicts,
-    preferLocalConflicts
-  });
-  const localDiffersFromMerged = !areStatesEqual(state, mergedState);
-  const remoteDiffersFromMerged = !areStatesEqual(remoteState, mergedState);
-
-  if (fromAuthBootstrap) {
-    if (localDiffersFromMerged) {
-      setState(mergedState);
-      requestRender();
-    }
-    lastSyncedAt = new Date().toISOString();
-    updateAuthUI();
-    if (remoteDiffersFromMerged) {
-      await syncToCloud();
-    }
-    return;
-  }
-
-  if (localDiffersFromMerged) {
-    setState(mergedState);
+  lastSyncError = "";
+  const remoteState = normalizeImportedState(latest.data);
+  const localDiffersFromRemote = !areStatesEqual(state, remoteState);
+  if (localDiffersFromRemote) {
+    // Cloud-authoritative: never merge signed-in diary data with local cached diary data.
+    setState(remoteState);
     requestRender();
   }
   lastSyncedAt = new Date().toISOString();
   updateAuthUI();
-  if (remoteDiffersFromMerged) {
-    await syncToCloud();
-  }
 }
 
 async function syncToCloud() {
@@ -298,16 +333,54 @@ async function syncToCloud() {
   if (syncInFlight) return syncInFlight;
   syncInProgress = true;
   updateAuthUI();
-  const payload = {
+  const snapshot = getCloudStateSnapshot(state);
+  const updatedAt = snapshot.lastModified || new Date().toISOString();
+  const payloadWithUpdatedAt = {
     user_id: syncUser.id,
-    data: getCloudStateSnapshot(state),
-    updated_at: new Date().toISOString()
+    data: snapshot,
+    updated_at: updatedAt
+  };
+  const payloadWithoutUpdatedAt = {
+    user_id: syncUser.id,
+    data: snapshot
   };
   syncInFlight = (async () => {
-    const { error } = await supabase.from("user_data").upsert(payload);
-    if (error) {
-      showToast("Could not sync to cloud.");
+    let writeError = null;
+    let result = await supabase.from("user_data").upsert(payloadWithUpdatedAt, { onConflict: "user_id" });
+    writeError = result.error;
+
+    if (writeError) {
+      result = await supabase.from("user_data").upsert(payloadWithoutUpdatedAt, { onConflict: "user_id" });
+      writeError = result.error;
+    }
+    if (writeError) {
+      // Legacy fallback: update all rows for this user; insert if none exist.
+      result = await supabase.from("user_data").update({ data: snapshot, updated_at: updatedAt }).eq("user_id", syncUser.id);
+      writeError = result.error;
+    }
+    if (writeError) {
+      result = await supabase.from("user_data").update({ data: snapshot }).eq("user_id", syncUser.id);
+      writeError = result.error;
+    }
+    if (!writeError) {
+      const existingRows = await supabase.from("user_data").select("user_id").eq("user_id", syncUser.id).limit(1);
+      if (existingRows.error) {
+        writeError = existingRows.error;
+      } else if (!Array.isArray(existingRows.data) || existingRows.data.length === 0) {
+        result = await supabase.from("user_data").insert(payloadWithUpdatedAt);
+        writeError = result.error;
+        if (writeError) {
+          result = await supabase.from("user_data").insert(payloadWithoutUpdatedAt);
+          writeError = result.error;
+        }
+      }
+    }
+
+    if (writeError) {
+      lastSyncError = writeError.message || "Cloud write failed.";
+      showToast(`Could not sync to cloud: ${lastSyncError}`);
     } else {
+      lastSyncError = "";
       lastSyncedAt = new Date().toISOString();
     }
   })();
@@ -345,6 +418,7 @@ function getMagicLinkRedirectTo() {
 }
 
 function formatSyncStatus() {
+  if (lastSyncError) return `Sync error: ${lastSyncError}`;
   return lastSyncedAt ? `Saved to cloud ${formatSyncTime(lastSyncedAt)}.` : "Signed in. Saving changes to cloud.";
 }
 function formatSyncTime(iso) {
@@ -363,137 +437,4 @@ function formatSyncTime(iso) {
 
 function getCloudStateSnapshot(sourceState) {
   return structuredClone(sourceState);
-}
-
-function mergeSettingsFromLocal(baseState, localState) {
-  return {
-    ...baseState,
-    weekStartsMonday: Boolean(localState.weekStartsMonday),
-    hideSuggestions: Boolean(localState.hideSuggestions),
-    showKeyboardHints:
-      typeof localState.showKeyboardHints === "boolean"
-        ? localState.showKeyboardHints
-        : baseState.showKeyboardHints,
-    darkMode: typeof localState.darkMode === "boolean" ? localState.darkMode : baseState.darkMode
-  };
-}
-
-function mergeDiaryStates(localState, remoteState, { preferLocalSettings, preferLocalConflicts }) {
-  const preferredState = preferLocalConflicts ? localState : remoteState;
-  const fallbackState = preferLocalConflicts ? remoteState : localState;
-  const settingsMerged = preferLocalSettings
-    ? mergeSettingsFromLocal(remoteState, localState)
-    : mergeSettingsFromLocal(localState, remoteState);
-  const localTimestamp = new Date(localState.lastModified || 0).getTime() || 0;
-  const remoteTimestamp = new Date(remoteState.lastModified || 0).getTime() || 0;
-  const latestTimestamp = Math.max(localTimestamp, remoteTimestamp);
-
-  return {
-    ...settingsMerged,
-    monthCursor: preferredState.monthCursor || fallbackState.monthCursor,
-    yearCursor: Number.isInteger(preferredState.yearCursor)
-      ? preferredState.yearCursor
-      : fallbackState.yearCursor,
-    lastModified: latestTimestamp > 0 ? new Date(latestTimestamp).toISOString() : null,
-    dotTypes: mergeDotTypes(localState.dotTypes, remoteState.dotTypes, preferLocalConflicts),
-    dayDots: mergeDayDots(localState.dayDots, remoteState.dayDots, preferLocalConflicts),
-    dotPositions: mergeDotPositions(localState.dotPositions, remoteState.dotPositions, preferLocalConflicts),
-    dayNotes: mergeDayNotes(localState.dayNotes, remoteState.dayNotes, preferLocalConflicts)
-  };
-}
-
-function mergeDotTypes(localDotTypes, remoteDotTypes, preferLocalConflicts) {
-  const merged = [];
-  const indexes = new Map();
-  const primary = preferLocalConflicts ? localDotTypes || [] : remoteDotTypes || [];
-  const secondary = preferLocalConflicts ? remoteDotTypes || [] : localDotTypes || [];
-
-  const upsert = (dot, isPreferredSource) => {
-    if (!dot || typeof dot !== "object") return;
-    const key = getDotTypeKey(dot);
-    const existingIndex = indexes.get(key);
-    if (existingIndex == null) {
-      indexes.set(key, merged.length);
-      merged.push(dot);
-      return;
-    }
-    if (isPreferredSource) {
-      merged[existingIndex] = dot;
-    }
-  };
-
-  primary.forEach((dot) => upsert(dot, true));
-  secondary.forEach((dot) => upsert(dot, false));
-  return merged;
-}
-
-function getDotTypeKey(dot) {
-  if (typeof dot.id === "string" && dot.id.length > 0) return `id:${dot.id}`;
-  const name = typeof dot.name === "string" ? dot.name : "";
-  const color = typeof dot.color === "string" ? dot.color : "";
-  return `anon:${name}|${color}`;
-}
-
-function mergeDayDots(localDayDots, remoteDayDots, preferLocalConflicts) {
-  const merged = {};
-  const allDates = new Set([...Object.keys(remoteDayDots || {}), ...Object.keys(localDayDots || {})]);
-  for (const isoDate of allDates) {
-    const primary = preferLocalConflicts ? localDayDots?.[isoDate] : remoteDayDots?.[isoDate];
-    const secondary = preferLocalConflicts ? remoteDayDots?.[isoDate] : localDayDots?.[isoDate];
-    const dotIds = dedupeDotIds([...(primary || []), ...(secondary || [])]);
-    if (dotIds.length > 0) {
-      merged[isoDate] = dotIds;
-    }
-  }
-  return merged;
-}
-
-function dedupeDotIds(dotIds) {
-  const seen = new Set();
-  const deduped = [];
-  dotIds.forEach((dotId) => {
-    if (typeof dotId !== "string" || seen.has(dotId)) return;
-    seen.add(dotId);
-    deduped.push(dotId);
-  });
-  return deduped;
-}
-
-function mergeDotPositions(localPositions, remotePositions, preferLocalConflicts) {
-  const merged = {};
-  const allDates = new Set([...Object.keys(remotePositions || {}), ...Object.keys(localPositions || {})]);
-  for (const isoDate of allDates) {
-    const localDay = localPositions?.[isoDate] && typeof localPositions[isoDate] === "object" ? localPositions[isoDate] : {};
-    const remoteDay =
-      remotePositions?.[isoDate] && typeof remotePositions[isoDate] === "object" ? remotePositions[isoDate] : {};
-    const nextDay = preferLocalConflicts ? { ...remoteDay, ...localDay } : { ...localDay, ...remoteDay };
-    if (Object.keys(nextDay).length > 0) {
-      merged[isoDate] = nextDay;
-    }
-  }
-  return merged;
-}
-
-function mergeDayNotes(localNotes, remoteNotes, preferLocalConflicts) {
-  const merged = {};
-  const allDates = new Set([...Object.keys(remoteNotes || {}), ...Object.keys(localNotes || {})]);
-  for (const isoDate of allDates) {
-    const localNote = typeof localNotes?.[isoDate] === "string" ? localNotes[isoDate] : "";
-    const remoteNote = typeof remoteNotes?.[isoDate] === "string" ? remoteNotes[isoDate] : "";
-    const primary = preferLocalConflicts ? localNote : remoteNote;
-    const secondary = preferLocalConflicts ? remoteNote : localNote;
-    const nextNote = primary || secondary;
-    if (nextNote) {
-      merged[isoDate] = nextNote;
-    }
-  }
-  return merged;
-}
-
-function areStatesEqual(a, b) {
-  try {
-    return JSON.stringify(a) === JSON.stringify(b);
-  } catch {
-    return false;
-  }
 }

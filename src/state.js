@@ -20,10 +20,12 @@ let renderQueued = false;
 let renderCallbacks = [];
 let scheduleSyncFn = () => {};
 
+// registerRender: Registers the UI render function used by state updates.
 export function registerRender(fn) {
   renderFn = fn;
 }
 
+// requestRender: Queues a safe render on the next animation frame.
 export function requestRender(callback) {
   if (typeof callback === "function") {
     renderCallbacks.push(callback);
@@ -49,16 +51,19 @@ export function requestRender(callback) {
   requestAnimationFrame(flushRender);
 }
 
+// registerScheduleSync: Registers the cloud-sync scheduler callback used after state changes.
 export function registerScheduleSync(fn) {
   scheduleSyncFn = fn;
 }
 
 export let state = DEMO_MODE ? createDemoState() : loadState();
 
+// setState: Sets state.
 export function setState(next) {
   state = next;
 }
 
+// saveAndRender: Persists state, schedules sync, and re-renders.
 export function saveAndRender() {
   if (DEMO_MODE) {
     requestRender();
@@ -70,6 +75,7 @@ export function saveAndRender() {
   requestRender();
 }
 
+// loadState: Loads persisted state from localStorage and normalizes its shape.
 export function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -81,14 +87,17 @@ export function loadState() {
   }
 }
 
+// getDayDotIds: Returns day dot ids.
 export function getDayDotIds(isoDate) {
   return state.dayDots[isoDate] || [];
 }
 
+// getDayNote: Returns day note.
 export function getDayNote(isoDate) {
   return state.dayNotes[isoDate] || "";
 }
 
+// setDayNote: Sets day note.
 export function setDayNote(isoDate, rawValue) {
   const note = normalizeNote(rawValue);
   if (!note) {
@@ -99,6 +108,7 @@ export function setDayNote(isoDate, rawValue) {
   saveAndRender();
 }
 
+// createDemoState: Creates demo state.
 export function createDemoState() {
   const now = new Date();
   const year = now.getFullYear();
@@ -260,6 +270,7 @@ export function createDemoState() {
   };
 }
 
+// stickerPosition: Handles sticker position.
 export function stickerPosition(isoDate, dotId) {
   const h1 = hash32(`${isoDate}|${dotId}|x`);
   const h2 = hash32(`${isoDate}|${dotId}|y`);
@@ -272,6 +283,7 @@ export function stickerPosition(isoDate, dotId) {
   };
 }
 
+// stickerPositionMonth: Handles sticker position month.
 export function stickerPositionMonth(isoDate, dotId) {
   const h1 = hash32(`${isoDate}|${dotId}|x|m`);
   const h2 = hash32(`${isoDate}|${dotId}|y|m`);
@@ -283,6 +295,7 @@ export function stickerPositionMonth(isoDate, dotId) {
   };
 }
 
+// getDemoDotPosition: Returns demo dot position.
 export function getDemoDotPosition(demoState, isoDate, dotId) {
   const stored = demoState.dotPositions?.[isoDate]?.[dotId];
   const base = stickerPosition(isoDate, dotId);
@@ -294,6 +307,7 @@ export function getDemoDotPosition(demoState, isoDate, dotId) {
   };
 }
 
+// getDotPosition: Returns dot position.
 export function getDotPosition(isoDate, dotId, mode) {
   const stored = state.dotPositions?.[isoDate]?.[dotId];
   const base = mode === "month" ? stickerPositionMonth(isoDate, dotId) : stickerPosition(isoDate, dotId);
@@ -305,11 +319,13 @@ export function getDotPosition(isoDate, dotId, mode) {
   };
 }
 
+// saveDotPosition: Saves dot position.
 export function saveDotPosition(isoDate, dotId, left, top) {
   if (!state.dotPositions[isoDate]) state.dotPositions[isoDate] = {};
   state.dotPositions[isoDate][dotId] = { left, top };
 }
 
+// clearDotPosition: Clears dot position.
 export function clearDotPosition(isoDate, dotId) {
   const dayPositions = state.dotPositions[isoDate];
   if (!dayPositions) return;
@@ -319,6 +335,7 @@ export function clearDotPosition(isoDate, dotId) {
   }
 }
 
+// normalizeImportedState: Normalizes imported state.
 export function normalizeImportedState(parsed) {
   if (!parsed || typeof parsed !== "object") {
     return structuredClone(defaultState);
@@ -356,6 +373,7 @@ function normalizeDotTypeName(name) {
     .slice(0, DOT_NAME_MAX_LENGTH);
 }
 
+// getStateTimestamp: Returns state timestamp.
 export function getStateTimestamp() {
   return new Date(state.lastModified || 0).getTime();
 }

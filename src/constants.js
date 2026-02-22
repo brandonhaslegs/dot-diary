@@ -1,10 +1,17 @@
+// Local persistence keys used across settings, onboarding, and app routing state.
 export const STORAGE_KEY = "dot-diary-v1";
 export const ONBOARDING_KEY = "dot-diary-onboarding-v1";
 export const APP_ENTRY_KEY = "dot-diary-entered-app";
 export const VIEW_MODE_KEY = "dot-diary-view-mode";
+
+// Optional demo dataset toggle via URL query string (`?demo=1`).
 export const DEMO_MODE = new URLSearchParams(window.location.search).get("demo") === "1";
+
+// Supabase project configuration for passwordless auth + cloud sync.
 export const SUPABASE_URL = "https://onmrtxwqwyqyiicweffy.supabase.co";
 export const SUPABASE_ANON_KEY = "sb_publishable_E9ZgVOUfB3EWjP1Njm5PJQ_c-maFufE";
+
+// Starter suggestions shown when users create their first dot types.
 export const SUGGESTED_DOT_TYPES = [
 	{ name: "Reading", color: "#FF7A59" },
 	{ name: "Cooking", color: "#00A676" },
@@ -36,15 +43,23 @@ export const SUGGESTED_DOT_TYPES = [
   { name: "Meat", color: "#8D5524" },
   { name: "Exploring", color: "#6C5CE7" }
 ];
+
+// Incremental loading/timing constants used by period picker and modal animations.
 export const YEAR_BATCH_SIZE = 10;
 export const MOBILE_MONTH_BATCH_SIZE = 12;
 export const DOT_NAME_MAX_LENGTH = 24;
 export const MODAL_ANIMATION_MS = 280;
 export const POPOVER_ANIMATION_MS = 180;
+
+// Auth and sync local flags.
 export const AUTH_STATE_KEY = "dot-diary-authenticated";
 export const AUTH_INTENT_KEY = "dot-diary-auth-intent";
 export const SYNC_DIRTY_KEY = "dot-diary-sync-dirty";
+
+// Development hostnames that enable local-only behaviors (auto reload checks).
 export const DEV_HOSTS = new Set(["localhost", "127.0.0.1"]);
+
+// Shared color list used when auto-picking colors for new dot types.
 export const COLOR_PALETTE = [
   "#FF0000",
   "#FFC700",

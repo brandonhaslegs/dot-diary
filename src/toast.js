@@ -3,6 +3,7 @@ import { toast } from "./dom.js";
 let toastTimer = null;
 let toastHideTimer = null;
 
+// showToast: Shows a transient toast message with enter/exit animation timing.
 export function showToast(message) {
   if (!toast) return;
   if (toastTimer) {

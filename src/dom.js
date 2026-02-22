@@ -1,3 +1,5 @@
+// Centralized DOM lookups so modules share the same element references.
+// Each export corresponds to a single element in `index.html`.
 export const yearGrid = document.querySelector("#year-grid");
 export const monthGrid = document.querySelector("#month-grid");
 export const dotTypeList = document.querySelector("#dot-type-list");
