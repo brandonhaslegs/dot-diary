@@ -97,7 +97,7 @@ export async function initSupabaseAuth() {
   updateAuthUI();
   if (syncUser) {
     await loadFromCloud({ fromAuthBootstrap: true });
-    if (enteredFromMarketing && shouldFocusTodayOnEntry) {
+    if (shouldFocusTodayOnEntry) {
       focusPeriodToToday();
       clearAuthIntent();
     }
@@ -122,7 +122,7 @@ export async function initSupabaseAuth() {
     updateAuthUI();
     if (syncUser) {
       await loadFromCloud({ fromAuthBootstrap: !wasSignedIn });
-      if (enteredFromMarketingNow && shouldFocusTodayOnEntry) {
+      if (!wasSignedIn && shouldFocusTodayOnEntry) {
         focusPeriodToToday();
         clearAuthIntent();
       }

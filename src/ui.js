@@ -606,9 +606,12 @@ export function renderMonthGrid() {
     );
   }
 
-  const initialAnchorIso = !hasInitializedMobileMonthScroll ? selectedMonthDate.toISOString() : null;
-  const targetAnchorIso = pendingMobileMonthAnchorIso || initialAnchorIso;
-  lastObservedMobileMonthIso = targetAnchorIso || selectedMonthDate.toISOString();
+  const selectedMonthIso = selectedMonthDate.toISOString();
+  const initialAnchorIso = !hasInitializedMobileMonthScroll ? selectedMonthIso : null;
+  const stateChangeAnchorIso =
+    hasInitializedMobileMonthScroll && selectedMonthIso !== lastObservedMobileMonthIso ? selectedMonthIso : null;
+  const targetAnchorIso = pendingMobileMonthAnchorIso || stateChangeAnchorIso || initialAnchorIso;
+  lastObservedMobileMonthIso = targetAnchorIso || selectedMonthIso;
   if (targetAnchorIso) {
     requestAnimationFrame(() => {
       const target = monthGrid.querySelector(`[data-month-iso="${targetAnchorIso}"]`);
