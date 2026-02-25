@@ -3,6 +3,7 @@
   --foreground: #000000;
   --destructive: #ff0000;
   --on-destructive: #ffffff;
+  --feature-spacing: 28px;
   --bg: var(--background);
   --panel: var(--background);
   --ink: var(--foreground);
@@ -366,7 +367,8 @@ textarea {
 .marketing-sections {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: var(--feature-spacing);
+  margin-block: calc(var(--feature-spacing) / 2);
 }
 
 .feature-divider {
@@ -383,6 +385,10 @@ textarea {
   margin: 0 0 10px 0;
   font-size: 18px;
   line-height: 1.2;
+}
+
+.paid-list .feature-dot {
+  background: var(--foreground) !important;
 }
 
 .marketing-card .coming-soon-badge {
@@ -481,24 +487,11 @@ textarea {
   gap: 10px;
 }
 
-.marketing-actions + .marketing-sections {
-  margin-top: 6px;
-}
-
 .how-it-works {
   border: 2px solid var(--line);
   border-radius: 24px;
   padding: 16px 18px;
   background: var(--card);
-}
-
-.marketing-sections + .how-it-works {
-  margin-top: 12px;
-}
-
-.how-it-works h3 {
-  margin: 0 0 8px 0;
-  font-size: 20px;
 }
 
 .how-vignettes {
@@ -513,7 +506,7 @@ textarea {
 }
 
 .how-vignette p {
-  margin: 0;
+  margin: 0 0 4px 0;
   font-size: 14px;
   line-height: 1.25;
 }
@@ -687,23 +680,23 @@ textarea {
   background-image:
     radial-gradient(
       circle at var(--d1x) var(--d1y),
-      var(--c1) 0 1.7px,
-      transparent 2px
+      var(--c1) 0 2.1px,
+      transparent 2.4px
     ),
     radial-gradient(
       circle at var(--d2x) var(--d2y),
-      var(--c2) 0 1.7px,
-      transparent 2px
+      var(--c2) 0 2.1px,
+      transparent 2.4px
     ),
     radial-gradient(
       circle at var(--d3x) var(--d3y),
-      var(--c3) 0 1.7px,
-      transparent 2px
+      var(--c3) 0 2.1px,
+      transparent 2.4px
     ),
     radial-gradient(
       circle at var(--d4x) var(--d4y),
-      var(--c4) 0 1.7px,
-      transparent 2px
+      var(--c4) 0 2.1px,
+      transparent 2.4px
     );
 }
 
@@ -3070,7 +3063,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     display: block;
     border: 0;
     border-top: 4px dotted var(--line);
-    margin: 20px -24px;
+    margin: var(--feature-spacing) -24px;
     width: calc(100% + 48px);
     grid-column: 1 / -1;
   }
