@@ -53,38 +53,57 @@
           website and app.
         </p>
 
-        <h2>1. Information We Collect</h2>
+        <h2>1. Controller</h2>
+        <p>The controller for data processing under GDPR is the operator listed in the Impressum.</p>
+
+        <h2>2. Information We Collect</h2>
         <p>We collect:</p>
         <ul>
           <li>Account information, including your email address.</li>
           <li>
             Diary data you create in the app, such as dot types, entries, note text, settings, and related metadata.
           </li>
-          <li>Basic technical data needed to provide the service, like authentication/session information.</li>
+          <li>Technical and usage data required to operate the service (for example auth/session and security logs).</li>
         </ul>
 
-        <h2>2. How We Use Information</h2>
-        <p>We use information to:</p>
+        <h2>3. Why We Collect Data and Legal Basis (Art. 6 GDPR)</h2>
+        <p>We process data for the following purposes and legal bases:</p>
         <ul>
-          <li>Provide, maintain, and secure Dot Diary.</li>
-          <li>Authenticate your account and let you sign in with magic links.</li>
-          <li>Sync your diary data across devices.</li>
-          <li>Troubleshoot service issues and prevent abuse.</li>
+          <li>Provide app functionality (account access, sync, storage): Art. 6(1)(b) GDPR (contract).</li>
+          <li>Maintain security, prevent abuse, and keep systems stable: Art. 6(1)(f) GDPR (legitimate interests).</li>
+          <li>Respond to support and legal/privacy requests: Art. 6(1)(c) and/or Art. 6(1)(f) GDPR.</li>
         </ul>
 
-        <h2>3. Storage and Processing</h2>
+        <h2>4. Processors and Tools We Use</h2>
+        <p>We use the following processors/subprocessors to run Dot Diary:</p>
+        <ul>
+          <li>Supabase (authentication and cloud database).</li>
+          <li>Vercel (hosting and delivery).</li>
+          <li>Cloudflare (DNS and email routing/forwarding).</li>
+          <li>Resend (transactional email delivery, when enabled).</li>
+        </ul>
         <p>
-          Dot Diary uses Supabase to provide authentication and cloud data storage. Data may be processed and stored by
-          this provider on our behalf.
+          We currently do not use Stripe, PostHog, or Google Analytics in the production app unless explicitly added in a
+          future update to this policy.
         </p>
 
-        <h2>4. Cookies and Similar Technologies</h2>
+        <h2>5. Where Data Is Stored and International Transfers</h2>
+        <p>
+          Data is stored and processed by our service providers in the regions they operate. Depending on provider
+          infrastructure, data may be processed in the EU, the US, or other countries.
+        </p>
+        <p>
+          Where required, we rely on appropriate safeguards for international transfers (for example, contractual transfer
+          mechanisms provided by our vendors).
+        </p>
+
+        <h2>6. Cookies and Similar Technologies</h2>
         <p>
           Dot Diary uses essential storage/session technologies required to keep you signed in and operate core app
           functionality. We do not use non-essential advertising cookies in the current version of the app.
         </p>
 
-        <h2>5. How Information Is Shared</h2>
+        <h2>7. How Information Is Shared</h2>
         <p>We do not sell your personal information. We may share information:</p>
         <ul>
           <li>With service providers that help operate Dot Diary (for example, infrastructure and auth providers).</li>
@@ -92,37 +111,70 @@
           <li>To protect rights, safety, and security of users and the service.</li>
         </ul>
 
-        <h2>6. Data Retention</h2>
+        <h2>8. Data Retention</h2>
         <p>
-          We retain account and diary data for as long as your account is active or as needed to provide the service.
-          You can request account and data deletion by contacting us.
+          We retain account and diary data while your account is active. If you request deletion, we delete or anonymize
+          personal data unless we must keep specific records for legal obligations or security/fraud prevention.
+        </p>
+        <p>
+          Technical logs are retained for a limited period based on operational necessity and provider defaults.
         </p>
 
-        <h2>7. Your Privacy Rights</h2>
+        <h2>9. User Rights (GDPR and Similar Laws)</h2>
         <p>
-          Depending on where you live, you may have rights to request access, correction, deletion, or portability of
-          your personal information. You may also have rights to limit certain processing.
+          Depending on your location, you may have rights to access, rectify, erase, restrict processing, object, and data
+          portability. You may also have the right to lodge a complaint with your local data protection authority.
+        </p>
+        <p>
+          To exercise rights, email
+          <a href="mailto:hello@dot-diary.com">hello@dot-diary.com</a>.
         </p>
 
-        <h2>8. Children’s Privacy</h2>
+        <h2>10. Encryption and Access to Diary Content</h2>
+        <p>
+          Data is transmitted over encrypted connections (TLS). Data stored by our providers may be encrypted at rest per
+          provider standards.
+        </p>
+        <p>
+          Dot Diary is not currently designed as end-to-end encrypted storage. That means authorized operators and service
+          providers may be technically able to access stored content when necessary for support, security, legal
+          compliance, or platform operations.
+        </p>
+
+        <h2>11. Account Deletion</h2>
+        <p>
+          You can request account and diary deletion by contacting
+          <a href="mailto:hello@dot-diary.com">hello@dot-diary.com</a>. We process deletion requests within a reasonable
+          timeframe.
+        </p>
+
+        <h2>12. Data Processing Agreements (DPAs)</h2>
+        <p>Where legally required, we maintain Data Processing Agreements with relevant processors.</p>
+        <ul>
+          <li>Infrastructure/hosting providers (for example Vercel and Supabase).</li>
+          <li>Email service providers used for transactional messages (for example Resend).</li>
+          <li>Payment processors (for example Stripe), if and when payments are enabled.</li>
+        </ul>
+
+        <h2>13. Children’s Privacy</h2>
         <p>
           Dot Diary is not intended for children under 13, and we do not knowingly collect personal information from
           children under 13.
         </p>
 
-        <h2>9. Security</h2>
+        <h2>14. Security</h2>
         <p>
           We use reasonable safeguards designed to protect personal information. No method of transmission or storage is
           completely secure.
         </p>
 
-        <h2>10. Changes to This Policy</h2>
+        <h2>15. Changes to This Policy</h2>
         <p>
           We may update this Privacy Policy from time to time. If we make material changes, we will update the effective
           date above.
         </p>
 
-        <h2>11. Contact</h2>
+        <h2>16. Contact</h2>
         <p>
           For privacy questions or requests, contact:
           <a href="mailto:hello@dot-diary.com">hello@dot-diary.com</a>
