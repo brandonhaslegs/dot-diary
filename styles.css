@@ -78,7 +78,7 @@ textarea {
   }
 
   #marketing-hero {
-    padding: 24px;
+    --marketing-card-pad: 24px;
   }
 }
 
@@ -160,14 +160,27 @@ textarea {
 
   .marketing-sections {
     grid-template-columns: 1fr;
+    column-gap: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .marketing-sections::before {
+    display: none;
+  }
+
+  .how-vignettes::before,
+  .how-vignettes::after {
+    display: none;
   }
 }
 
 .marketing-card {
+  --marketing-card-pad: 32px;
   width: min(768px, 100%);
   border: 2px solid var(--line);
   border-radius: 40px;
-  padding: 32px;
+  padding: var(--marketing-card-pad);
   background: var(--card);
   display: grid;
   gap: 14px;
@@ -242,10 +255,10 @@ textarea {
   text-decoration: none !important;
   opacity: 1 !important;
   transform: translateY(0);
-  box-shadow: 0 0 0 var(--line);
+  filter: drop-shadow(0 0 0 transparent);
   transition:
     transform 140ms ease,
-    box-shadow 140ms ease;
+    filter 140ms ease;
 }
 
 .legal-back-button svg {
@@ -255,13 +268,13 @@ textarea {
 @media (hover: hover) and (pointer: fine) {
   .legal-link-row a.legal-back-button:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 0 var(--line);
+    filter: drop-shadow(0 4px 0 var(--line));
   }
 }
 
 .legal-link-row a.legal-back-button:active {
   transform: translateY(-1px);
-  box-shadow: 0 1px 0 var(--line);
+  filter: drop-shadow(0 1px 0 var(--line));
   transition-duration: 70ms;
 }
 
@@ -280,9 +293,9 @@ textarea {
 .feature-list {
   display: grid;
   gap: 14px;
-  border: 2px solid var(--line);
-  border-radius: 24px;
-  padding: 18px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 .feature-dot {
@@ -367,13 +380,46 @@ textarea {
 .marketing-sections {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--feature-spacing);
-  margin-block: calc(var(--feature-spacing) / 2);
+  column-gap: var(--feature-spacing);
+  row-gap: var(--feature-spacing);
+  margin-top: var(--feature-spacing);
+  margin-bottom: calc(var(--marketing-card-pad) * -1);
+  margin-inline: calc(var(--marketing-card-pad) * -1);
+  padding-top: 0;
+  padding-bottom: var(--marketing-card-pad);
+  padding-inline: var(--marketing-card-pad);
+  border-top: 2px solid var(--line);
   order: 7;
+  position: relative;
 }
 
 .feature-divider {
   display: none;
+}
+
+.marketing-sections::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--line);
+}
+
+.marketing-sections > .feature-list {
+  padding-top: var(--feature-spacing);
+}
+
+@media (min-width: 921px) {
+  .marketing-sections > .feature-list:first-of-type {
+    padding-right: 16px;
+  }
+
+  .marketing-sections > .feature-list:last-of-type {
+    padding-left: 16px;
+  }
 }
 
 .paid-list h4 {
@@ -489,12 +535,14 @@ textarea {
 }
 
 .how-it-works {
-  border: 2px solid var(--line);
-  border-radius: 24px;
-  padding: 16px 18px;
-  background: var(--card);
+  border: 0;
+  border-top: 2px solid var(--line);
+  border-radius: 0;
+  padding: var(--feature-spacing) var(--marketing-card-pad) 0;
+  background: transparent;
   order: 6;
-  margin-top: calc(var(--feature-spacing) / 2);
+  margin-top: var(--feature-spacing);
+  margin-inline: calc(var(--marketing-card-pad) * -1);
 }
 
 .how-vignettes {
@@ -584,7 +632,7 @@ textarea {
 
 .how-day-label {
   font-size: 24px;
-  opacity: 0.75;
+  opacity: 1;
 }
 
 .how-day-dot-stage {
@@ -973,22 +1021,22 @@ button {
   cursor: pointer;
   font: inherit;
   transform: translateY(0);
-  box-shadow: 0 0 0 var(--line);
+  filter: drop-shadow(0 0 0 transparent);
   transition:
     transform 140ms ease,
-    box-shadow 140ms ease;
+    filter 140ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   button:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 0 var(--line);
+    filter: drop-shadow(0 4px 0 var(--line));
   }
 }
 
 button:active {
   transform: translateY(-1px);
-  box-shadow: 0 1px 0 var(--line);
+  filter: drop-shadow(0 1px 0 var(--line));
   transition-duration: 70ms;
 }
 
@@ -1071,22 +1119,22 @@ button:active {
   overflow: visible;
   z-index: 1;
   transform: translateY(0);
-  box-shadow: 0 0 0 var(--line);
+  filter: drop-shadow(0 0 0 transparent);
   transition:
     transform 140ms ease,
-    box-shadow 140ms ease;
+    filter 140ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dot-type-row:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 0 var(--line);
+    filter: drop-shadow(0 4px 0 var(--line));
   }
 }
 
 .dot-type-row:active {
   transform: translateY(-1px);
-  box-shadow: 0 1px 0 var(--line);
+  filter: drop-shadow(0 1px 0 var(--line));
   transition-duration: 70ms;
 }
 
@@ -3060,15 +3108,32 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     border: 0;
     border-radius: 0;
     padding: 0;
+    gap: 10px;
+  }
+
+  .marketing-sections > .feature-list:first-of-type {
+    padding-top: 24px;
+    padding-bottom: 2px;
+  }
+
+  .marketing-sections > .feature-list:last-of-type {
+    padding-top: 4px;
+    padding-bottom: 14px;
+  }
+
+  .paid-subtitle {
+    margin: 0 0 8px 0;
   }
 
   .feature-divider {
     display: block;
     border: 0;
-    border-top: 4px dotted var(--line);
-    margin: var(--feature-spacing) -24px;
-    width: calc(100% + 48px);
+    border-top: 2px solid var(--line);
+    margin: 0 calc(var(--marketing-card-pad) * -1);
+    width: auto;
+    height: 0;
     grid-column: 1 / -1;
+    background: transparent;
   }
 
   .auth-row {
@@ -3111,6 +3176,13 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   .marketing-sections {
     grid-template-columns: 1fr;
+    column-gap: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .marketing-sections::before {
+    display: none;
   }
 
   /* Popover: full width bottom sheet */
