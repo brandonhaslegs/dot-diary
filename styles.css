@@ -522,10 +522,28 @@ textarea {
 
 #enter-app {
   justify-self: start;
-  background: var(--foreground);
-  color: var(--background);
-  border-color: var(--foreground);
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
   padding: 10px 16px;
+  filter: none;
+  box-shadow: 0 0 0 var(--line);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #enter-app:hover {
+    filter: none;
+    box-shadow: 0 4px 0 var(--line);
+  }
+}
+
+#enter-app:active {
+  filter: none;
+  box-shadow: 0 1px 0 var(--line);
+  transition-duration: 70ms;
 }
 
 .marketing-actions {
@@ -760,6 +778,35 @@ textarea {
 .outline-button {
   background: transparent;
   color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .outline-button:hover {
+    background: var(--card);
+  }
+}
+
+.outline-button:active {
+  background: var(--card);
+}
+
+.ghost-button {
+  background: transparent;
+  color: var(--ink);
+  border-color: transparent;
+  padding-inline: 10px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ghost-button:hover {
+    background: var(--card);
+    border-color: var(--line);
+  }
+}
+
+.ghost-button:active {
+  background: var(--card);
+  border-color: var(--line);
 }
 
 .topbar {
