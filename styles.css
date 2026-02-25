@@ -199,6 +199,12 @@ textarea {
   line-height: 1.3;
 }
 
+.legal-link-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .legal-link-row a {
   display: inline;
   padding: 0;
