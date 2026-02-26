@@ -128,6 +128,67 @@ const DOT_CANDIDATE_OFFSETS = [
   [1, -2],
   [-1, -2]
 ];
+const MARKETING_DOT_COLORS = {
+  "demo-exercise": "#FF0000",
+  "demo-sugar": "#FF7A00",
+  "demo-slept": "#FFC700",
+  "demo-reading": "#15C771",
+  "demo-cooking": "#2F8CFA",
+  "demo-social": "#B632CC",
+  "demo-movie": "#2F8CFA",
+  "demo-music": "#15C771"
+};
+
+function getMarketingDotColor(dotType) {
+  return MARKETING_DOT_COLORS[dotType.id] || dotType.color;
+}
+
+function reduceMarketingDotDensity(demoState) {
+  const reducedDayDots = {};
+  const keepWeekdaysByDot = {
+    "demo-exercise": new Set([1, 3, 5]),
+    "demo-slept": new Set([1, 2, 4, 6]),
+    "demo-reading": new Set([1, 4]),
+    "demo-cooking": new Set([0, 2, 6]),
+    "demo-social": new Set([2, 4, 6]),
+    "demo-sugar": new Set([6]),
+    "demo-movie": new Set([5]),
+    "demo-music": new Set([0, 6])
+  };
+
+  Object.entries(demoState.dayDots || {}).forEach(([iso, dotIds]) => {
+    const date = new Date(`${iso}T00:00:00`);
+    const weekday = date.getDay();
+    const month = date.getMonth();
+    const weekBucket = Math.floor((date.getDate() - 1) / 7);
+
+    const kept = dotIds.filter((dotId) => {
+      const weekdaySet = keepWeekdaysByDot[dotId];
+      if (!weekdaySet || !weekdaySet.has(weekday)) return false;
+
+      // Keep seasonal signals visible while still reducing total dot count.
+      if (dotId === "demo-social") {
+        if (month >= 2 && month <= 3) return weekday !== 6 || weekBucket % 2 === 0;
+        if (month === 4) return false;
+        return weekBucket % 2 === 0;
+      }
+      if (dotId === "demo-sugar") {
+        if (month >= 10) return weekday === 0 || weekday === 6;
+        return weekday === 6 && weekBucket % 2 === 0;
+      }
+      if (dotId === "demo-music" && month === 4) {
+        return [1, 3, 5].includes(weekday);
+      }
+      if (dotId === "demo-slept" && month >= 10) {
+        return hash32(`${iso}|${dotId}|holiday-thin`) % 3 !== 0;
+      }
+      return true;
+    });
+
+    if (kept.length > 0) reducedDayDots[iso] = kept;
+  });
+  demoState.dayDots = reducedDayDots;
+}
 
 // registerAuthUpdater: Registers auth updater.
 export function registerAuthUpdater(fn) {
@@ -723,6 +784,7 @@ function resolveDotPositionsForDay({ isoDate, dotIds, mode, getBasePosition, isL
 export function renderMarketingCalendar() {
   if (!marketingCalendar || !marketingYear || !marketingMonth) return;
   const demoState = createDemoState();
+  reduceMarketingDotDensity(demoState);
   const year = demoState.yearCursor;
   const todayIso = formatISODate(new Date());
   marketingYear.innerHTML = "";
@@ -767,7 +829,7 @@ export function renderMarketingCalendar() {
         if (!dotType) return;
         const sticker = document.createElement("span");
         sticker.className = "dot-sticker";
-        sticker.style.background = dotType.color;
+        sticker.style.background = getMarketingDotColor(dotType);
         const pos = getDemoDotPosition(demoState, iso, dotId);
         sticker.style.left = `${pos.left}%`;
         sticker.style.top = `${pos.top}%`;
@@ -818,7 +880,7 @@ export function renderMarketingMonth(demoState) {
       if (!dotType) return;
       const sticker = document.createElement("span");
       sticker.className = "dot-sticker";
-      sticker.style.background = dotType.color;
+      sticker.style.background = getMarketingDotColor(dotType);
       const pos = getDemoDotPosition(demoState, day.iso, dotId);
       sticker.style.left = `${pos.left}%`;
       sticker.style.top = `${pos.top}%`;

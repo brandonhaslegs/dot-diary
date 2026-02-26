@@ -1,5 +1,6 @@
 import { AUTH_STATE_KEY, DEMO_MODE, VIEW_MODE_KEY } from "./constants.js";
 import {
+  authEmailInput,
   authSendButton,
   authSignOutButton,
   brandHomeButton,
@@ -92,15 +93,25 @@ window.addEventListener("resize", () => {
 });
 
 // Marketing/login navigation.
+function submitMagicLinkOnEnter(input, submit) {
+  input?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.isComposing) return;
+    event.preventDefault();
+    submit();
+  });
+}
+
 enterAppButton?.addEventListener("click", () => enterApp());
 openLoginButton?.addEventListener("click", showLogin);
 loginBackButton?.addEventListener("click", showMarketingHero);
 loginSendButton?.addEventListener("click", () => handleMagicLink(loginEmailInput?.value, loginSendButton));
+submitMagicLinkOnEnter(loginEmailInput, () => handleMagicLink(loginEmailInput?.value, loginSendButton));
 brandHomeButton?.addEventListener("click", () => {
   showMarketingHero();
   showMarketingPage();
 });
 authSendButton?.addEventListener("click", () => handleMagicLink(undefined, authSendButton));
+submitMagicLinkOnEnter(authEmailInput, () => handleMagicLink(authEmailInput?.value, authSendButton));
 authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsBackButton?.addEventListener("click", closeSettingsModal);
 openSettings?.addEventListener("click", () => {
@@ -119,6 +130,7 @@ onboardingDoneButton?.addEventListener("click", completeOnboarding);
 onboardingSkipIntroButton?.addEventListener("click", completeOnboarding);
 onboardingSkipButton?.addEventListener("click", completeOnboarding);
 onboardingSendButton?.addEventListener("click", () => handleMagicLink(onboardingEmailInput?.value));
+submitMagicLinkOnEnter(onboardingEmailInput, () => handleMagicLink(onboardingEmailInput?.value));
 
 // Period picker open/close and related dismiss behavior.
 periodPickerToggle?.addEventListener("click", (event) => {

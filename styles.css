@@ -72,6 +72,13 @@ textarea {
   overflow: hidden;
 }
 
+@media (min-width: 921px) {
+  .marketing-shell {
+    padding-top: 88px;
+    padding-bottom: 88px;
+  }
+}
+
 @media (max-width: 480px) {
   .marketing-shell {
     padding: 200px 40px;
@@ -83,13 +90,14 @@ textarea {
 }
 
 .marketing-background {
-  position: absolute;
+  position: fixed;
   inset: 0;
   display: grid;
   place-items: stretch;
   pointer-events: none;
   opacity: 0.2;
   padding: 16px;
+  z-index: 0;
 }
 
 .marketing-calendar {
@@ -278,12 +286,10 @@ textarea {
   transition-duration: 70ms;
 }
 
-.floating-legal-link {
-  position: fixed;
-  left: 50%;
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  z-index: 30;
+.marketing-legal-links {
+  justify-self: center;
+  margin-top: 14px;
+  z-index: 1;
 }
 
 .marketing-free {
@@ -544,6 +550,10 @@ textarea {
   filter: none;
   box-shadow: 0 1px 0 var(--line);
   transition-duration: 70ms;
+}
+
+#open-login {
+  background: var(--card);
 }
 
 .marketing-actions {
@@ -3149,6 +3159,23 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   .marketing-actions button {
     width: 100%;
+  }
+
+  #marketing-hero .marketing-actions {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  #marketing-hero .marketing-actions button {
+    width: auto;
+  }
+
+  #marketing-hero #enter-app {
+    flex: 1 1 auto;
+  }
+
+  #marketing-hero #open-login {
+    flex: 0 0 auto;
   }
 
   .feature-list {
