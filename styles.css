@@ -1199,24 +1199,23 @@ button:active {
   padding: 10px 12px;
   overflow: visible;
   z-index: 1;
-  transform: translateY(0);
-  filter: drop-shadow(0 0 0 transparent);
+  transform: none;
+  filter: none;
   transition:
-    transform 140ms ease,
-    filter 140ms ease;
+    border-color 140ms ease,
+    background 140ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dot-type-row:hover {
-    transform: translateY(-4px);
-    filter: drop-shadow(0 4px 0 var(--line));
+    transform: none;
+    filter: none;
   }
 }
 
 .dot-type-row:active {
-  transform: translateY(-1px);
-  filter: drop-shadow(0 1px 0 var(--line));
-  transition-duration: 70ms;
+  transform: none;
+  filter: none;
 }
 
 .dot-type-row.menu-open {
@@ -1687,6 +1686,24 @@ button:active {
   background: transparent;
   color: var(--ink);
   padding: 6px 14px;
+  transform: none;
+  filter: none;
+  box-shadow: none;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .color-mode-toggle button:hover {
+    transform: none;
+    filter: none;
+    box-shadow: none;
+  }
+}
+
+.color-mode-toggle button:active {
+  transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .color-mode-toggle button.active {
