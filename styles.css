@@ -1097,6 +1097,30 @@ button:active {
   transition-duration: 70ms;
 }
 
+/* App buttons should stay flat (no 3D lift/press). */
+.app-shell button {
+  filter: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .app-shell button:hover {
+    transform: none;
+    filter: none;
+  }
+}
+
+.app-shell button:active {
+  transform: none;
+  filter: none;
+  transition-duration: 140ms;
+}
+
+.app-shell .brand-link,
+.app-shell .brand-link:hover,
+.app-shell .brand-link:active {
+  transform: translateY(-50%);
+}
+
 :where(
   button,
   [role="button"],
@@ -1134,7 +1158,7 @@ button:active {
 
   .brand-link:hover,
   .brand-link:active {
-    transform: translateY(-50%) scale(1);
+    transform: translateY(-50%);
     box-shadow: none;
   }
 }
