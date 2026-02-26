@@ -1342,6 +1342,9 @@ button:active {
   min-width: 24px;
   background: transparent;
   line-height: 1;
+  transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .dot-actions-toggle svg {
@@ -1383,12 +1386,17 @@ button:active {
   border-radius: 12px;
   padding: 8px;
   background: transparent;
+  transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .dot-actions-item:hover {
   background: var(--ink);
   color: var(--bg);
   transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .dot-actions-item:disabled {
@@ -1409,6 +1417,9 @@ button:active {
 .dot-actions-item.danger-solid:hover {
   background: var(--destructive);
   color: var(--on-destructive);
+  transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .small-danger {
@@ -2891,17 +2902,30 @@ button:active {
   text-align: left;
   padding: 8px;
   background: transparent;
+  transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .popover-item:hover {
   background: var(--foreground);
   color: var(--background);
   transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .popover-item.selected {
   background: var(--foreground);
   color: var(--background);
+}
+
+.dot-actions-toggle:active,
+.dot-actions-item:active,
+.popover-item:active {
+  transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .popover-note {
