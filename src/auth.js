@@ -90,6 +90,14 @@ export async function initSupabaseAuth() {
   }
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
+  if (!syncUser) {
+    // Prevent stale auth bootstrap state from implying cloud sync is active.
+    try {
+      localStorage.removeItem(AUTH_STATE_KEY);
+    } catch {
+      // ignore
+    }
+  }
   const enteredFromMarketing = !getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden");
   if (enteredFromMarketing) {
     enterApp({ skipOnboarding: true });
@@ -137,6 +145,30 @@ export async function initSupabaseAuth() {
     }
   });
   document.addEventListener("visibilitychange", handleVisibilitySync);
+}
+
+// refreshAuthSession: Re-reads Supabase session and updates local auth UI/state.
+export async function refreshAuthSession({ loadCloud = false } = {}) {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  syncUser = data?.session?.user || null;
+  try {
+    if (syncUser) {
+      localStorage.setItem(AUTH_STATE_KEY, "1");
+    } else {
+      localStorage.removeItem(AUTH_STATE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+  updateAuthUI();
+  if (syncUser) {
+    if (loadCloud) await loadFromCloud({ silentError: true });
+    startSyncPolling();
+  } else {
+    stopSyncPolling();
+  }
+  return syncUser;
 }
 
 function focusPeriodToToday() {
@@ -268,7 +300,7 @@ export function updateAuthUI() {
       syncStatus.classList.toggle("muted", !lastSyncError);
     }
   } else {
-    authStatus.textContent = "Sign in to store this diary in the cloud.";
+    authStatus.textContent = "Local-only mode on this device. Sign in to sync and back up.";
     authStatus.classList.add("muted");
     authSignOutButton.classList.add("hidden");
     if (authRow) authRow.classList.remove("hidden");

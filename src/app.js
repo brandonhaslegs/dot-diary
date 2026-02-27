@@ -72,6 +72,7 @@ import {
 import {
   handleMagicLink,
   initSupabaseAuth,
+  refreshAuthSession,
   scheduleSync,
   signOutSupabase,
   updateAuthUI
@@ -114,8 +115,9 @@ authSendButton?.addEventListener("click", () => handleMagicLink(undefined, authS
 submitMagicLinkOnEnter(authEmailInput, () => handleMagicLink(authEmailInput?.value, authSendButton));
 authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsBackButton?.addEventListener("click", closeSettingsModal);
-openSettings?.addEventListener("click", () => {
+openSettings?.addEventListener("click", async () => {
   closePopover();
+  await refreshAuthSession({ loadCloud: false });
   openSettingsModal();
 });
 todayButton?.addEventListener("click", scrollToToday);
