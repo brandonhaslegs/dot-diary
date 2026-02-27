@@ -1012,7 +1012,22 @@ html.hide-keyboard-hints #settings-modal .shortcut-list .key-hint {
   }
 }
 
-#period-picker-toggle .topbar-key,
+#period-picker-toggle .topbar-key {
+  margin-left: 0;
+}
+
+#period-picker-toggle .period-nav-key:first-child {
+  margin-right: 2px;
+}
+
+#period-picker-toggle #period-picker-label + .period-nav-key {
+  margin-left: 2px;
+}
+
+#period-picker-toggle .topbar-key:not(.period-nav-key) {
+  margin-left: 2px;
+}
+
 #open-settings .topbar-key {
   margin-left: 2px;
 }
