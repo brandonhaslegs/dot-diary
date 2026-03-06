@@ -35,7 +35,9 @@ import {
   todayButton,
   uploadDataButton,
   uploadDataInput,
-  weekStartMondayInput
+  weekStartMondayInput,
+  yearNextButton,
+  yearPrevButton
 } from "./dom.js";
 import { registerRender, registerScheduleSync, requestRender, saveAndRender, state } from "./state.js";
 import {
@@ -67,7 +69,8 @@ import {
   showMarketingHero,
   showMarketingPage,
   showOnboardingIfNeeded,
-  showOnboardingStep
+  showOnboardingStep,
+  shiftYearBy
 } from "./ui.js";
 import {
   handleMagicLink,
@@ -121,6 +124,8 @@ openSettings?.addEventListener("click", async () => {
   openSettingsModal();
 });
 todayButton?.addEventListener("click", scrollToToday);
+yearPrevButton?.addEventListener("click", () => shiftYearBy(-1));
+yearNextButton?.addEventListener("click", () => shiftYearBy(1));
 resetOnboardingButton?.addEventListener("click", handleResetOnboarding);
 
 // Onboarding step controls.

@@ -856,6 +856,36 @@ textarea {
   min-width: 0;
 }
 
+.year-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.year-nav-button {
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid var(--foreground);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--foreground);
+  opacity: 0.33;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  transform: none;
+  transition: none;
+}
+
+.year-nav-button:hover,
+.year-nav-button:active {
+  transform: none;
+  box-shadow: none;
+}
+
 #period-picker-toggle {
   display: inline-flex;
   align-items: center;
@@ -1176,6 +1206,8 @@ button:active {
 }
 
 #period-picker-toggle:focus-visible .year-caret path,
+#year-prev:focus-visible svg path,
+#year-next:focus-visible svg path,
 #open-settings:focus-visible svg path,
 #open-settings:focus-visible svg circle {
   stroke: currentColor;
@@ -3080,6 +3112,16 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     flex: 0 1 auto;
     min-width: 0;
     justify-content: flex-start;
+  }
+
+  .year-nav {
+    gap: 6px;
+  }
+
+  .year-nav-button {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
   }
 
   #period-picker-toggle {

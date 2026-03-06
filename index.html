@@ -151,45 +151,33 @@
           <span class="brand-mark" aria-hidden="true"></span>
           Dot Diary
         </button>
-        <div class="period-picker">
-          <button id="period-picker-toggle" type="button" aria-label="Select period">
-            <span class="key-hint topbar-key period-nav-key" aria-hidden="true">
-              <svg class="period-nav-icon" width="16" height="10" viewBox="0 0 16 10" fill="none">
-                <path d="M4.25 5H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                <path
-                  d="M4.25 5L7.25 2M4.25 5L7.25 8"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-            <span id="period-picker-label"></span>
-            <span class="key-hint topbar-key period-nav-key" aria-hidden="true">
-              <svg class="period-nav-icon" width="16" height="10" viewBox="0 0 16 10" fill="none">
-                <path d="M1 5H11.75" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                <path
-                  d="M11.75 5L8.75 2M11.75 5L8.75 8"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-            <span class="key-hint topbar-key" aria-hidden="true">Y</span>
-            <svg class="year-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path
-                d="M9.75 4.5L6 8.25L2.25 4.5"
-                stroke="black"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
+        <div class="year-nav">
+          <button id="year-prev" type="button" class="year-nav-button" aria-label="Previous year">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
-          <div id="period-picker-menu" class="period-picker-menu hidden"></div>
+          <div class="period-picker">
+            <button id="period-picker-toggle" type="button" aria-label="Select period">
+              <span id="period-picker-label"></span>
+              <span class="key-hint topbar-key" aria-hidden="true">Y</span>
+              <svg class="year-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path
+                  d="M9.75 4.5L6 8.25L2.25 4.5"
+                  stroke="black"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+            <div id="period-picker-menu" class="period-picker-menu hidden"></div>
+          </div>
+          <button id="year-next" type="button" class="year-nav-button" aria-label="Next year">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
         </div>
         <nav class="view-nav" aria-label="Sections">
           <button id="today-button" type="button" class="outline-button today-button hidden">Today</button>
