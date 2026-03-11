@@ -151,33 +151,23 @@
           <span class="brand-mark" aria-hidden="true"></span>
           Dot Diary
         </button>
-        <div class="year-nav">
-          <button id="year-prev" type="button" class="year-nav-button" aria-label="Previous year">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <div class="period-picker">
+          <button id="period-picker-toggle" type="button" aria-label="Select period">
+            <span class="key-hint topbar-key period-nav-key" aria-hidden="true">&larr;</span>
+            <span id="period-picker-label"></span>
+            <span class="key-hint topbar-key period-nav-key" aria-hidden="true">&rarr;</span>
+            <span class="key-hint topbar-key" aria-hidden="true">Y</span>
+            <svg class="year-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path
+                d="M9.75 4.5L6 8.25L2.25 4.5"
+                stroke="black"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </button>
-          <div class="period-picker">
-            <button id="period-picker-toggle" type="button" aria-label="Select period">
-              <span id="period-picker-label"></span>
-              <span class="key-hint topbar-key" aria-hidden="true">Y</span>
-              <svg class="year-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <path
-                  d="M9.75 4.5L6 8.25L2.25 4.5"
-                  stroke="black"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-            <div id="period-picker-menu" class="period-picker-menu hidden"></div>
-          </div>
-          <button id="year-next" type="button" class="year-nav-button" aria-label="Next year">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </button>
+          <div id="period-picker-menu" class="period-picker-menu hidden"></div>
         </div>
         <nav class="view-nav" aria-label="Sections">
           <button id="today-button" type="button" class="outline-button today-button hidden">Today</button>
@@ -539,6 +529,17 @@
               <div class="auth-status muted" id="sync-status"></div>
             </div>
             <button id="auth-signout" type="button" class="hidden">Sign out</button>
+          </div>
+        </section>
+
+        <hr />
+
+        <section class="settings-section">
+          <h4>Billing</h4>
+          <p id="billing-status" class="muted">Free plan: up to 6 dot types.</p>
+          <div class="billing-actions">
+            <button id="billing-upgrade" type="button" class="outline-button">Upgrade to Pro</button>
+            <button id="billing-manage" type="button" class="outline-button hidden">Manage subscription</button>
           </div>
         </section>
 

@@ -1046,32 +1046,15 @@ html.hide-keyboard-hints #settings-modal .shortcut-list .key-hint {
   margin-left: 0;
 }
 
+#period-picker-toggle .topbar-key:not(:first-child) {
+  margin-left: 2px;
+}
+
 #period-picker-toggle .period-nav-key:first-child {
   margin-right: 2px;
 }
 
 #period-picker-toggle #period-picker-label + .period-nav-key {
-  margin-left: 2px;
-}
-
-#period-picker-toggle .period-nav-key {
-  min-width: 34px;
-  height: 24px;
-  padding: 0 8px;
-  border-width: 2px;
-  border-color: #a8a8a8;
-  border-radius: 10px;
-  color: #8f8f8f;
-  opacity: 1;
-}
-
-#period-picker-toggle .period-nav-icon {
-  display: block;
-  width: 16px;
-  height: 10px;
-}
-
-#period-picker-toggle .topbar-key:not(.period-nav-key) {
   margin-left: 2px;
 }
 
@@ -1742,6 +1725,13 @@ button:active {
 
 #auth-signout {
   align-self: start;
+}
+
+.billing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .display-row {
