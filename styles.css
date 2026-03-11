@@ -1644,6 +1644,12 @@ button:active {
   justify-content: flex-end;
 }
 
+.shortcut-arrow-icon {
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+
 .suggested-header-row {
   display: grid;
   grid-template-columns: 1fr auto;
