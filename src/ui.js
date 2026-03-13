@@ -1897,6 +1897,8 @@ export function enterApp({ skipOnboarding = false } = {}) {
   }
   marketingPage?.classList.add("hidden");
   appShell?.classList.remove("hidden");
+  hasInitializedMobileMonthScroll = false;
+  requestRender();
   if (skipOnboarding) {
     try {
       localStorage.setItem(ONBOARDING_KEY, "1");
