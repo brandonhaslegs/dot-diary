@@ -3162,6 +3162,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     min-height: 34px;
     padding: 4px 8px;
     gap: 5px;
+    font-size: 16px;
   }
 
   /* Month grid: tighter gap, better cell sizing */
@@ -3256,7 +3257,11 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   #period-picker-toggle {
-    font-size: 15px;
+    font-size: 14px;
+  }
+
+  .icon-button {
+    font-size: 14px;
   }
 
   .today-button {

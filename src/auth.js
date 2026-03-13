@@ -1,10 +1,13 @@
 import {
   AUTH_INTENT_KEY,
   AUTH_STATE_KEY,
+  BUTTON_RESET_DELAY_MS,
   ONBOARDING_KEY,
   STORAGE_KEY,
   SUPABASE_ANON_KEY,
-  SUPABASE_URL
+  SUPABASE_URL,
+  SYNC_DEBOUNCE_MS,
+  SYNC_POLL_MS
 } from "./constants.js";
 import {
   authEmailInput,
@@ -22,7 +25,7 @@ import {
   state
 } from "./state.js";
 import { startOfMonth } from "./utils.js";
-import { areStatesEqual, pickLatestCloudRow } from "./sync-core.mjs";
+import { areStatesEqual, mergeDiaryStates, pickLatestCloudRow } from "./sync-core.mjs";
 import {
   closeDeleteModal,
   closePopover,
@@ -50,10 +53,7 @@ let syncInProgress = false;
 let signOutInProgress = false;
 let authInitStarted = false;
 let lastSyncError = "";
-const SYNC_DEBOUNCE_MS = 250;
-const SYNC_POLL_MS = 5000;
 
-// initSupabaseAuth: Initializes Supabase auth, restores sessions, and wires auth listeners.
 export async function initSupabaseAuth() {
   if (authInitStarted) return;
   authInitStarted = true;
@@ -147,7 +147,6 @@ export async function initSupabaseAuth() {
   document.addEventListener("visibilitychange", handleVisibilitySync);
 }
 
-// refreshAuthSession: Re-reads Supabase session and updates local auth UI/state.
 export async function refreshAuthSession({ loadCloud = false } = {}) {
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
@@ -186,7 +185,6 @@ function clearAuthIntent() {
   }
 }
 
-// handleMagicLink: Requests a magic-link email sign-in and updates button feedback states.
 export async function handleMagicLink(overrideEmail, sourceButton) {
   if (!supabase) return;
   const email = overrideEmail?.trim() || authEmailInput?.value?.trim();
@@ -227,12 +225,11 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
       sourceButton.disabled = false;
       window.setTimeout(() => {
         sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
-      }, 2000);
+      }, BUTTON_RESET_DELAY_MS);
     }
   }
 }
 
-// signOutSupabase: Signs the current user out and resets local app state to logged-out defaults.
 export async function signOutSupabase() {
   if (signOutInProgress) return;
   signOutInProgress = true;
@@ -280,7 +277,6 @@ export async function signOutSupabase() {
   }
 }
 
-// updateAuthUI: Updates auth-related labels, buttons, and sync status text.
 export function updateAuthUI() {
   if (!authStatus || !authSignOutButton) return;
   if (!supabase) {
@@ -311,7 +307,6 @@ export function updateAuthUI() {
   }
 }
 
-// scheduleSync: Handles schedule sync.
 export function scheduleSync() {
   if (!supabase || !syncUser) return false;
   if (syncTimer) clearTimeout(syncTimer);
@@ -352,8 +347,11 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
   const remoteState = normalizeImportedState(latest.data);
   const localDiffersFromRemote = !areStatesEqual(state, remoteState);
   if (localDiffersFromRemote) {
-    // Cloud-authoritative: never merge signed-in diary data with local cached diary data.
-    setState(remoteState);
+    const merged = mergeDiaryStates(state, remoteState, {
+      preferLocalSettings: true,
+      preferLocalConflicts: false
+    });
+    setState(merged);
     requestRender();
   }
   lastSyncedAt = new Date().toISOString();
@@ -393,19 +391,6 @@ async function syncToCloud() {
     if (writeError) {
       result = await supabase.from("user_data").update({ data: snapshot }).eq("user_id", syncUser.id);
       writeError = result.error;
-    }
-    if (!writeError) {
-      const existingRows = await supabase.from("user_data").select("user_id").eq("user_id", syncUser.id).limit(1);
-      if (existingRows.error) {
-        writeError = existingRows.error;
-      } else if (!Array.isArray(existingRows.data) || existingRows.data.length === 0) {
-        result = await supabase.from("user_data").insert(payloadWithUpdatedAt);
-        writeError = result.error;
-        if (writeError) {
-          result = await supabase.from("user_data").insert(payloadWithoutUpdatedAt);
-          writeError = result.error;
-        }
-      }
     }
 
     if (writeError) {

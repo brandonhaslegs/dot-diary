@@ -1,4 +1,4 @@
-import { DEMO_MODE, DOT_NAME_MAX_LENGTH, STORAGE_KEY } from "./constants.js";
+import { DEMO_MODE, DOT_NAME_MAX_LENGTH, SCHEMA_VERSION, STORAGE_KEY } from "./constants.js";
 import { formatISODate, hash32, normalizeNote, shuffleArray, startOfMonth } from "./utils.js";
 
 export const defaultState = {
@@ -20,23 +20,26 @@ let renderQueued = false;
 let renderCallbacks = [];
 let scheduleSyncFn = () => {};
 
-// registerRender: Registers the UI render function used by state updates.
 export function registerRender(fn) {
   renderFn = fn;
 }
 
-// requestRender: Queues a safe render on the next animation frame.
 export function requestRender(callback) {
   if (typeof callback === "function") {
     renderCallbacks.push(callback);
   }
   if (renderQueued) return;
   renderQueued = true;
+
   const flushRender = () => {
     const active = document.activeElement;
     const editingNote = active instanceof HTMLElement && active.classList.contains("note-editor");
     if (editingNote) {
-      requestAnimationFrame(flushRender);
+      const onBlur = () => {
+        active.removeEventListener("blur", onBlur);
+        requestAnimationFrame(flushRender);
+      };
+      active.addEventListener("blur", onBlur);
       return;
     }
 
@@ -51,19 +54,18 @@ export function requestRender(callback) {
   requestAnimationFrame(flushRender);
 }
 
-// registerScheduleSync: Registers the cloud-sync scheduler callback used after state changes.
 export function registerScheduleSync(fn) {
   scheduleSyncFn = fn;
 }
 
 export let state = DEMO_MODE ? createDemoState() : loadState();
 
-// setState: Sets state.
+
 export function setState(next) {
   state = next;
 }
 
-// saveAndRender: Persists state, schedules sync, and re-renders.
+
 export function saveAndRender() {
   if (DEMO_MODE) {
     requestRender();
@@ -75,29 +77,33 @@ export function saveAndRender() {
   requestRender();
 }
 
-// loadState: Loads persisted state from localStorage and normalizes its shape.
+
 export function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return structuredClone(defaultState);
     const parsed = JSON.parse(raw);
+    const version = parsed?.version ?? SCHEMA_VERSION;
+    if (version > SCHEMA_VERSION) {
+      console.warn(`State schema version ${version} is newer than supported ${SCHEMA_VERSION}.`);
+    }
     return normalizeImportedState(parsed?.data ?? parsed);
   } catch {
     return structuredClone(defaultState);
   }
 }
 
-// getDayDotIds: Returns day dot ids.
+
 export function getDayDotIds(isoDate) {
   return state.dayDots[isoDate] || [];
 }
 
-// getDayNote: Returns day note.
+
 export function getDayNote(isoDate) {
   return state.dayNotes[isoDate] || "";
 }
 
-// setDayNote: Sets day note.
+
 export function setDayNote(isoDate, rawValue) {
   const note = normalizeNote(rawValue);
   if (!note) {
@@ -108,7 +114,7 @@ export function setDayNote(isoDate, rawValue) {
   saveAndRender();
 }
 
-// createDemoState: Creates demo state.
+
 export function createDemoState() {
   const now = new Date();
   const year = now.getFullYear();
@@ -270,7 +276,7 @@ export function createDemoState() {
   };
 }
 
-// stickerPosition: Handles sticker position.
+
 export function stickerPosition(isoDate, dotId) {
   const h1 = hash32(`${isoDate}|${dotId}|x`);
   const h2 = hash32(`${isoDate}|${dotId}|y`);
@@ -283,7 +289,7 @@ export function stickerPosition(isoDate, dotId) {
   };
 }
 
-// stickerPositionMonth: Handles sticker position month.
+
 export function stickerPositionMonth(isoDate, dotId) {
   const h1 = hash32(`${isoDate}|${dotId}|x|m`);
   const h2 = hash32(`${isoDate}|${dotId}|y|m`);
@@ -295,7 +301,7 @@ export function stickerPositionMonth(isoDate, dotId) {
   };
 }
 
-// getDemoDotPosition: Returns demo dot position.
+
 export function getDemoDotPosition(demoState, isoDate, dotId) {
   const stored = demoState.dotPositions?.[isoDate]?.[dotId];
   const base = stickerPosition(isoDate, dotId);
@@ -307,7 +313,7 @@ export function getDemoDotPosition(demoState, isoDate, dotId) {
   };
 }
 
-// getDotPosition: Returns dot position.
+
 export function getDotPosition(isoDate, dotId, mode) {
   const stored = state.dotPositions?.[isoDate]?.[dotId];
   const base = mode === "month" ? stickerPositionMonth(isoDate, dotId) : stickerPosition(isoDate, dotId);
@@ -319,13 +325,13 @@ export function getDotPosition(isoDate, dotId, mode) {
   };
 }
 
-// saveDotPosition: Saves dot position.
+
 export function saveDotPosition(isoDate, dotId, left, top) {
   if (!state.dotPositions[isoDate]) state.dotPositions[isoDate] = {};
   state.dotPositions[isoDate][dotId] = { left, top };
 }
 
-// clearDotPosition: Clears dot position.
+
 export function clearDotPosition(isoDate, dotId) {
   const dayPositions = state.dotPositions[isoDate];
   if (!dayPositions) return;
@@ -335,7 +341,7 @@ export function clearDotPosition(isoDate, dotId) {
   }
 }
 
-// normalizeImportedState: Normalizes imported state.
+
 export function normalizeImportedState(parsed) {
   if (!parsed || typeof parsed !== "object") {
     return structuredClone(defaultState);
@@ -351,10 +357,30 @@ export function normalizeImportedState(parsed) {
     darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
     lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : defaultState.lastModified,
     dotTypes: normalizeDotTypes(parsed.dotTypes),
-    dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
+    dayDots: cleanOrphanDotIds(
+      parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},
+      normalizeDotTypes(parsed.dotTypes)
+    ),
     dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
     dayNotes: parsed.dayNotes && typeof parsed.dayNotes === "object" ? parsed.dayNotes : {}
   };
+}
+
+function cleanOrphanDotIds(dayDots, dotTypes) {
+  const validIds = new Set(dotTypes.map((d) => d.id));
+  const cleaned = {};
+  for (const [iso, ids] of Object.entries(dayDots)) {
+    if (!Array.isArray(ids)) continue;
+    const filtered = ids.filter((id) => validIds.has(id));
+    if (filtered.length > 0) cleaned[iso] = filtered;
+  }
+  return cleaned;
+}
+
+export function normalizeDotTypeName(name) {
+  return String(name || "")
+    .trim()
+    .slice(0, DOT_NAME_MAX_LENGTH);
 }
 
 function normalizeDotTypes(dotTypes) {
@@ -367,20 +393,13 @@ function normalizeDotTypes(dotTypes) {
     }));
 }
 
-function normalizeDotTypeName(name) {
-  return String(name || "")
-    .trim()
-    .slice(0, DOT_NAME_MAX_LENGTH);
-}
-
-// getStateTimestamp: Returns state timestamp.
 export function getStateTimestamp() {
   return new Date(state.lastModified || 0).getTime();
 }
 
 function persistStateToLocal(sourceState) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: sourceState }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: SCHEMA_VERSION, data: sourceState }));
   } catch {
     // ignore storage errors
   }
