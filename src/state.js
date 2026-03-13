@@ -87,7 +87,10 @@ export function loadState() {
     if (version > SCHEMA_VERSION) {
       console.warn(`State schema version ${version} is newer than supported ${SCHEMA_VERSION}.`);
     }
-    return normalizeImportedState(parsed?.data ?? parsed);
+    const loaded = normalizeImportedState(parsed?.data ?? parsed);
+    loaded.monthCursor = startOfMonth(new Date()).toISOString();
+    loaded.yearCursor = new Date().getFullYear();
+    return loaded;
   } catch {
     return structuredClone(defaultState);
   }
@@ -399,7 +402,8 @@ export function getStateTimestamp() {
 
 function persistStateToLocal(sourceState) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: SCHEMA_VERSION, data: sourceState }));
+    const { monthCursor, yearCursor, ...data } = sourceState;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: SCHEMA_VERSION, data }));
   } catch {
     // ignore storage errors
   }

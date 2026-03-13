@@ -347,10 +347,14 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
   const remoteState = normalizeImportedState(latest.data);
   const localDiffersFromRemote = !areStatesEqual(state, remoteState);
   if (localDiffersFromRemote) {
+    const localMonthCursor = state.monthCursor;
+    const localYearCursor = state.yearCursor;
     const merged = mergeDiaryStates(state, remoteState, {
       preferLocalSettings: true,
       preferLocalConflicts: false
     });
+    merged.monthCursor = localMonthCursor;
+    merged.yearCursor = localYearCursor;
     setState(merged);
     requestRender();
   }
@@ -453,5 +457,6 @@ function formatSyncTime(iso) {
 }
 
 function getCloudStateSnapshot(sourceState) {
-  return structuredClone(sourceState);
+  const { monthCursor, yearCursor, ...data } = sourceState;
+  return structuredClone(data);
 }
