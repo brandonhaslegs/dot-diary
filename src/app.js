@@ -1,4 +1,4 @@
-import { AUTH_STATE_KEY, DEMO_MODE, LOCAL_DEV_MODE, VIEW_MODE_KEY } from "./constants.js";
+import { DEMO_MODE, LOCAL_DEV_MODE } from "./constants.js";
 import {
   authEmailInput,
   authSendButton,
@@ -105,7 +105,13 @@ function submitMagicLinkOnEnter(input, submit) {
   });
 }
 
-enterAppButton?.addEventListener("click", () => enterApp());
+enterAppButton?.addEventListener("click", () => {
+  if (LOCAL_DEV_MODE) {
+    enterApp({ skipOnboarding: true });
+    return;
+  }
+  showLogin();
+});
 openLoginButton?.addEventListener("click", showLogin);
 loginBackButton?.addEventListener("click", showMarketingHero);
 loginSendButton?.addEventListener("click", () => handleMagicLink(loginEmailInput?.value, loginSendButton));
@@ -203,24 +209,11 @@ document.addEventListener("keydown", handleGlobalKeyDown);
 
 // Initial render and first-view routing.
 render();
-try {
-  if (LOCAL_DEV_MODE) {
-    enterApp({ skipOnboarding: true });
-  } else if (!DEMO_MODE) {
-    const lastView = localStorage.getItem(VIEW_MODE_KEY);
-    const hasAuthState = localStorage.getItem(AUTH_STATE_KEY) === "1";
-    if (lastView === "marketing") {
-      showMarketingPage();
-    } else if (hasAuthState) {
-      enterApp({ skipOnboarding: true });
-    } else {
-      showMarketingPage();
-    }
-  }
-} catch {
-  // ignore storage access
+if (LOCAL_DEV_MODE) {
+  enterApp({ skipOnboarding: true });
+} else if (!DEMO_MODE) {
+  showMarketingPage();
 }
-showOnboardingIfNeeded();
 
 // Startup services and background listeners.
 initSupabaseAuth();

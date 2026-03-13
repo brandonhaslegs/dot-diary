@@ -1,18 +1,12 @@
 import {
-  APP_ENTRY_KEY,
-  AUTH_STATE_KEY,
   COLOR_PALETTE,
   DEMO_MODE,
   DOT_NAME_MAX_LENGTH,
   LOCAL_DEV_MODE,
   MOBILE_MONTH_BATCH_SIZE,
   MODAL_ANIMATION_MS,
-  ONBOARDING_KEY,
-  STORAGE_SESSION_FALLBACK_KEY,
   POPOVER_ANIMATION_MS,
   SUGGESTED_DOT_TYPES,
-  STORAGE_KEY,
-  VIEW_MODE_KEY,
   YEAR_BATCH_SIZE
 } from "./constants.js";
 import {
@@ -228,11 +222,6 @@ export function showMarketingHero() {
 
 // showMarketingPage: Shows marketing page.
 export function showMarketingPage() {
-  try {
-    localStorage.setItem(VIEW_MODE_KEY, "marketing");
-  } catch {
-    // ignore
-  }
   marketingPage?.classList.remove("hidden");
   appShell?.classList.add("hidden");
 }
@@ -241,12 +230,6 @@ export function showMarketingPage() {
 export function resetToLoggedOut() {
   hasEnteredApp = false;
   loginMode = false;
-  try {
-    localStorage.removeItem(APP_ENTRY_KEY);
-    localStorage.setItem(VIEW_MODE_KEY, "marketing");
-  } catch {
-    // ignore
-  }
   marketingLogin?.classList.add("hidden");
   marketingHero?.classList.remove("hidden");
   marketingPage?.classList.remove("hidden");
@@ -1859,18 +1842,9 @@ export function handleGlobalKeyDown(event) {
 export function showOnboardingIfNeeded() {
   if (!hasEnteredApp) return;
   if (DEMO_MODE) return;
-  try {
-    if (localStorage.getItem(AUTH_STATE_KEY) !== "1") return;
-  } catch {
-    return;
-  }
-  try {
-    if (localStorage.getItem(ONBOARDING_KEY) === "1") return;
-    showOnboardingStep("intro");
-    onboardingModal?.classList.remove("hidden");
-  } catch {
-    // Ignore storage access issues.
-  }
+  if (state.onboardingComplete) return;
+  showOnboardingStep("intro");
+  onboardingModal?.classList.remove("hidden");
 }
 
 // showOnboardingStep: Shows onboarding step.
@@ -1893,11 +1867,8 @@ export function closeOnboardingModal() {
 
 // completeOnboarding: Completes onboarding.
 export function completeOnboarding() {
-  try {
-    localStorage.setItem(ONBOARDING_KEY, "1");
-  } catch {
-    // ignore
-  }
+  state.onboardingComplete = true;
+  saveAndRender();
   closeOnboardingModal();
 }
 
@@ -1909,37 +1880,12 @@ export function renderOnboardingLists() {
 
 // enterApp: Enters app.
 export function enterApp({ skipOnboarding = false } = {}) {
-  if (!DEMO_MODE && !LOCAL_DEV_MODE) {
-    try {
-      if (localStorage.getItem(AUTH_STATE_KEY) !== "1") {
-        showMarketingPage();
-        showLogin();
-        showToast("Sign in to access your diary.");
-        return false;
-      }
-    } catch {
-      showMarketingPage();
-      showLogin();
-      showToast("Sign in to access your diary.");
-      return false;
-    }
-  }
   hasEnteredApp = true;
   loginMode = false;
-  try {
-    localStorage.setItem(APP_ENTRY_KEY, "1");
-    localStorage.setItem(VIEW_MODE_KEY, "app");
-  } catch {
-    // ignore
-  }
   marketingPage?.classList.add("hidden");
   appShell?.classList.remove("hidden");
   if (skipOnboarding) {
-    try {
-      localStorage.setItem(ONBOARDING_KEY, "1");
-    } catch {
-      // ignore
-    }
+    state.onboardingComplete = true;
     closeOnboardingModal();
   } else {
     showOnboardingIfNeeded();
@@ -2258,18 +2204,22 @@ export function isDarkModeEnabled() {
 
 // handleResetOnboarding: Handles reset onboarding.
 export function handleResetOnboarding() {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    sessionStorage.removeItem(STORAGE_SESSION_FALLBACK_KEY);
-    localStorage.removeItem(ONBOARDING_KEY);
-    localStorage.removeItem(AUTH_STATE_KEY);
-  } catch {
-    // ignore
-  }
   closeSettingsModal();
-  setState(structuredClone(defaultState));
+  setState({
+    ...structuredClone(defaultState),
+    dotTypes: state.dotTypes,
+    dayDots: state.dayDots,
+    dotPositions: state.dotPositions,
+    dayNotes: state.dayNotes,
+    monthCursor: state.monthCursor,
+    yearCursor: state.yearCursor,
+    weekStartsMonday: state.weekStartsMonday,
+    hideSuggestions: state.hideSuggestions,
+    showKeyboardHints: state.showKeyboardHints,
+    darkMode: state.darkMode,
+    onboardingComplete: false
+  });
   saveAndRender();
-  resetToLoggedOut();
   showOnboardingIfNeeded();
 }
 

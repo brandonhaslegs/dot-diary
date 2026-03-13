@@ -28,7 +28,8 @@ function mergeSettingsFromLocal(baseState, localState) {
       typeof localState.showKeyboardHints === "boolean"
         ? localState.showKeyboardHints
         : baseState.showKeyboardHints,
-    darkMode: typeof localState.darkMode === "boolean" ? localState.darkMode : baseState.darkMode
+    darkMode: typeof localState.darkMode === "boolean" ? localState.darkMode : baseState.darkMode,
+    onboardingComplete: Boolean(baseState.onboardingComplete || localState.onboardingComplete)
   };
 }
 

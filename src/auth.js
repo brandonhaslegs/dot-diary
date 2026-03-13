@@ -1,10 +1,7 @@
 import {
   AUTH_INTENT_KEY,
-  AUTH_STATE_KEY,
+  CANONICAL_APP_URL,
   LOCAL_DEV_MODE,
-  ONBOARDING_KEY,
-  STORAGE_KEY,
-  STORAGE_SESSION_FALLBACK_KEY,
   SUPABASE_ANON_KEY,
   SUPABASE_URL
 } from "./constants.js";
@@ -19,12 +16,14 @@ import {
 import {
   defaultState,
   normalizeImportedState,
+  persistStateSnapshot,
   requestRender,
   saveAndRender,
   setState,
   state
 } from "./state.js";
 import { startOfMonth } from "./utils.js";
+import { getMagicLinkRedirectTargets } from "./auth-redirect.mjs";
 import { areStatesEqual, mergeDiaryStates, pickLatestCloudRow } from "./sync-core.mjs";
 import {
   closeDeleteModal,
@@ -97,21 +96,13 @@ export async function initSupabaseAuth() {
   }
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
-  if (!syncUser) {
-    // Prevent stale auth bootstrap state from implying cloud sync is active.
-    try {
-      localStorage.removeItem(AUTH_STATE_KEY);
-    } catch {
-      // ignore
-    }
-  }
-  const enteredFromMarketing = !getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden");
-  if (enteredFromMarketing) {
-    enterApp({ skipOnboarding: true });
-  }
   updateAuthUI();
   if (syncUser) {
     await loadFromCloud({ fromAuthBootstrap: true });
+    const enteredFromMarketing = !getHasEnteredApp() && !marketingPage?.classList.contains("hidden");
+    if (enteredFromMarketing) {
+      enterApp();
+    }
     if (shouldFocusTodayOnEntry) {
       focusPeriodToToday();
       clearAuthIntent();
@@ -121,22 +112,13 @@ export async function initSupabaseAuth() {
   supabase.auth.onAuthStateChange(async (_event, session) => {
     const wasSignedIn = Boolean(syncUser);
     syncUser = session?.user || null;
-    const enteredFromMarketingNow = !getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden");
-    if (enteredFromMarketingNow) {
-      enterApp({ skipOnboarding: true });
-    }
-    try {
-      if (syncUser) {
-        localStorage.setItem(AUTH_STATE_KEY, "1");
-      } else {
-        localStorage.removeItem(AUTH_STATE_KEY);
-      }
-    } catch {
-      // ignore
-    }
     updateAuthUI();
     if (syncUser) {
       await loadFromCloud({ fromAuthBootstrap: !wasSignedIn });
+      const enteredFromMarketingNow = !getHasEnteredApp() && !marketingPage?.classList.contains("hidden");
+      if (enteredFromMarketingNow) {
+        enterApp();
+      }
       if (!wasSignedIn && shouldFocusTodayOnEntry) {
         focusPeriodToToday();
         clearAuthIntent();
@@ -163,15 +145,6 @@ export async function refreshAuthSession({ loadCloud = false } = {}) {
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
-  try {
-    if (syncUser) {
-      localStorage.setItem(AUTH_STATE_KEY, "1");
-    } else {
-      localStorage.removeItem(AUTH_STATE_KEY);
-    }
-  } catch {
-    // ignore
-  }
   updateAuthUI();
   if (syncUser) {
     if (loadCloud) await loadFromCloud({ silentError: true });
@@ -222,25 +195,23 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
     // ignore
   }
   let error = null;
-  let usedFallbackRedirect = false;
-  const firstAttempt = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: getMagicLinkRedirectTo()
-    }
-  });
-  error = firstAttempt.error || null;
-
-  // Some environments (mobile wrappers/custom origins) can reject custom redirect URLs.
-  // Retry without explicit redirect so Supabase falls back to project default URL settings.
-  if (error) {
-    const fallbackAttempt = await supabase.auth.signInWithOtp({ email });
-    if (!fallbackAttempt.error) {
+  let successfulTarget = undefined;
+  const redirectTargets = getMagicLinkRedirectTargets(window.location);
+  for (const target of redirectTargets) {
+    const attempt = target
+      ? await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: target
+          }
+        })
+      : await supabase.auth.signInWithOtp({ email });
+    if (!attempt.error) {
       error = null;
-      usedFallbackRedirect = true;
-    } else {
-      error = fallbackAttempt.error;
+      successfulTarget = target;
+      break;
     }
+    error = attempt.error;
   }
 
   if (error) {
@@ -252,10 +223,14 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
       sourceButton.disabled = false;
     }
   } else {
+    const usedCanonicalRedirect = typeof successfulTarget === "string" && successfulTarget.startsWith(CANONICAL_APP_URL);
+    const usedDefaultRedirect = successfulTarget == null;
     showToast(
-      usedFallbackRedirect
-        ? "Magic link sent. Check your email. (Using default redirect.)"
-        : "Magic link sent. Check your email."
+      usedCanonicalRedirect
+        ? "Magic link sent. Check your email. It will open on the main app URL."
+        : usedDefaultRedirect
+          ? "Magic link sent. Check your email. (Using default redirect.)"
+          : "Magic link sent. Check your email."
     );
     if (sourceButton) {
       sourceButton.textContent = "Check your email";
@@ -296,25 +271,7 @@ export async function signOutSupabase() {
       syncUser = null;
       lastSyncedAt = null;
       lastSyncError = "";
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch {
-        // ignore
-      }
-      try {
-        sessionStorage.removeItem(STORAGE_SESSION_FALLBACK_KEY);
-      } catch {
-        // ignore
-      }
-      try {
-        localStorage.removeItem(ONBOARDING_KEY);
-        localStorage.removeItem(AUTH_STATE_KEY);
-      } catch {
-        // ignore
-      }
       setState(structuredClone(defaultState));
-      // Persist cleared state so stale fallback data cannot reappear after refresh.
-      saveAndRender();
       closePopover();
       closeSettingsModal();
       closeDeleteModal();
@@ -361,7 +318,7 @@ export function updateAuthUI() {
       syncStatus.classList.toggle("muted", !lastSyncError);
     }
   } else {
-    authStatus.textContent = "Local-only mode on this device. Sign in to sync and back up.";
+    authStatus.textContent = "Sign in to access your diary.";
     authStatus.classList.add("muted");
     authSignOutButton.classList.add("hidden");
     if (authRow) authRow.classList.remove("hidden");
@@ -424,6 +381,7 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
 
   if (!areStatesEqual(localState, mergedState)) {
     setState(mergedState);
+    persistStateSnapshot(mergedState);
     requestRender();
   }
   if (!areStatesEqual(remoteState, mergedState)) {
@@ -514,12 +472,12 @@ function stopSyncPolling() {
 }
 
 function handleVisibilitySync() {
-  if (document.hidden || !syncUser) return;
+  if (document.hidden || !supabase) return;
+  if (!syncUser) {
+    refreshAuthSession({ loadCloud: true });
+    return;
+  }
   loadFromCloud({ silentError: true });
-}
-
-function getMagicLinkRedirectTo() {
-  return `${window.location.origin}${window.location.pathname}`;
 }
 
 function formatSyncStatus() {

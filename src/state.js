@@ -1,4 +1,10 @@
-import { DEMO_MODE, DOT_NAME_MAX_LENGTH, STORAGE_KEY, STORAGE_SESSION_FALLBACK_KEY } from "./constants.js";
+import {
+  CLOUD_ONLY_DIARY,
+  DEMO_MODE,
+  DOT_NAME_MAX_LENGTH,
+  STORAGE_KEY,
+  STORAGE_SESSION_FALLBACK_KEY
+} from "./constants.js";
 import { formatISODate, hash32, normalizeNote, shuffleArray, startOfMonth } from "./utils.js";
 
 export const defaultState = {
@@ -8,6 +14,7 @@ export const defaultState = {
   hideSuggestions: false,
   showKeyboardHints: true,
   darkMode: null,
+  onboardingComplete: false,
   lastModified: null,
   dotTypes: [],
   dayDots: {},
@@ -63,6 +70,12 @@ export function setState(next) {
   state = next;
 }
 
+// persistStateSnapshot: Writes a state snapshot locally without mutating timestamps or scheduling sync.
+export function persistStateSnapshot(sourceState) {
+  if (DEMO_MODE || CLOUD_ONLY_DIARY) return;
+  persistStateToLocal(sourceState);
+}
+
 // saveAndRender: Persists state, schedules sync, and re-renders.
 export function saveAndRender() {
   if (DEMO_MODE) {
@@ -70,13 +83,18 @@ export function saveAndRender() {
     return;
   }
   state.lastModified = new Date().toISOString();
-  persistStateToLocal(state);
+  if (!CLOUD_ONLY_DIARY) {
+    persistStateToLocal(state);
+  }
   scheduleSyncFn();
   requestRender();
 }
 
 // loadState: Loads persisted state from localStorage and normalizes its shape.
 export function loadState() {
+  if (CLOUD_ONLY_DIARY) {
+    return structuredClone(defaultState);
+  }
   try {
     const raw = readPersistedStateRaw();
     if (!raw) return structuredClone(defaultState);
@@ -349,6 +367,7 @@ export function normalizeImportedState(parsed) {
     showKeyboardHints:
       typeof parsed.showKeyboardHints === "boolean" ? parsed.showKeyboardHints : defaultState.showKeyboardHints,
     darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
+    onboardingComplete: Boolean(parsed.onboardingComplete),
     lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : defaultState.lastModified,
     dotTypes: normalizeDotTypes(parsed.dotTypes),
     dayDots: parsed.dayDots && typeof parsed.dayDots === "object" ? parsed.dayDots : {},

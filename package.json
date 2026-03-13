@@ -2,7 +2,7 @@
   "name": "dot-diary",
   "private": true,
   "scripts": {
-    "test:sync": "node --test tests/sync-simulator.test.mjs",
+    "test:sync": "node --test tests/*.test.mjs",
     "test:e2e": "playwright test",
     "test:all": "npm run test:sync && npm run test:e2e"
   },
