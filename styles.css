@@ -523,7 +523,7 @@ textarea {
   border-radius: 999px;
   background: currentColor;
   flex: 0 0 auto;
-  margin-top: 1px;
+  margin-top: 0;
 }
 
 #enter-app {
@@ -846,6 +846,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  line-height: 1;
   transition: none;
   box-shadow: none;
 }
@@ -914,6 +915,7 @@ textarea {
   box-shadow: none;
   transform: none;
   transition: none;
+  line-height: 1;
 }
 
 #period-picker-label {
@@ -1003,6 +1005,14 @@ textarea {
   box-shadow: none;
   transform: none;
   transition: none;
+  line-height: 1;
+}
+
+.brand-link svg,
+#period-picker-toggle svg,
+.icon-button svg {
+  display: block;
+  flex: 0 0 auto;
 }
 
 .key-hint {
@@ -3115,6 +3125,12 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     min-height: 34px;
     padding: 4px 8px;
     flex-shrink: 0;
+  }
+
+  .app-shell .brand-link,
+  .app-shell .brand-link:hover,
+  .app-shell .brand-link:active {
+    transform: none;
   }
 
   .period-picker {
