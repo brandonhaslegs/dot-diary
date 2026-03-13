@@ -51,6 +51,23 @@ export const DOT_NAME_MAX_LENGTH = 24;
 export const MODAL_ANIMATION_MS = 280;
 export const POPOVER_ANIMATION_MS = 180;
 
+// Timing constants used across UI interactions.
+export const TOAST_DISPLAY_MS = 1800;
+export const TOAST_HIDE_MS = 280;
+export const SYNC_DEBOUNCE_MS = 250;
+export const SYNC_POLL_MS = 5000;
+export const SUPPRESS_DAY_OPEN_MS = 250;
+export const SUPPRESS_DAY_CLOSE_MS = 200;
+export const MENU_SCRIM_HIDE_MS = 180;
+export const DEV_POLL_MS = 1000;
+export const PERIOD_SCROLL_THRESHOLD = 24;
+export const MOBILE_SCROLL_NEAR_TOP = 80;
+export const MOBILE_BREAKPOINT = 480;
+export const BUTTON_RESET_DELAY_MS = 2000;
+
+// Schema version for local storage migration.
+export const SCHEMA_VERSION = 1;
+
 // Auth and sync local flags.
 export const AUTH_STATE_KEY = "dot-diary-authenticated";
 export const AUTH_INTENT_KEY = "dot-diary-auth-intent";

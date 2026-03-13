@@ -1,15 +1,24 @@
 import {
   APP_ENTRY_KEY,
   AUTH_STATE_KEY,
+  BUTTON_RESET_DELAY_MS,
   COLOR_PALETTE,
+  DEV_HOSTS,
+  DEV_POLL_MS,
   DEMO_MODE,
   DOT_NAME_MAX_LENGTH,
+  MENU_SCRIM_HIDE_MS,
+  MOBILE_BREAKPOINT,
   MOBILE_MONTH_BATCH_SIZE,
+  MOBILE_SCROLL_NEAR_TOP,
   MODAL_ANIMATION_MS,
   ONBOARDING_KEY,
+  PERIOD_SCROLL_THRESHOLD,
   POPOVER_ANIMATION_MS,
   SUGGESTED_DOT_TYPES,
   STORAGE_KEY,
+  SUPPRESS_DAY_CLOSE_MS,
+  SUPPRESS_DAY_OPEN_MS,
   VIEW_MODE_KEY,
   YEAR_BATCH_SIZE
 } from "./constants.js";
@@ -65,6 +74,7 @@ import {
   getDemoDotPosition,
   getDotPosition,
   normalizeImportedState,
+  normalizeDotTypeName,
   requestRender,
   saveAndRender,
   saveDotPosition,
@@ -95,6 +105,17 @@ let menuScrimHideTimer = null;
 let hasEnteredApp = false;
 let loginMode = false;
 let updateAuthUIFn = () => {};
+let lastFocusTrigger = null;
+
+// WeakMaps for private state on DOM elements (avoids underscore-prefixed properties).
+const portalParents = new WeakMap();
+const hostRows = new WeakMap();
+const hexInputs = new WeakMap();
+const currentColors = new WeakMap();
+
+// Cached lookups rebuilt each render cycle.
+let dotTypeMap = new Map();
+let dotTypeInUseSet = new Set();
 const DOT_SPACING_BY_MODE = {
   year: 9,
   month: 11
@@ -190,41 +211,35 @@ function reduceMarketingDotDensity(demoState) {
   demoState.dayDots = reducedDayDots;
 }
 
-// registerAuthUpdater: Registers auth updater.
+
 export function registerAuthUpdater(fn) {
   updateAuthUIFn = fn;
 }
 
-// getHasEnteredApp: Returns has entered app.
 export function getHasEnteredApp() {
   return hasEnteredApp;
 }
 
-// setHasEnteredApp: Sets has entered app.
 export function setHasEnteredApp(value) {
   hasEnteredApp = value;
 }
 
-// setLoginMode: Sets login mode.
 export function setLoginMode(value) {
   loginMode = value;
 }
 
-// showLogin: Shows login.
 export function showLogin() {
   loginMode = true;
   marketingHero?.classList.add("hidden");
   marketingLogin?.classList.remove("hidden");
 }
 
-// showMarketingHero: Shows marketing hero.
 export function showMarketingHero() {
   loginMode = false;
   marketingLogin?.classList.add("hidden");
   marketingHero?.classList.remove("hidden");
 }
 
-// showMarketingPage: Shows marketing page.
 export function showMarketingPage() {
   try {
     localStorage.setItem(VIEW_MODE_KEY, "marketing");
@@ -235,27 +250,30 @@ export function showMarketingPage() {
   appShell?.classList.add("hidden");
 }
 
-// resetToLoggedOut: Resets to logged out.
 export function resetToLoggedOut() {
   hasEnteredApp = false;
   loginMode = false;
   try {
     localStorage.removeItem(APP_ENTRY_KEY);
-    localStorage.setItem(VIEW_MODE_KEY, "marketing");
   } catch {
     // ignore
   }
   marketingLogin?.classList.add("hidden");
   marketingHero?.classList.remove("hidden");
-  marketingPage?.classList.remove("hidden");
-  appShell?.classList.add("hidden");
+  showMarketingPage();
 }
 
-// render: Renders the main UI from current app state.
 export function render() {
   const active = document.activeElement;
   const editingNote = active instanceof HTMLElement && active.classList.contains("note-editor");
   if (editingNote) return;
+
+  // Rebuild per-render caches for O(1) lookups.
+  dotTypeMap = new Map(state.dotTypes.map((d) => [d.id, d]));
+  dotTypeInUseSet = new Set();
+  for (const ids of Object.values(state.dayDots)) {
+    for (const id of ids) dotTypeInUseSet.add(id);
+  }
 
   applyTheme();
   renderPeriodPicker();
@@ -297,8 +315,8 @@ function updateTodayButtonVisibility() {
   todayButton.classList.toggle("hidden", !shouldShow);
 }
 
-// renderPeriodPicker: Renders period picker.
 export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0) {
+  if (!periodPickerMenu || !periodPickerLabel) return;
   const currentYear = new Date().getFullYear();
   if (state.yearCursor > currentYear) {
     state.yearCursor = currentYear;
@@ -381,7 +399,6 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
   }
 }
 
-// shiftYearBy: Shifts year by.
 export function shiftYearBy(delta) {
   if (isMobileView()) return;
   const amount = Number(delta) || 0;
@@ -397,7 +414,6 @@ export function shiftYearBy(delta) {
   saveAndRender();
 }
 
-// renderDiaryGrid: Renders diary grid.
 export function renderDiaryGrid() {
   if (isMobileView()) {
     const wasHidden = monthGrid.classList.contains("hidden");
@@ -414,7 +430,6 @@ export function renderDiaryGrid() {
   }
 }
 
-// renderYearGrid: Renders year grid.
 export function renderYearGrid() {
   const year = state.yearCursor;
   const todayIso = formatISODate(new Date());
@@ -466,7 +481,7 @@ export function renderYearGrid() {
         isLocked: (dotId) => Boolean(state.dotPositions?.[iso]?.[dotId])
       });
       dayDotIds.forEach((dotId) => {
-        const dotType = state.dotTypes.find((t) => t.id === dotId);
+        const dotType = dotTypeMap.get(dotId);
         if (!dotType) return;
         const sticker = document.createElement("span");
         sticker.className = "dot-sticker";
@@ -510,7 +525,6 @@ export function renderYearGrid() {
   }
 }
 
-// renderMonthGrid: Renders month grid.
 export function renderMonthGrid() {
   const selectedMonthDate = startOfMonth(new Date(state.monthCursor));
   const currentMonthDate = startOfMonth(new Date());
@@ -546,7 +560,7 @@ export function renderMonthGrid() {
       isLocked: (dotId) => Boolean(state.dotPositions?.[day.iso]?.[dotId])
     });
     dayDotIds.forEach((dotId) => {
-      const dotType = state.dotTypes.find((t) => t.id === dotId);
+      const dotType = dotTypeMap.get(dotId);
       if (!dotType) return;
       const sticker = document.createElement("span");
       sticker.className = "dot-sticker";
@@ -650,7 +664,7 @@ export function renderMonthGrid() {
         }
         updateTodayButtonVisibility();
 
-        const nearTop = monthGrid.scrollTop <= 80;
+        const nearTop = monthGrid.scrollTop <= MOBILE_SCROLL_NEAR_TOP;
         if (nearTop && !periodLoadInProgress) {
           periodLoadInProgress = true;
           const previousHeight = monthGrid.scrollHeight;
@@ -691,7 +705,6 @@ export function renderMonthGrid() {
   }
 }
 
-// scrollToToday: Handles scroll to today.
 export function scrollToToday() {
   const today = new Date();
   const todayMonth = startOfMonth(today);
@@ -780,9 +793,10 @@ function resolveDotPositionsForDay({ isoDate, dotIds, mode, getBasePosition, isL
   return resolved;
 }
 
-// renderMarketingCalendar: Renders marketing calendar.
 export function renderMarketingCalendar() {
   if (!marketingCalendar || !marketingYear || !marketingMonth) return;
+  // Skip heavy render if the user is already signed in and won't see the marketing page.
+  if (hasEnteredApp && marketingPage?.classList.contains("hidden")) return;
   const demoState = createDemoState();
   reduceMarketingDotDensity(demoState);
   const year = demoState.yearCursor;
@@ -855,7 +869,6 @@ export function renderMarketingCalendar() {
   renderMarketingMonth(demoState);
 }
 
-// renderMarketingMonth: Renders marketing month.
 export function renderMarketingMonth(demoState) {
   const monthDate = startOfMonth(new Date());
   const days = buildMonthCells(monthDate, demoState.weekStartsMonday);
@@ -901,7 +914,6 @@ export function renderMarketingMonth(demoState) {
   }
 }
 
-// renderDotTypeList: Renders dot type list.
 export function renderDotTypeList(targetList = dotTypeList) {
   if (!targetList) return;
   targetList.innerHTML = "";
@@ -1031,14 +1043,14 @@ export function renderDotTypeList(targetList = dotTypeList) {
       if (opening) {
         showAnimated(menu);
         requestAnimationFrame(() => {
-          if (!window.matchMedia("(max-width: 480px)").matches) {
+          if (!window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches) {
             positionDotActionsMenu(menu);
           } else {
             menu.style.removeProperty("--menu-offset-x");
             menu.style.removeProperty("--menu-offset-y");
             if (mobileMenuPortal && !menu.dataset.portalActive) {
               menu.dataset.portalActive = "true";
-              menu._portalParent = actions;
+              portalParents.set(menu, actions);
               mobileMenuPortal.appendChild(menu);
             }
           }
@@ -1074,7 +1086,6 @@ export function renderDotTypeList(targetList = dotTypeList) {
   }
 }
 
-// renderSuggestedDotTypes: Renders suggested dot types.
 export function renderSuggestedDotTypes(targetList = suggestedDotList) {
   if (!targetList) return;
   targetList.innerHTML = "";
@@ -1085,7 +1096,12 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "suggestion-chip";
-    chip.innerHTML = `<span class="swatch" style="background:${suggestion.color}"></span><span>${suggestion.name}</span>`;
+    const chipSwatch = document.createElement("span");
+    chipSwatch.className = "swatch";
+    chipSwatch.style.background = suggestion.color;
+    const chipLabel = document.createElement("span");
+    chipLabel.textContent = suggestion.name;
+    chip.append(chipSwatch, chipLabel);
     chip.addEventListener("click", () => addSuggestedDotType(suggestion));
     targetList.appendChild(chip);
   });
@@ -1098,13 +1114,20 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
   targetList.appendChild(addNewChip);
 }
 
-// openPopover: Opens popover.
+function restoreFocus() {
+  if (lastFocusTrigger && typeof lastFocusTrigger.focus === "function") {
+    lastFocusTrigger.focus({ preventScroll: true });
+  }
+  lastFocusTrigger = null;
+}
+
 export function openPopover(isoDate, x, y, contextMonthIso = null) {
   if (popoverHideTimer) {
     clearTimeout(popoverHideTimer);
     popoverHideTimer = null;
   }
   const shouldAnimateIn = popover.classList.contains("hidden");
+  lastFocusTrigger = document.activeElement;
   activePopover = { isoDate, contextMonthIso };
   activeNoteEdit = null;
   document.body.classList.add("popover-open");
@@ -1176,7 +1199,7 @@ export function openPopover(isoDate, x, y, contextMonthIso = null) {
   popover.appendChild(noteWrap);
 
   popover.classList.remove("hidden");
-  const isSmallScreen = window.matchMedia("(max-width: 480px)").matches;
+  const isSmallScreen = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
   if (isSmallScreen) {
     popover.style.left = "";
     popover.style.top = "";
@@ -1194,7 +1217,6 @@ export function openPopover(isoDate, x, y, contextMonthIso = null) {
   showPopoverScrim();
 }
 
-// closePopover: Closes popover.
 export function closePopover() {
   activePopover = null;
   document.body.classList.remove("popover-open");
@@ -1208,9 +1230,9 @@ export function closePopover() {
     popoverHideTimer = null;
   }, POPOVER_ANIMATION_MS);
   hidePopoverScrim();
+  restoreFocus();
 }
 
-// showPopoverScrim: Shows popover scrim.
 export function showPopoverScrim() {
   if (!popoverScrim) return;
   popoverScrim.classList.remove("hidden");
@@ -1219,7 +1241,6 @@ export function showPopoverScrim() {
   });
 }
 
-// hidePopoverScrim: Hides popover scrim.
 export function hidePopoverScrim() {
   if (!popoverScrim) return;
   popoverScrim.classList.remove("visible");
@@ -1228,7 +1249,6 @@ export function hidePopoverScrim() {
   }, POPOVER_ANIMATION_MS);
 }
 
-// startNoteEdit: Starts note edit.
 export function startNoteEdit(isoDate, contextMonthIso = null, initialText = "", immediateFocus = false) {
   activeNoteEdit = isoDate;
   activeNoteEditMonthIso = contextMonthIso;
@@ -1276,14 +1296,12 @@ export function startNoteEdit(isoDate, contextMonthIso = null, initialText = "",
   });
 }
 
-// finishNoteEdit: Handles finish note edit.
 export function finishNoteEdit(isoDate, editor) {
   activeNoteEdit = null;
   activeNoteEditMonthIso = null;
   setDayNote(isoDate, editor.textContent || "");
 }
 
-// buildNoteEditor: Builds note editor.
 export function buildNoteEditor(isoDate, baseClass, monthIso = null) {
   const editor = document.createElement("div");
   editor.className = `${baseClass} note-editor`;
@@ -1315,7 +1333,6 @@ export function buildNoteEditor(isoDate, baseClass, monthIso = null) {
   return editor;
 }
 
-// toggleDot: Toggles dot.
 export function toggleDot(isoDate, dotId) {
   const ids = new Set(getDayDotIds(isoDate));
   if (ids.has(dotId)) {
@@ -1332,7 +1349,6 @@ export function toggleDot(isoDate, dotId) {
   saveAndRender();
 }
 
-// deleteDotType: Handles delete dot type.
 export function deleteDotType(dotId) {
   if (isDotTypeInUse(dotId)) return;
 
@@ -1348,7 +1364,6 @@ export function deleteDotType(dotId) {
   saveAndRender();
 }
 
-// promptDeleteDotType: Opens a confirmation flow for delete dot type.
 export function promptDeleteDotType(dotId, dotName) {
   if (isDotTypeInUse(dotId)) return;
   pendingDeleteDotTypeId = dotId;
@@ -1358,7 +1373,6 @@ export function promptDeleteDotType(dotId, dotName) {
   deleteModal.classList.remove("hidden");
 }
 
-// promptPermanentDeleteDotType: Opens a confirmation flow for permanent delete dot type.
 export function promptPermanentDeleteDotType(dotId, dotName) {
   pendingDeleteDotTypeId = dotId;
   pendingDeleteDotTypeName = dotName;
@@ -1367,7 +1381,6 @@ export function promptPermanentDeleteDotType(dotId, dotName) {
   deleteModal.classList.remove("hidden");
 }
 
-// closeDeleteModal: Closes delete modal.
 export function closeDeleteModal() {
   pendingDeleteDotTypeId = null;
   pendingDeleteDotTypeName = "";
@@ -1375,7 +1388,6 @@ export function closeDeleteModal() {
   deleteModal.classList.add("hidden");
 }
 
-// confirmDeleteDotType: Confirms delete dot type.
 export function confirmDeleteDotType() {
   if (!pendingDeleteDotTypeId) return;
   if (pendingDeleteMode === "force") {
@@ -1388,7 +1400,6 @@ export function confirmDeleteDotType() {
   closeDeleteModal();
 }
 
-// forceDeleteDotType: Force-applies delete dot type.
 export function forceDeleteDotType(dotId) {
   state.dotTypes = state.dotTypes.filter((d) => d.id !== dotId);
 
@@ -1402,7 +1413,6 @@ export function forceDeleteDotType(dotId) {
   saveAndRender();
 }
 
-// closeSettingsModal: Closes settings modal.
 export function closeSettingsModal() {
   if (settingsModalHideTimer) {
     clearTimeout(settingsModalHideTimer);
@@ -1414,19 +1424,20 @@ export function closeSettingsModal() {
     settingsModalHideTimer = null;
   }, MODAL_ANIMATION_MS);
   closeDotMenus();
+  restoreFocus();
 }
 
-// openSettingsModal: Opens settings modal.
 export function openSettingsModal() {
   if (settingsModalHideTimer) {
     clearTimeout(settingsModalHideTimer);
     settingsModalHideTimer = null;
   }
+  lastFocusTrigger = document.activeElement;
   showAnimated(settingsModal);
 }
 
-// closePeriodMenu: Closes period menu.
 export function closePeriodMenu() {
+  if (!periodPickerMenu) return;
   periodPickerMenu.classList.remove("visible");
   periodPickerMenu.classList.add("hidden");
   updateMenuScrim();
@@ -1471,6 +1482,31 @@ function getFocusableElements(container) {
   });
 }
 
+function trapFocus(container, event) {
+  const focusable = getFocusableElements(container);
+  if (focusable.length === 0) {
+    event.preventDefault();
+    return;
+  }
+  const activeElement = document.activeElement;
+  const activeIndex = focusable.indexOf(activeElement);
+  if (activeIndex === -1) {
+    event.preventDefault();
+    (event.shiftKey ? focusable[focusable.length - 1] : focusable[0]).focus();
+    return;
+  }
+  if (!event.shiftKey && activeIndex === focusable.length - 1) {
+    event.preventDefault();
+    focusable[0].focus();
+    return;
+  }
+  if (event.shiftKey && activeIndex === 0) {
+    event.preventDefault();
+    focusable[focusable.length - 1].focus();
+    return;
+  }
+}
+
 function getPopoverDotItems() {
   return Array.from(popover.querySelectorAll(".popover-item"));
 }
@@ -1493,7 +1529,6 @@ function focusPopoverDotItem(items, index) {
   item.scrollIntoView({ block: "nearest" });
 }
 
-// openPeriodMenu: Opens period menu.
 export function openPeriodMenu() {
   showAnimated(periodPickerMenu);
   updateMenuScrim();
@@ -1505,7 +1540,6 @@ export function openPeriodMenu() {
   });
 }
 
-// addSuggestedDotType: Adds suggested dot type.
 export function addSuggestedDotType(suggestion) {
   if (hasDotTypeName(suggestion.name)) return;
   state.dotTypes.push({
@@ -1517,7 +1551,6 @@ export function addSuggestedDotType(suggestion) {
   showToast(`Added "${suggestion.name}".`);
 }
 
-// addNewDotType: Adds new dot type.
 export function addNewDotType() {
   const dotId = crypto.randomUUID();
   const dotName = "New Dot";
@@ -1531,16 +1564,9 @@ export function addNewDotType() {
   showToast(`Added "${dotName}".`);
 }
 
-// hasDotTypeName: Checks whether dot type name.
 export function hasDotTypeName(name) {
   const target = normalizeDotTypeName(name).toLowerCase();
   return state.dotTypes.some((dot) => normalizeDotTypeName(dot.name).toLowerCase() === target);
-}
-
-function normalizeDotTypeName(name) {
-  return String(name || "")
-    .trim()
-    .slice(0, DOT_NAME_MAX_LENGTH);
 }
 
 function setButtonLabelWithShortcut(button, label, shortcut) {
@@ -1588,7 +1614,6 @@ function normalizeDotTypeColorInput(value) {
   return probe.style.color ? namedColor : null;
 }
 
-// getNextSuggestedColor: Returns next suggested color.
 export function getNextSuggestedColor() {
   for (const suggestion of SUGGESTED_DOT_TYPES) {
     if (!state.dotTypes.some((dot) => dot.color.toLowerCase() === suggestion.color.toLowerCase())) {
@@ -1598,17 +1623,14 @@ export function getNextSuggestedColor() {
   return "#000000";
 }
 
-// isDotTypeInUse: Returns whether dot type in use.
 export function isDotTypeInUse(dotId) {
-  return Object.values(state.dayDots).some((ids) => ids.includes(dotId));
+  return dotTypeInUseSet.has(dotId);
 }
 
-// handlePeriodPickerScroll: Handles period picker scroll.
 export function handlePeriodPickerScroll() {
   if (periodPickerMenu.classList.contains("hidden")) return;
-  const threshold = 24;
   const nearBottom =
-    periodPickerMenu.scrollTop + periodPickerMenu.clientHeight >= periodPickerMenu.scrollHeight - threshold;
+    periodPickerMenu.scrollTop + periodPickerMenu.clientHeight >= periodPickerMenu.scrollHeight - PERIOD_SCROLL_THRESHOLD;
   if (!nearBottom || periodLoadInProgress) return;
 
   periodLoadInProgress = true;
@@ -1621,21 +1643,13 @@ export function handlePeriodPickerScroll() {
   });
 }
 
-// setupMobileMonthScroll: Sets up mobile month scroll.
-export function setupMobileMonthScroll() {
-  if (monthScrollAttached || !monthGrid) return;
-  monthScrollAttached = true;
-}
-
-// dismissPopoverFromScrim: Dismisses popover from scrim.
 export function dismissPopoverFromScrim(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
   closePopover();
-  suppressDayOpenUntil = Date.now() + 250;
+  suppressDayOpenUntil = Date.now() + SUPPRESS_DAY_OPEN_MS;
 }
 
-// handleGlobalPointerDown: Handles global pointer down.
 export function handleGlobalPointerDown(event) {
   if (!event.target.closest(".period-picker")) {
     closePeriodMenu();
@@ -1659,7 +1673,7 @@ export function handleGlobalPointerDown(event) {
   const clickedDay = event.target.closest(".year-day, .month-day");
   if (!insidePopover && clickedDay) {
     closePopover();
-    suppressDayOpenUntil = Date.now() + 200;
+    suppressDayOpenUntil = Date.now() + SUPPRESS_DAY_CLOSE_MS;
     return;
   }
   if (!insidePopover && !clickedDay) {
@@ -1667,7 +1681,6 @@ export function handleGlobalPointerDown(event) {
   }
 }
 
-// handleGlobalKeyDown: Handles global key down.
 export function handleGlobalKeyDown(event) {
   const target = event.target;
   const isEditableTarget =
@@ -1683,28 +1696,7 @@ export function handleGlobalKeyDown(event) {
   const isDotPopoverOpen = Boolean(activePopover) && !popover.classList.contains("hidden");
 
   if (isDotPopoverOpen && event.key === "Tab") {
-    const focusable = getFocusableElements(popover);
-    if (focusable.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const activeElement = document.activeElement;
-    const activeIndex = focusable.indexOf(activeElement);
-    if (activeIndex === -1) {
-      event.preventDefault();
-      (event.shiftKey ? focusable[focusable.length - 1] : focusable[0]).focus();
-      return;
-    }
-    if (!event.shiftKey && activeIndex === focusable.length - 1) {
-      event.preventDefault();
-      focusable[0].focus();
-      return;
-    }
-    if (event.shiftKey && activeIndex === 0) {
-      event.preventDefault();
-      focusable[focusable.length - 1].focus();
-      return;
-    }
+    trapFocus(popover, event);
   }
 
   if (isDotPopoverOpen && !isEditableTarget) {
@@ -1724,28 +1716,7 @@ export function handleGlobalKeyDown(event) {
   }
 
   if (isSettingsOpen && event.key === "Tab") {
-    const focusable = getFocusableElements(settingsModal);
-    if (focusable.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const activeElement = document.activeElement;
-    const activeIndex = focusable.indexOf(activeElement);
-    if (activeIndex === -1) {
-      event.preventDefault();
-      (event.shiftKey ? focusable[focusable.length - 1] : focusable[0]).focus();
-      return;
-    }
-    if (!event.shiftKey && activeIndex === focusable.length - 1) {
-      event.preventDefault();
-      focusable[0].focus();
-      return;
-    }
-    if (event.shiftKey && activeIndex === 0) {
-      event.preventDefault();
-      focusable[focusable.length - 1].focus();
-      return;
-    }
+    trapFocus(settingsModal, event);
   }
 
   if (isPeriodMenuOpen && !isEditableTarget) {
@@ -1853,7 +1824,6 @@ export function handleGlobalKeyDown(event) {
   closeDeleteModal();
 }
 
-// showOnboardingIfNeeded: Shows onboarding if needed.
 export function showOnboardingIfNeeded() {
   if (!hasEnteredApp) return;
   if (DEMO_MODE) return;
@@ -1871,7 +1841,6 @@ export function showOnboardingIfNeeded() {
   }
 }
 
-// showOnboardingStep: Shows onboarding step.
 export function showOnboardingStep(step) {
   onboardingModal?.querySelectorAll(".onboarding-step").forEach((panel) => {
     panel.classList.toggle("hidden", panel.dataset.step !== step);
@@ -1884,12 +1853,10 @@ export function showOnboardingStep(step) {
   }
 }
 
-// closeOnboardingModal: Closes onboarding modal.
 export function closeOnboardingModal() {
   onboardingModal?.classList.add("hidden");
 }
 
-// completeOnboarding: Completes onboarding.
 export function completeOnboarding() {
   try {
     localStorage.setItem(ONBOARDING_KEY, "1");
@@ -1899,13 +1866,11 @@ export function completeOnboarding() {
   closeOnboardingModal();
 }
 
-// renderOnboardingLists: Renders onboarding lists.
 export function renderOnboardingLists() {
   renderDotTypeList(onboardingDotTypeList);
   renderSuggestedDotTypes(onboardingSuggestedDotList);
 }
 
-// enterApp: Enters app.
 export function enterApp({ skipOnboarding = false } = {}) {
   if (!DEMO_MODE) {
     try {
@@ -1945,7 +1910,6 @@ export function enterApp({ skipOnboarding = false } = {}) {
   return true;
 }
 
-// startDotDrag: Starts dot drag.
 export function startDotDrag(event, { isoDate, dotId, sticker, mode }) {
   event.preventDefault();
   event.stopPropagation();
@@ -1981,7 +1945,7 @@ export function startDotDrag(event, { isoDate, dotId, sticker, mode }) {
     if (moved && last) {
       saveDotPosition(isoDate, dotId, last.nextLeft, last.nextTop);
       saveAndRender();
-      suppressDayOpenUntil = Date.now() + 250;
+      suppressDayOpenUntil = Date.now() + SUPPRESS_DAY_OPEN_MS;
     }
   };
 
@@ -1991,7 +1955,6 @@ export function startDotDrag(event, { isoDate, dotId, sticker, mode }) {
   sticker.addEventListener("pointercancel", onUp);
 }
 
-// closeDotMenus: Closes dot menus.
 export function closeDotMenus() {
   document.querySelectorAll(".dot-type-row.menu-open").forEach((row) => {
     row.classList.remove("menu-open");
@@ -2001,32 +1964,33 @@ export function closeDotMenus() {
     menu.classList.add("hidden");
     menu.style.removeProperty("--menu-offset-x");
     menu.style.removeProperty("--menu-offset-y");
-    if (menu.dataset.portalActive === "true" && menu._portalParent) {
-      menu._portalParent.appendChild(menu);
+    if (menu.dataset.portalActive === "true") {
+      const parent = portalParents.get(menu);
+      if (parent) parent.appendChild(menu);
       menu.dataset.portalActive = "";
     }
   });
   updateMenuScrim();
 }
 
-// closeColorPickers: Closes color pickers.
 export function closeColorPickers() {
   document.querySelectorAll(".color-picker").forEach((picker) => {
     picker.classList.remove("visible");
     picker.classList.add("hidden");
-    if (picker._hostRow) {
-      picker._hostRow.classList.remove("menu-open");
-      picker._hostRow = null;
+    const row = hostRows.get(picker);
+    if (row) {
+      row.classList.remove("menu-open");
+      hostRows.delete(picker);
     }
-    if (picker.dataset.portalActive === "true" && picker._portalParent) {
-      picker._portalParent.appendChild(picker);
+    if (picker.dataset.portalActive === "true") {
+      const parent = portalParents.get(picker);
+      if (parent) parent.appendChild(picker);
       picker.dataset.portalActive = "";
     }
   });
   updateMenuScrim();
 }
 
-// openColorPicker: Opens color picker.
 export function openColorPicker(picker) {
   const opening = picker.classList.contains("hidden");
   closeColorPickers();
@@ -2034,27 +1998,28 @@ export function openColorPicker(picker) {
   const hostRow = picker.closest(".dot-type-row");
   if (hostRow) {
     hostRow.classList.add("menu-open");
-    picker._hostRow = hostRow;
+    hostRows.set(picker, hostRow);
   }
-  if (picker._hexInput && picker._currentColor) {
-    picker._hexInput.value = picker._currentColor();
+  const hexInput = hexInputs.get(picker);
+  const colorFn = currentColors.get(picker);
+  if (hexInput && colorFn) {
+    hexInput.value = colorFn();
   }
-  const isMobile = window.matchMedia("(max-width: 480px)").matches;
+  const isMobile = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
   if (isMobile && mobileMenuPortal && !picker.dataset.portalActive) {
     picker.dataset.portalActive = "true";
-    picker._portalParent = picker.parentElement;
+    portalParents.set(picker, picker.parentElement);
     mobileMenuPortal.appendChild(picker);
   }
   showAnimated(picker);
   updateMenuScrim();
 }
 
-// buildColorPicker: Builds color picker.
 export function buildColorPicker(dotType, swatch) {
   const picker = document.createElement("div");
   picker.className = "color-picker hidden";
   picker.dataset.portal = "color-picker";
-  picker._currentColor = () => dotType.color;
+  currentColors.set(picker, () => dotType.color);
 
   const grid = document.createElement("div");
   grid.className = "color-grid";
@@ -2080,12 +2045,16 @@ export function buildColorPicker(dotType, swatch) {
   const customRow = document.createElement("div");
   customRow.className = "color-custom";
 
+  const hexLabel = document.createElement("label");
+  hexLabel.className = "sr-only";
+  hexLabel.textContent = "Custom color";
   const hexInput = document.createElement("input");
   hexInput.type = "text";
   hexInput.value = dotType.color;
   hexInput.placeholder = "#RRGGBB or red";
   hexInput.className = "color-hex-input";
-  picker._hexInput = hexInput;
+  hexInput.setAttribute("aria-label", "Custom color hex value");
+  hexInputs.set(picker, hexInput);
 
   const applyButton = document.createElement("button");
   applyButton.type = "button";
@@ -2112,7 +2081,6 @@ export function buildColorPicker(dotType, swatch) {
   return picker;
 }
 
-// positionDotActionsMenu: Positions dot actions menu.
 export function positionDotActionsMenu(menu) {
   const boundaryRect = menu.closest(".settings-card, .modal-card")?.getBoundingClientRect() || {
     left: 8,
@@ -2139,10 +2107,9 @@ export function positionDotActionsMenu(menu) {
   menu.style.setProperty("--menu-offset-y", `${offsetY}px`);
 }
 
-// updateMenuScrim: Updates menu scrim.
 export function updateMenuScrim() {
   if (!menuScrim) return;
-  const isMobileSheet = window.matchMedia("(max-width: 480px)").matches;
+  const isMobileSheet = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
   const hasDotMenu = Boolean(document.querySelector(".dot-actions-menu:not(.hidden)"));
   const hasColorPicker = Boolean(document.querySelector(".color-picker:not(.hidden)"));
   const hasPeriodMenu = !periodPickerMenu.classList.contains("hidden");
@@ -2162,10 +2129,9 @@ export function updateMenuScrim() {
   menuScrimHideTimer = window.setTimeout(() => {
     menuScrim.classList.add("hidden");
     menuScrimHideTimer = null;
-  }, 180);
+  }, MENU_SCRIM_HIDE_MS);
 }
 
-// showAnimated: Shows animated.
 export function showAnimated(element) {
   element.classList.remove("hidden");
   element.classList.remove("visible");
@@ -2177,7 +2143,6 @@ export function showAnimated(element) {
   });
 }
 
-// syncDotTypeInputSize: Synchronizes dot type input size.
 export function syncDotTypeInputSize(input) {
   const value = input.value || " ";
   const style = window.getComputedStyle(input);
@@ -2200,12 +2165,10 @@ export function syncDotTypeInputSize(input) {
   input.style.width = `${measured}px`;
 }
 
-// applyTheme: Applies theme.
 export function applyTheme() {
   document.documentElement.dataset.theme = isDarkModeEnabled() ? "dark" : "light";
 }
 
-// downloadDataExport: Downloads data export.
 export function downloadDataExport() {
   const payload = {
     version: 1,
@@ -2224,7 +2187,6 @@ export function downloadDataExport() {
   showToast("Downloaded your data.");
 }
 
-// handleDataImport: Handles data import.
 export async function handleDataImport(event) {
   const file = event.target.files?.[0];
   if (!file) return;
@@ -2246,7 +2208,6 @@ export async function handleDataImport(event) {
   }
 }
 
-// isDarkModeEnabled: Returns whether dark mode enabled.
 export function isDarkModeEnabled() {
   if (typeof state.darkMode === "boolean") {
     return state.darkMode;
@@ -2254,7 +2215,6 @@ export function isDarkModeEnabled() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
-// handleResetOnboarding: Handles reset onboarding.
 export function handleResetOnboarding() {
   try {
     localStorage.removeItem(STORAGE_KEY);
@@ -2270,10 +2230,8 @@ export function handleResetOnboarding() {
   showOnboardingIfNeeded();
 }
 
-// setupDevAutoReload: Sets up dev auto reload.
 export function setupDevAutoReload() {
-  const devHosts = new Set(["localhost", "127.0.0.1"]);
-  if (!devHosts.has(window.location.hostname)) return;
+  if (!DEV_HOSTS.has(window.location.hostname)) return;
   const files = [
     "index.html",
     "styles.css",
@@ -2309,5 +2267,5 @@ export function setupDevAutoReload() {
     }
   };
   poll();
-  window.setInterval(poll, 1000);
+  window.setInterval(poll, DEV_POLL_MS);
 }

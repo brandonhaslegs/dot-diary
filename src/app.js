@@ -64,7 +64,6 @@ import {
   downloadDataExport,
   dismissPopoverFromScrim,
   setupDevAutoReload,
-  setupMobileMonthScroll,
   showLogin,
   showMarketingHero,
   showMarketingPage,
@@ -224,7 +223,6 @@ showOnboardingIfNeeded();
 initSupabaseAuth();
 renderMarketingCalendar();
 setupDevAutoReload();
-setupMobileMonthScroll();
 
 const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 if (colorSchemeMedia && typeof colorSchemeMedia.addEventListener === "function") {

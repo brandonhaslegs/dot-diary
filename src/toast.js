@@ -1,9 +1,9 @@
 import { toast } from "./dom.js";
+import { TOAST_DISPLAY_MS, TOAST_HIDE_MS } from "./constants.js";
 
 let toastTimer = null;
 let toastHideTimer = null;
 
-// showToast: Shows a transient toast message with enter/exit animation timing.
 export function showToast(message) {
   if (!toast) return;
   if (toastTimer) {
@@ -17,7 +17,6 @@ export function showToast(message) {
   toast.textContent = message;
   toast.classList.remove("visible");
   toast.classList.remove("hidden");
-  // Force a style flush so the transition runs reliably from hidden -> visible.
   void toast.offsetHeight;
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -29,7 +28,7 @@ export function showToast(message) {
     toastHideTimer = setTimeout(() => {
       toast.classList.add("hidden");
       toastHideTimer = null;
-    }, 280);
+    }, TOAST_HIDE_MS);
     toastTimer = null;
-  }, 1800);
+  }, TOAST_DISPLAY_MS);
 }

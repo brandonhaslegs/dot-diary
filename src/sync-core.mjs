@@ -118,13 +118,6 @@ function mergeDotTypes(localDotTypes, remoteDotTypes, preferLocalConflicts) {
   };
 }
 
-function getDotTypeKey(dot) {
-  if (typeof dot.id === "string" && dot.id.length > 0) return `id:${dot.id}`;
-  const name = typeof dot.name === "string" ? dot.name : "";
-  const color = typeof dot.color === "string" ? dot.color : "";
-  return `anon:${name}|${color}`;
-}
-
 function mapDotId(dotId, idAliases) {
   if (!idAliases || !(idAliases instanceof Map)) return dotId;
   if (typeof dotId !== "string") return dotId;
