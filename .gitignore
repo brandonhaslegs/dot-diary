@@ -12,5 +12,8 @@
 node_modules/
 dist/
 build/
+.vite/
+playwright-report/
+test-results/
 
 .vercel

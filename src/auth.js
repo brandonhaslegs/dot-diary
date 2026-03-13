@@ -1,8 +1,10 @@
 import {
   AUTH_INTENT_KEY,
   AUTH_STATE_KEY,
+  LOCAL_DEV_MODE,
   ONBOARDING_KEY,
   STORAGE_KEY,
+  STORAGE_SESSION_FALLBACK_KEY,
   SUPABASE_ANON_KEY,
   SUPABASE_URL
 } from "./constants.js";
@@ -18,11 +20,12 @@ import {
   defaultState,
   normalizeImportedState,
   requestRender,
+  saveAndRender,
   setState,
   state
 } from "./state.js";
 import { startOfMonth } from "./utils.js";
-import { areStatesEqual, pickLatestCloudRow } from "./sync-core.mjs";
+import { areStatesEqual, mergeDiaryStates, pickLatestCloudRow } from "./sync-core.mjs";
 import {
   closeDeleteModal,
   closePopover,
@@ -55,6 +58,10 @@ const SYNC_POLL_MS = 5000;
 
 // initSupabaseAuth: Initializes Supabase auth, restores sessions, and wires auth listeners.
 export async function initSupabaseAuth() {
+  if (LOCAL_DEV_MODE) {
+    updateAuthUI();
+    return;
+  }
   if (authInitStarted) return;
   authInitStarted = true;
   if (!supabase) return;
@@ -149,6 +156,10 @@ export async function initSupabaseAuth() {
 
 // refreshAuthSession: Re-reads Supabase session and updates local auth UI/state.
 export async function refreshAuthSession({ loadCloud = false } = {}) {
+  if (LOCAL_DEV_MODE) {
+    updateAuthUI();
+    return null;
+  }
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
@@ -188,6 +199,10 @@ function clearAuthIntent() {
 
 // handleMagicLink: Requests a magic-link email sign-in and updates button feedback states.
 export async function handleMagicLink(overrideEmail, sourceButton) {
+  if (LOCAL_DEV_MODE) {
+    showToast("Local dev mode active. Magic link auth is disabled.");
+    return;
+  }
   if (!supabase) return;
   const email = overrideEmail?.trim() || authEmailInput?.value?.trim();
   if (!email) {
@@ -206,12 +221,28 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
   } catch {
     // ignore
   }
-  const { error } = await supabase.auth.signInWithOtp({
+  let error = null;
+  let usedFallbackRedirect = false;
+  const firstAttempt = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: getMagicLinkRedirectTo()
     }
   });
+  error = firstAttempt.error || null;
+
+  // Some environments (mobile wrappers/custom origins) can reject custom redirect URLs.
+  // Retry without explicit redirect so Supabase falls back to project default URL settings.
+  if (error) {
+    const fallbackAttempt = await supabase.auth.signInWithOtp({ email });
+    if (!fallbackAttempt.error) {
+      error = null;
+      usedFallbackRedirect = true;
+    } else {
+      error = fallbackAttempt.error;
+    }
+  }
+
   if (error) {
     const message = error?.message ? `Magic link failed: ${error.message}` : "Could not send magic link.";
     showToast(message);
@@ -221,7 +252,11 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
       sourceButton.disabled = false;
     }
   } else {
-    showToast("Magic link sent. Check your email.");
+    showToast(
+      usedFallbackRedirect
+        ? "Magic link sent. Check your email. (Using default redirect.)"
+        : "Magic link sent. Check your email."
+    );
     if (sourceButton) {
       sourceButton.textContent = "Check your email";
       sourceButton.disabled = false;
@@ -234,6 +269,10 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
 
 // signOutSupabase: Signs the current user out and resets local app state to logged-out defaults.
 export async function signOutSupabase() {
+  if (LOCAL_DEV_MODE) {
+    showToast("Local dev mode active. Sign out is disabled.");
+    return;
+  }
   if (signOutInProgress) return;
   signOutInProgress = true;
   if (authSignOutButton) authSignOutButton.disabled = true;
@@ -259,12 +298,23 @@ export async function signOutSupabase() {
       lastSyncError = "";
       try {
         localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+      try {
+        sessionStorage.removeItem(STORAGE_SESSION_FALLBACK_KEY);
+      } catch {
+        // ignore
+      }
+      try {
         localStorage.removeItem(ONBOARDING_KEY);
         localStorage.removeItem(AUTH_STATE_KEY);
       } catch {
         // ignore
       }
       setState(structuredClone(defaultState));
+      // Persist cleared state so stale fallback data cannot reappear after refresh.
+      saveAndRender();
       closePopover();
       closeSettingsModal();
       closeDeleteModal();
@@ -283,6 +333,17 @@ export async function signOutSupabase() {
 // updateAuthUI: Updates auth-related labels, buttons, and sync status text.
 export function updateAuthUI() {
   if (!authStatus || !authSignOutButton) return;
+  if (LOCAL_DEV_MODE) {
+    authStatus.textContent = "Local dev mode: no login required, cloud sync disabled.";
+    authStatus.classList.add("muted");
+    authSignOutButton.classList.add("hidden");
+    if (authRow) authRow.classList.add("hidden");
+    if (syncStatus) {
+      syncStatus.textContent = "";
+      syncStatus.classList.add("muted");
+    }
+    return;
+  }
   if (!supabase) {
     authStatus.textContent = "Supabase client not available.";
     authStatus.classList.add("muted");
@@ -313,6 +374,7 @@ export function updateAuthUI() {
 
 // scheduleSync: Handles schedule sync.
 export function scheduleSync() {
+  if (LOCAL_DEV_MODE) return false;
   if (!supabase || !syncUser) return false;
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
@@ -344,28 +406,39 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
   const latest = pickLatestCloudRow(data);
   if (!latest?.data) {
     // Initialize cloud row once if this account has no cloud data yet.
-    await syncToCloud();
+    await syncToCloud(state);
     if (!fromAuthBootstrap) showToast("Cloud data initialized.");
     return;
   }
   lastSyncError = "";
   const remoteState = normalizeImportedState(latest.data);
-  const localDiffersFromRemote = !areStatesEqual(state, remoteState);
-  if (localDiffersFromRemote) {
-    // Cloud-authoritative: never merge signed-in diary data with local cached diary data.
-    setState(remoteState);
+  const localState = normalizeImportedState(state);
+  const localTimestamp = new Date(localState.lastModified || 0).getTime() || 0;
+  const remoteTimestamp = new Date(remoteState.lastModified || 0).getTime() || 0;
+  const preferLocalConflicts = localTimestamp >= remoteTimestamp;
+  const mergedState = mergeDiaryStates(localState, remoteState, {
+    preferLocalSettings: preferLocalConflicts,
+    preferLocalConflicts,
+    keepLocalCursor: true
+  });
+
+  if (!areStatesEqual(localState, mergedState)) {
+    setState(mergedState);
     requestRender();
+  }
+  if (!areStatesEqual(remoteState, mergedState)) {
+    await syncToCloud(mergedState);
   }
   lastSyncedAt = new Date().toISOString();
   updateAuthUI();
 }
 
-async function syncToCloud() {
+async function syncToCloud(sourceState = state) {
   if (!supabase || !syncUser) return;
   if (syncInFlight) return syncInFlight;
   syncInProgress = true;
   updateAuthUI();
-  const snapshot = getCloudStateSnapshot(state);
+  const snapshot = getCloudStateSnapshot(sourceState);
   const updatedAt = snapshot.lastModified || new Date().toISOString();
   const payloadWithUpdatedAt = {
     user_id: syncUser.id,

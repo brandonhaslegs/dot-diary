@@ -1,4 +1,4 @@
-import { DEMO_MODE, DOT_NAME_MAX_LENGTH, STORAGE_KEY } from "./constants.js";
+import { DEMO_MODE, DOT_NAME_MAX_LENGTH, STORAGE_KEY, STORAGE_SESSION_FALLBACK_KEY } from "./constants.js";
 import { formatISODate, hash32, normalizeNote, shuffleArray, startOfMonth } from "./utils.js";
 
 export const defaultState = {
@@ -78,7 +78,7 @@ export function saveAndRender() {
 // loadState: Loads persisted state from localStorage and normalizes its shape.
 export function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readPersistedStateRaw();
     if (!raw) return structuredClone(defaultState);
     const parsed = JSON.parse(raw);
     return normalizeImportedState(parsed?.data ?? parsed);
@@ -379,9 +379,50 @@ export function getStateTimestamp() {
 }
 
 function persistStateToLocal(sourceState) {
+  const serialized = JSON.stringify({ data: sourceState });
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: sourceState }));
+    localStorage.setItem(STORAGE_KEY, serialized);
   } catch {
-    // ignore storage errors
+    // ignore localStorage errors
+  }
+  try {
+    // sessionStorage fallback keeps data across refresh even if localStorage is unavailable.
+    sessionStorage.setItem(STORAGE_SESSION_FALLBACK_KEY, serialized);
+  } catch {
+    // ignore sessionStorage errors
+  }
+}
+
+function readPersistedStateRaw() {
+  let localRaw = null;
+  let sessionRaw = null;
+  try {
+    localRaw = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    // ignore localStorage read errors
+  }
+  try {
+    sessionRaw = sessionStorage.getItem(STORAGE_SESSION_FALLBACK_KEY);
+  } catch {
+    // ignore sessionStorage read errors
+  }
+  return pickNewestPersistedRaw(localRaw, sessionRaw);
+}
+
+function pickNewestPersistedRaw(primaryRaw, fallbackRaw) {
+  if (!primaryRaw) return fallbackRaw || null;
+  if (!fallbackRaw) return primaryRaw;
+  const primaryTs = getPersistedRawTimestamp(primaryRaw);
+  const fallbackTs = getPersistedRawTimestamp(fallbackRaw);
+  return fallbackTs > primaryTs ? fallbackRaw : primaryRaw;
+}
+
+function getPersistedRawTimestamp(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    const data = parsed?.data ?? parsed;
+    return new Date(data?.lastModified || 0).getTime() || 0;
+  } catch {
+    return 0;
   }
 }

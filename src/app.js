@@ -1,4 +1,4 @@
-import { AUTH_STATE_KEY, DEMO_MODE, VIEW_MODE_KEY } from "./constants.js";
+import { AUTH_STATE_KEY, DEMO_MODE, LOCAL_DEV_MODE, VIEW_MODE_KEY } from "./constants.js";
 import {
   authEmailInput,
   authSendButton,
@@ -204,7 +204,9 @@ document.addEventListener("keydown", handleGlobalKeyDown);
 // Initial render and first-view routing.
 render();
 try {
-  if (!DEMO_MODE) {
+  if (LOCAL_DEV_MODE) {
+    enterApp({ skipOnboarding: true });
+  } else if (!DEMO_MODE) {
     const lastView = localStorage.getItem(VIEW_MODE_KEY);
     const hasAuthState = localStorage.getItem(AUTH_STATE_KEY) === "1";
     if (lastView === "marketing") {
@@ -238,3 +240,7 @@ if (colorSchemeMedia && typeof colorSchemeMedia.addEventListener === "function")
 }
 
 updateAuthUI();
+
+if (LOCAL_DEV_MODE) {
+  showToast("Local dev mode: login and cloud sync are disabled.");
+}

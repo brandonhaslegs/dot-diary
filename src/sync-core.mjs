@@ -32,7 +32,11 @@ function mergeSettingsFromLocal(baseState, localState) {
   };
 }
 
-export function mergeDiaryStates(localState, remoteState, { preferLocalSettings, preferLocalConflicts }) {
+export function mergeDiaryStates(
+  localState,
+  remoteState,
+  { preferLocalSettings, preferLocalConflicts, keepLocalCursor = false } = {}
+) {
   const preferredState = preferLocalConflicts ? localState : remoteState;
   const fallbackState = preferLocalConflicts ? remoteState : localState;
   const settingsMerged = preferLocalSettings
@@ -46,10 +50,16 @@ export function mergeDiaryStates(localState, remoteState, { preferLocalSettings,
 
   return {
     ...settingsMerged,
-    monthCursor: preferredState.monthCursor || fallbackState.monthCursor,
-    yearCursor: Number.isInteger(preferredState.yearCursor)
-      ? preferredState.yearCursor
-      : fallbackState.yearCursor,
+    monthCursor: keepLocalCursor
+      ? localState.monthCursor || remoteState.monthCursor
+      : preferredState.monthCursor || fallbackState.monthCursor,
+    yearCursor: keepLocalCursor
+      ? Number.isInteger(localState.yearCursor)
+        ? localState.yearCursor
+        : remoteState.yearCursor
+      : Number.isInteger(preferredState.yearCursor)
+        ? preferredState.yearCursor
+        : fallbackState.yearCursor,
     lastModified: latestTimestamp > 0 ? new Date(latestTimestamp).toISOString() : null,
     dotTypes: mergedDotTypes.dotTypes,
     dayDots: mergeDayDots(localState.dayDots, remoteState.dayDots, preferLocalConflicts, mergedDotTypes.idAliases),

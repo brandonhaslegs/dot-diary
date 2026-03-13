@@ -4,9 +4,11 @@ import {
   COLOR_PALETTE,
   DEMO_MODE,
   DOT_NAME_MAX_LENGTH,
+  LOCAL_DEV_MODE,
   MOBILE_MONTH_BATCH_SIZE,
   MODAL_ANIMATION_MS,
   ONBOARDING_KEY,
+  STORAGE_SESSION_FALLBACK_KEY,
   POPOVER_ANIMATION_MS,
   SUGGESTED_DOT_TYPES,
   STORAGE_KEY,
@@ -1907,7 +1909,7 @@ export function renderOnboardingLists() {
 
 // enterApp: Enters app.
 export function enterApp({ skipOnboarding = false } = {}) {
-  if (!DEMO_MODE) {
+  if (!DEMO_MODE && !LOCAL_DEV_MODE) {
     try {
       if (localStorage.getItem(AUTH_STATE_KEY) !== "1") {
         showMarketingPage();
@@ -2258,6 +2260,7 @@ export function isDarkModeEnabled() {
 export function handleResetOnboarding() {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_SESSION_FALLBACK_KEY);
     localStorage.removeItem(ONBOARDING_KEY);
     localStorage.removeItem(AUTH_STATE_KEY);
   } catch {

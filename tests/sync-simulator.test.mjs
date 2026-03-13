@@ -126,3 +126,59 @@ test("two devices converge with cross edits and duplicate cloud history", () => 
   assert.equal(deviceA.state.dayNotes["2026-02-03"], "B note");
   assert.ok(areStatesEqual(deviceA.state, deviceB.state));
 });
+
+test("keeps newer local dots when cloud snapshot is stale", () => {
+  const remote = baseState("2026-02-01T09:00:00.000Z");
+  remote.dayDots["2026-02-03"] = ["reading"];
+
+  const local = baseState("2026-02-01T10:00:00.000Z");
+  local.dayDots["2026-02-04"] = ["reading"];
+
+  const cloud = createCloud([{ user_id: "u1", data: remote, updated_at: "2026-02-01T09:00:01.000Z" }]);
+  const device = { userId: "u1", state: local };
+
+  syncDevice(cloud, device);
+
+  assert.deepEqual(device.state.dayDots["2026-02-04"], ["reading"]);
+  assert.deepEqual(device.state.dayDots["2026-02-03"], ["reading"]);
+
+  const latest = selectLatest(cloud, "u1");
+  assert.deepEqual(latest?.data?.dayDots?.["2026-02-04"], ["reading"]);
+});
+
+test("prefers local conflicts on equal timestamps to avoid refresh data loss", () => {
+  const timestamp = "2026-02-01T10:00:00.000Z";
+  const remote = baseState(timestamp);
+  remote.dayNotes["2026-02-02"] = "remote";
+
+  const local = baseState(timestamp);
+  local.dayNotes["2026-02-02"] = "local";
+
+  const merged = mergeDiaryStates(local, remote, {
+    preferLocalSettings: true,
+    preferLocalConflicts: true
+  });
+
+  assert.equal(merged.dayNotes["2026-02-02"], "local");
+});
+
+test("keeps local month/year cursor while merging remote diary data", () => {
+  const local = baseState("2026-02-01T10:00:00.000Z");
+  local.monthCursor = "2025-09-01T00:00:00.000Z";
+  local.yearCursor = 2025;
+
+  const remote = baseState("2026-02-01T12:00:00.000Z");
+  remote.monthCursor = "2026-02-01T00:00:00.000Z";
+  remote.yearCursor = 2026;
+  remote.dayNotes["2026-02-02"] = "from remote";
+
+  const merged = mergeDiaryStates(local, remote, {
+    preferLocalSettings: false,
+    preferLocalConflicts: false,
+    keepLocalCursor: true
+  });
+
+  assert.equal(merged.monthCursor, "2025-09-01T00:00:00.000Z");
+  assert.equal(merged.yearCursor, 2025);
+  assert.equal(merged.dayNotes["2026-02-02"], "from remote");
+});
