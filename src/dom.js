@@ -64,3 +64,6 @@ export const authSignOutButton = document.querySelector("#auth-signout");
 export const authRow = document.querySelector("#auth-row");
 export const settingsBackButton = document.querySelector("#settings-back");
 export const resetOnboardingButton = document.querySelector("#reset-onboarding");
+export const billingStatus = document.querySelector("#billing-status");
+export const billingUpgrade = document.querySelector("#billing-upgrade");
+export const billingManage = document.querySelector("#billing-manage");
