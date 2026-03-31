@@ -1,4 +1,5 @@
 import { AUTH_STATE_KEY, DEMO_MODE, VIEW_MODE_KEY } from "./constants.js";
+import { formatISODate } from "./utils.js";
 import {
   authEmailInput,
   authSendButton,
@@ -85,6 +86,30 @@ import { showToast } from "./toast.js";
 registerRender(render);
 registerScheduleSync(scheduleSync);
 registerAuthUpdater(updateAuthUI);
+
+// Re-render when the date changes (e.g. app left open overnight).
+let lastRenderedDate = formatISODate(new Date());
+
+function scheduleMidnightRender() {
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const msUntilMidnight = tomorrow - now + 500; // small buffer past midnight
+  setTimeout(() => {
+    lastRenderedDate = formatISODate(new Date());
+    render();
+    scheduleMidnightRender();
+  }, msUntilMidnight);
+}
+scheduleMidnightRender();
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  const today = formatISODate(new Date());
+  if (today !== lastRenderedDate) {
+    lastRenderedDate = today;
+    render();
+  }
+});
 
 // Re-render on window resize unless the user is actively typing in a note editor.
 window.addEventListener("resize", () => {
