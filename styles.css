@@ -290,6 +290,7 @@ textarea {
   justify-self: center;
   margin-top: 14px;
   z-index: 1;
+  order: 8;
 }
 
 .marketing-free {
