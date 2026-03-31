@@ -44,6 +44,9 @@ export const SUGGESTED_DOT_TYPES = [
   { name: "Exploring", color: "#6C5CE7" }
 ];
 
+// Free-tier feature limits.
+export const FREE_DOT_TYPE_LIMIT = 6;
+
 // Incremental loading/timing constants used by period picker and modal animations.
 export const YEAR_BATCH_SIZE = 10;
 export const MOBILE_MONTH_BATCH_SIZE = 12;
