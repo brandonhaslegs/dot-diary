@@ -286,6 +286,16 @@ textarea {
   transition-duration: 70ms;
 }
 
+.marketing-hero-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.marketing-hero-group > .marketing-legal-links {
+  margin-top: 14px;
+}
+
 .marketing-legal-links {
   justify-self: center;
   margin-top: 14px;
