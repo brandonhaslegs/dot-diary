@@ -36,6 +36,7 @@ import {
   resetToLoggedOut
 } from "./ui.js";
 import { showToast } from "./toast.js";
+import { fetchBillingStatus, resetBilling } from "./billing.js";
 
 const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -105,6 +106,7 @@ export async function initSupabaseAuth() {
   updateAuthUI();
   if (syncUser) {
     await loadFromCloud({ fromAuthBootstrap: true });
+    fetchBillingStatus(await getAccessToken()).catch(() => {});
     if (shouldFocusTodayOnEntry) {
       focusPeriodToToday();
       clearAuthIntent();
@@ -130,6 +132,7 @@ export async function initSupabaseAuth() {
     updateAuthUI();
     if (syncUser) {
       await loadFromCloud({ fromAuthBootstrap: !wasSignedIn });
+      fetchBillingStatus(await getAccessToken()).catch(() => {});
       if (!wasSignedIn && shouldFocusTodayOnEntry) {
         focusPeriodToToday();
         clearAuthIntent();
@@ -138,6 +141,7 @@ export async function initSupabaseAuth() {
     } else {
       lastSyncError = "";
       stopSyncPolling();
+      resetBilling();
       setState(structuredClone(defaultState));
       requestRender();
       showMarketingPage();
@@ -163,11 +167,18 @@ export async function refreshAuthSession({ loadCloud = false } = {}) {
   updateAuthUI();
   if (syncUser) {
     if (loadCloud) await loadFromCloud({ silentError: true });
+    fetchBillingStatus(await getAccessToken()).catch(() => {});
     startSyncPolling();
   } else {
     stopSyncPolling();
   }
   return syncUser;
+}
+
+export async function getAccessToken() {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data?.session?.access_token || null;
 }
 
 function focusPeriodToToday() {

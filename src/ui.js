@@ -7,6 +7,7 @@ import {
   DEV_POLL_MS,
   DEMO_MODE,
   DOT_NAME_MAX_LENGTH,
+  FREE_DOT_TYPE_LIMIT,
   MENU_SCRIM_HIDE_MS,
   MOBILE_BREAKPOINT,
   MOBILE_MONTH_BATCH_SIZE,
@@ -22,6 +23,7 @@ import {
   VIEW_MODE_KEY,
   YEAR_BATCH_SIZE
 } from "./constants.js";
+import { canAddDotType, isPro } from "./billing.js";
 import {
   appShell,
   colorModeDarkButton,
@@ -1074,12 +1076,14 @@ export function renderDotTypeList(targetList = dotTypeList) {
   });
 
   if (targetList === dotTypeList && state.hideSuggestions) {
+    const atLimit = !canAddDotType(state.dotTypes.length);
     const addItem = document.createElement("li");
     addItem.className = "dot-type-add-item";
     const addButton = document.createElement("button");
     addButton.type = "button";
     addButton.className = "suggestion-chip add-new";
-    addButton.textContent = "Add New";
+    addButton.textContent = atLimit ? `Upgrade to add more` : "Add New";
+    addButton.disabled = atLimit;
     addButton.addEventListener("click", addNewDotType);
     addItem.appendChild(addButton);
     targetList.appendChild(addItem);
@@ -1090,12 +1094,14 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
   if (!targetList) return;
   targetList.innerHTML = "";
 
+  const suggestionAtLimit = !canAddDotType(state.dotTypes.length);
   SUGGESTED_DOT_TYPES.forEach((suggestion) => {
     if (hasDotTypeName(suggestion.name)) return;
 
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "suggestion-chip";
+    chip.disabled = suggestionAtLimit;
     const chipSwatch = document.createElement("span");
     chipSwatch.className = "swatch";
     chipSwatch.style.background = suggestion.color;
@@ -1106,10 +1112,12 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
     targetList.appendChild(chip);
   });
 
+  const atLimit = !canAddDotType(state.dotTypes.length);
   const addNewChip = document.createElement("button");
   addNewChip.type = "button";
   addNewChip.className = "suggestion-chip add-new";
-  addNewChip.textContent = "Add New";
+  addNewChip.textContent = atLimit ? "Upgrade to add more" : "Add New";
+  addNewChip.disabled = atLimit;
   addNewChip.addEventListener("click", addNewDotType);
   targetList.appendChild(addNewChip);
 }
@@ -1542,6 +1550,10 @@ export function openPeriodMenu() {
 
 export function addSuggestedDotType(suggestion) {
   if (hasDotTypeName(suggestion.name)) return;
+  if (!canAddDotType(state.dotTypes.length)) {
+    showToast(`Free plan allows ${FREE_DOT_TYPE_LIMIT} dot types. Upgrade to Pro for unlimited.`);
+    return;
+  }
   state.dotTypes.push({
     id: crypto.randomUUID(),
     name: suggestion.name,
@@ -1552,6 +1564,10 @@ export function addSuggestedDotType(suggestion) {
 }
 
 export function addNewDotType() {
+  if (!canAddDotType(state.dotTypes.length)) {
+    showToast(`Free plan allows ${FREE_DOT_TYPE_LIMIT} dot types. Upgrade to Pro for unlimited.`);
+    return;
+  }
   const dotId = crypto.randomUUID();
   const dotName = "New Dot";
   state.dotTypes.push({
