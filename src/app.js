@@ -111,6 +111,10 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+// Prevent pinch-to-zoom on iOS.
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+document.addEventListener("touchmove", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
 // Re-render on window resize unless the user is actively typing in a note editor.
 window.addEventListener("resize", () => {
   const active = document.activeElement;
