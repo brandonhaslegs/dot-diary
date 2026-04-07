@@ -1,27 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" fill="#000000"/>
-  <!-- Cluster of colored dots representing tracked activities -->
-  <!-- Large dots -->
-  <circle cx="512" cy="420" r="100" fill="#FF0000"/>
-  <circle cx="380" cy="560" r="90" fill="#2F8CFA"/>
-  <circle cx="640" cy="560" r="90" fill="#15C771"/>
-  <circle cx="512" cy="680" r="85" fill="#FFC700"/>
-  <!-- Medium dots -->
-  <circle cx="350" cy="390" r="60" fill="#B632CC"/>
-  <circle cx="670" cy="400" r="55" fill="#FF7A59"/>
-  <circle cx="280" cy="520" r="50" fill="#8338EC"/>
-  <circle cx="740" cy="530" r="50" fill="#00A676"/>
-  <!-- Small accent dots -->
-  <circle cx="430" cy="320" r="35" fill="#0A66C2"/>
-  <circle cx="600" cy="310" r="30" fill="#0F766E"/>
-  <circle cx="310" cy="670" r="30" fill="#FF7A59"/>
-  <circle cx="710" cy="680" r="30" fill="#B632CC"/>
-  <circle cx="512" cy="790" r="28" fill="#8338EC"/>
-  <!-- Tiny dots for depth -->
-  <circle cx="460" cy="270" r="18" fill="#15C771"/>
-  <circle cx="560" cy="250" r="15" fill="#FFC700"/>
-  <circle cx="240" cy="450" r="16" fill="#FF0000"/>
-  <circle cx="780" cy="460" r="16" fill="#2F8CFA"/>
-  <circle cx="400" cy="770" r="14" fill="#00A676"/>
-  <circle cx="630" cy="780" r="14" fill="#0A66C2"/>
+  <rect width="1024" height="1024" rx="0" ry="0" fill="#000000"/>
+  <circle cx="420" cy="370" r="220" fill="#15C771"/>
+  <circle cx="620" cy="330" r="220" fill="#2F8CFA"/>
+  <circle cx="370" cy="620" r="220" fill="#FF0000"/>
+  <circle cx="620" cy="640" r="220" fill="#FFC700"/>
 </svg>
