@@ -29,6 +29,10 @@ html[data-theme="dark"] {
   box-sizing: border-box;
 }
 
+html {
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   font-family: "Funnel Sans", "Avenir Next", "Trebuchet MS", sans-serif;
