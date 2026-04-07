@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#000000"/>
+  <!-- Monochrome version for iOS tinted mode - white dots at varying opacity -->
+  <!-- Large dots -->
+  <circle cx="512" cy="420" r="100" fill="#FFFFFF"/>
+  <circle cx="380" cy="560" r="90" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="640" cy="560" r="90" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="512" cy="680" r="85" fill="#FFFFFF" opacity="0.8"/>
+  <!-- Medium dots -->
+  <circle cx="350" cy="390" r="60" fill="#FFFFFF" opacity="0.75"/>
+  <circle cx="670" cy="400" r="55" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="280" cy="520" r="50" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="740" cy="530" r="50" fill="#FFFFFF" opacity="0.75"/>
+  <!-- Small accent dots -->
+  <circle cx="430" cy="320" r="35" fill="#FFFFFF" opacity="0.65"/>
+  <circle cx="600" cy="310" r="30" fill="#FFFFFF" opacity="0.6"/>
+  <circle cx="310" cy="670" r="30" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="710" cy="680" r="30" fill="#FFFFFF" opacity="0.65"/>
+  <circle cx="512" cy="790" r="28" fill="#FFFFFF" opacity="0.6"/>
+  <!-- Tiny dots for depth -->
+  <circle cx="460" cy="270" r="18" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="560" cy="250" r="15" fill="#FFFFFF" opacity="0.45"/>
+  <circle cx="240" cy="450" r="16" fill="#FFFFFF" opacity="0.55"/>
+  <circle cx="780" cy="460" r="16" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="400" cy="770" r="14" fill="#FFFFFF" opacity="0.45"/>
+  <circle cx="630" cy="780" r="14" fill="#FFFFFF" opacity="0.5"/>
+</svg>
