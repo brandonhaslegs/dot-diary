@@ -4,6 +4,8 @@ import {
   authEmailInput,
   authSendButton,
   authSignOutButton,
+  billingManage,
+  billingUpgrade,
   brandHomeButton,
   colorModeDarkButton,
   colorModeLightButton,
@@ -73,6 +75,7 @@ import {
   shiftYearBy
 } from "./ui.js";
 import {
+  getAccessToken,
   handleMagicLink,
   initSupabaseAuth,
   refreshAuthSession,
@@ -80,6 +83,7 @@ import {
   signOutSupabase,
   updateAuthUI
 } from "./auth.js";
+import { openBillingPortal, startCheckout } from "./billing.js";
 import { showToast } from "./toast.js";
 
 // Wire cross-module callbacks so `state` can request UI work and cloud sync.
@@ -215,6 +219,16 @@ colorModeDarkButton?.addEventListener("click", () => {
   state.darkMode = true;
   saveAndRender();
   showToast("Dark mode on.");
+});
+
+// Billing controls.
+billingUpgrade?.addEventListener("click", async () => {
+  const token = await getAccessToken();
+  startCheckout(token, "monthly");
+});
+billingManage?.addEventListener("click", async () => {
+  const token = await getAccessToken();
+  openBillingPortal(token);
 });
 
 // Export/import controls.
