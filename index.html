@@ -140,6 +140,13 @@
           />
           <button id="login-send" type="button">Send magic link</button>
         </div>
+        <div class="otp-row hidden" id="login-otp-row">
+          <p class="muted otp-hint">Enter the 6-digit code from your email:</p>
+          <div class="auth-row">
+            <input id="login-otp-code" type="text" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6" />
+            <button id="login-otp-verify" type="button">Verify</button>
+          </div>
+        </div>
         <div class="marketing-actions">
           <button id="login-back" type="button" class="outline-button">Back</button>
         </div>
@@ -399,6 +406,13 @@
               />
               <button id="onboarding-send" type="button">Send magic link</button>
             </div>
+            <div class="otp-row hidden" id="onboarding-otp-row">
+              <p class="muted otp-hint">Enter the 6-digit code from your email:</p>
+              <div class="auth-row">
+                <input id="onboarding-otp-code" type="text" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6" />
+                <button id="onboarding-otp-verify" type="button">Verify</button>
+              </div>
+            </div>
             <p class="muted">Note: Your stuff is still saved on this device if you don't do this.</p>
           </div>
           <div class="onboarding-actions">
@@ -561,6 +575,13 @@
               inputmode="email"
             />
             <button id="auth-send" type="button">Send magic link</button>
+          </div>
+          <div class="otp-row hidden" id="settings-otp-row">
+            <p class="muted otp-hint">Enter the 6-digit code from your email:</p>
+            <div class="auth-row">
+              <input id="settings-otp-code" type="text" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6" />
+              <button id="settings-otp-verify" type="button">Verify</button>
+            </div>
           </div>
           <div class="cloud-sync-row">
             <div class="cloud-sync-info">

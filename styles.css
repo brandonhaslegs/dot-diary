@@ -1732,6 +1732,21 @@ button:active {
   color: var(--ink);
 }
 
+.otp-row {
+  margin-top: 12px;
+}
+
+.otp-row .otp-hint {
+  margin: 0 0 2px;
+  font-size: 0.85rem;
+}
+
+.otp-row input {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+
 .auth-status {
   margin-top: 8px;
   font-size: 0.9rem;

@@ -15,9 +15,13 @@ import {
   loginBackButton,
   loginEmailInput,
   loginSendButton,
+  loginOtpCode,
+  loginOtpVerify,
   menuScrim,
   onboardingEmailInput,
   onboardingBackButton,
+  onboardingOtpCode,
+  onboardingOtpVerify,
   onboardingBackSyncButton,
   onboardingDoneButton,
   onboardingNextButton,
@@ -32,6 +36,8 @@ import {
   popoverScrim,
   resetOnboardingButton,
   settingsBackButton,
+  settingsOtpCode,
+  settingsOtpVerify,
   showKeyboardHintsInput,
   todayButton,
   uploadDataButton,
@@ -78,7 +84,8 @@ import {
   refreshAuthSession,
   scheduleSync,
   signOutSupabase,
-  updateAuthUI
+  updateAuthUI,
+  verifyOtpCode
 } from "./auth.js";
 import { showToast } from "./toast.js";
 
@@ -166,6 +173,21 @@ onboardingSkipIntroButton?.addEventListener("click", completeOnboarding);
 onboardingSkipButton?.addEventListener("click", completeOnboarding);
 onboardingSendButton?.addEventListener("click", () => handleMagicLink(onboardingEmailInput?.value));
 submitMagicLinkOnEnter(onboardingEmailInput, () => handleMagicLink(onboardingEmailInput?.value));
+
+// OTP code verification.
+function submitOtpOnEnter(input, submit) {
+  input?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.isComposing) return;
+    event.preventDefault();
+    submit();
+  });
+}
+loginOtpVerify?.addEventListener("click", () => verifyOtpCode(loginOtpCode?.value, loginOtpVerify));
+submitOtpOnEnter(loginOtpCode, () => verifyOtpCode(loginOtpCode?.value, loginOtpVerify));
+settingsOtpVerify?.addEventListener("click", () => verifyOtpCode(settingsOtpCode?.value, settingsOtpVerify));
+submitOtpOnEnter(settingsOtpCode, () => verifyOtpCode(settingsOtpCode?.value, settingsOtpVerify));
+onboardingOtpVerify?.addEventListener("click", () => verifyOtpCode(onboardingOtpCode?.value, onboardingOtpVerify));
+submitOtpOnEnter(onboardingOtpCode, () => verifyOtpCode(onboardingOtpCode?.value, onboardingOtpVerify));
 
 // Period picker open/close and related dismiss behavior.
 periodPickerToggle?.addEventListener("click", (event) => {

@@ -14,6 +14,9 @@ import {
   authRow,
   authSignOutButton,
   authStatus,
+  loginOtpRow,
+  settingsOtpRow,
+  onboardingOtpRow,
   marketingPage,
   syncStatus
 } from "./dom.js";
@@ -53,6 +56,7 @@ let syncInProgress = false;
 let signOutInProgress = false;
 let authInitStarted = false;
 let lastSyncError = "";
+let pendingOtpEmail = "";
 
 export async function initSupabaseAuth() {
   if (authInitStarted) return;
@@ -219,13 +223,67 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
       sourceButton.disabled = false;
     }
   } else {
+    pendingOtpEmail = email;
     showToast("Magic link sent. Check your email.");
+    showOtpRows();
     if (sourceButton) {
       sourceButton.textContent = "Check your email";
       sourceButton.disabled = false;
       window.setTimeout(() => {
         sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
       }, BUTTON_RESET_DELAY_MS);
+    }
+  }
+}
+
+function showOtpRows() {
+  loginOtpRow?.classList.remove("hidden");
+  settingsOtpRow?.classList.remove("hidden");
+  onboardingOtpRow?.classList.remove("hidden");
+}
+
+function hideOtpRows() {
+  loginOtpRow?.classList.add("hidden");
+  settingsOtpRow?.classList.add("hidden");
+  onboardingOtpRow?.classList.add("hidden");
+  pendingOtpEmail = "";
+}
+
+export async function verifyOtpCode(code, sourceButton) {
+  if (!supabase) return;
+  const token = code?.trim();
+  if (!token) {
+    showToast("Enter the code from your email.");
+    return;
+  }
+  if (!pendingOtpEmail) {
+    showToast("Send a magic link first.");
+    return;
+  }
+  if (sourceButton) {
+    if (!sourceButton.dataset.defaultLabel) {
+      sourceButton.dataset.defaultLabel = sourceButton.textContent || "";
+    }
+    sourceButton.disabled = true;
+    sourceButton.textContent = "Verifying...";
+  }
+  const { error } = await supabase.auth.verifyOtp({
+    email: pendingOtpEmail,
+    token,
+    type: "email"
+  });
+  if (error) {
+    showToast(error.message || "Invalid code. Try again.");
+    if (sourceButton) {
+      sourceButton.textContent = sourceButton.dataset.defaultLabel || "Verify";
+      sourceButton.disabled = false;
+    }
+  } else {
+    hideOtpRows();
+    showToast("Signed in!");
+    if (sourceButton) {
+      sourceButton.textContent = sourceButton.dataset.defaultLabel || "Verify";
+      sourceButton.disabled = false;
     }
   }
 }
