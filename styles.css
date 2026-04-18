@@ -999,6 +999,7 @@ textarea {
   transform: translateY(-50%);
   display: flex;
   gap: 8px;
+  z-index: 19;
 }
 
 .today-button {
@@ -3160,11 +3161,12 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .view-nav {
-    position: static;
+    position: relative;
     transform: none;
     gap: 6px;
     flex-shrink: 0;
     align-items: center;
+    z-index: 19;
   }
 
   /* Hide "Settings" text label, keep icon */
