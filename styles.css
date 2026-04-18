@@ -999,6 +999,7 @@ textarea {
   transform: translateY(-50%);
   display: flex;
   gap: 8px;
+  z-index: 19;
 }
 
 .today-button {

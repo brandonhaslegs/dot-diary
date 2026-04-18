@@ -148,7 +148,11 @@ authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsBackButton?.addEventListener("click", closeSettingsModal);
 openSettings?.addEventListener("click", async () => {
   closePopover();
-  await refreshAuthSession({ loadCloud: false });
+  try {
+    await refreshAuthSession({ loadCloud: false });
+  } catch {
+    // Don't let a failed auth check block opening settings.
+  }
   openSettingsModal();
 });
 todayButton?.addEventListener("click", scrollToToday);
