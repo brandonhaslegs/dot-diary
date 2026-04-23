@@ -427,84 +427,73 @@
 
     <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="modal-card settings-card">
-        <button id="settings-back" type="button" class="settings-back">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <g clip-path="url(#back_clip_1)">
-              <path
-                d="M16.875 10H3.125"
-                stroke="black"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M8.75 4.375L3.125 10L8.75 15.625"
-                stroke="black"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </g>
-            <defs>
-              <clipPath id="back_clip_1">
-                <rect width="20" height="20" fill="white" />
-              </clipPath>
-            </defs>
-          </svg>
-          <span>Back to your diary</span>
-        </button>
-        <h3 id="settings-title" class="hidden">Settings</h3>
+        <div class="settings-header">
+          <h3 id="settings-title">Settings</h3>
+          <button id="settings-close" type="button" class="settings-close" aria-label="Close settings">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
 
-        <section class="settings-section suggestions">
-          <h4>Your dot types</h4>
-          <ul id="dot-type-list" class="dot-type-list"></ul>
-          <div id="suggested-dot-section">
-            <div class="suggested-header-row">
-              <h5>Suggested dot types</h5>
-              <label class="settings-toggle compact-toggle">
-                <input id="hide-suggestions" type="checkbox" />
+        <nav class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <button id="settings-tab-dot-types" class="settings-tab is-active" type="button" role="tab" data-tab="dot-types" aria-selected="true" aria-controls="settings-panel-dot-types">Dot types</button>
+          <button id="settings-tab-preferences" class="settings-tab" type="button" role="tab" data-tab="preferences" aria-selected="false" aria-controls="settings-panel-preferences">Preferences</button>
+          <button id="settings-tab-import-export" class="settings-tab" type="button" role="tab" data-tab="import-export" aria-selected="false" aria-controls="settings-panel-import-export">Import + Export</button>
+          <button id="settings-tab-account" class="settings-tab" type="button" role="tab" data-tab="account" aria-selected="false" aria-controls="settings-panel-account">Account</button>
+        </nav>
+
+        <div id="settings-panel-dot-types" class="settings-tab-panel is-active" role="tabpanel" aria-labelledby="settings-tab-dot-types" data-tab="dot-types">
+          <section class="settings-section suggestions">
+            <h4 class="sr-only">Your dot types</h4>
+            <ul id="dot-type-list" class="dot-type-list"></ul>
+            <div id="suggested-dot-section">
+              <div class="suggested-header-row">
+                <h5>Suggested dot types</h5>
+                <label class="settings-toggle compact-toggle">
+                  <input id="hide-suggestions" type="checkbox" />
+                </label>
+              </div>
+              <p class="muted">It’s helpful to choose three you want to do more of, and three you want to do less of.</p>
+              <div id="suggested-dot-content">
+                <div id="suggested-dot-list" class="suggested-dot-list"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div id="settings-panel-preferences" class="settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-preferences" data-tab="preferences" hidden>
+          <section class="settings-section">
+            <h4 class="sr-only">Display</h4>
+            <div class="display-row">
+              <div>
+                <div>Start weeks on Monday</div>
+                <div class="muted">This only affects the month view</div>
+              </div>
+              <label class="settings-toggle">
+                <input id="week-start-monday" type="checkbox" />
               </label>
             </div>
-            <p class="muted">It’s helpful to choose three you want to do more of, and three you want to do less of.</p>
-            <div id="suggested-dot-content">
-              <div id="suggested-dot-list" class="suggested-dot-list"></div>
+            <div class="display-row">
+              <div>Color mode</div>
+              <div class="color-mode-toggle" role="group" aria-label="Color mode">
+                <button id="color-mode-light" type="button">Light</button>
+                <button id="color-mode-dark" type="button">Dark</button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <hr />
+          <hr />
 
-        <section class="settings-section">
-          <h4>Display</h4>
-          <div class="display-row">
-            <div>
-              <div>Start weeks on Monday</div>
-              <div class="muted">This only affects the month view</div>
+          <section class="settings-section shortcuts">
+            <h4>Keyboard shortcuts</h4>
+            <div class="display-row">
+              <div>Show keyboard hints</div>
+              <label class="settings-toggle">
+                <input id="show-keyboard-hints" type="checkbox" />
+              </label>
             </div>
-            <label class="settings-toggle">
-              <input id="week-start-monday" type="checkbox" />
-            </label>
-          </div>
-          <div class="display-row">
-            <div>Color mode</div>
-            <div class="color-mode-toggle" role="group" aria-label="Color mode">
-              <button id="color-mode-light" type="button">Light</button>
-              <button id="color-mode-dark" type="button">Dark</button>
-            </div>
-          </div>
-        </section>
-
-        <hr />
-
-        <section class="settings-section shortcuts">
-          <h4>Keyboard shortcuts</h4>
-          <div class="display-row">
-            <div>Show keyboard hints</div>
-            <label class="settings-toggle">
-              <input id="show-keyboard-hints" type="checkbox" />
-            </label>
-          </div>
-          <ul class="shortcut-list" aria-label="Keyboard shortcuts">
+            <ul class="shortcut-list" aria-label="Keyboard shortcuts">
             <li class="shortcut-row">
               <span>Add a note to a day</span>
               <span class="shortcut-keys"><span class="key-hint" aria-hidden="true">N</span></span>
@@ -540,67 +529,68 @@
             </li>
           </ul>
         </section>
+        </div>
 
-        <hr />
-
-        <section class="settings-section">
-          <h4>Sync across devices</h4>
-          <div class="auth-row" id="auth-row">
-            <input
-              id="auth-email"
-              type="text"
-              placeholder="you@example.com"
-              autocomplete="email"
-              autocorrect="on"
-              spellcheck="true"
-              autocapitalize="none"
-              inputmode="email"
-            />
-            <button id="auth-send" type="button">Send magic link</button>
-          </div>
-          <div class="cloud-sync-row">
-            <div class="cloud-sync-info">
-              <div class="auth-status" id="auth-status"></div>
-              <div class="auth-status muted" id="sync-status"></div>
+        <div id="settings-panel-import-export" class="settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-import-export" data-tab="import-export" hidden>
+          <section class="settings-section">
+            <h4 class="sr-only">Your data</h4>
+            <div class="data-action-row">
+              <p class="muted">
+                You can download all your dot names, colors, entries, positions, and preferences and upload them on
+                another device.
+              </p>
+              <button id="download-data" type="button">Download</button>
             </div>
-            <button id="auth-signout" type="button" class="hidden">Sign out</button>
-          </div>
-        </section>
+            <div class="data-action-row">
+              <p class="muted">
+                Already downloaded your data from another device? Upload it here to keep going where you left off.
+              </p>
+              <button id="upload-data" type="button">Upload</button>
+            </div>
+            <input id="upload-data-input" type="file" accept="application/json,.json" class="hidden" />
+            <div class="muted legal-link-row legal-link-group">
+              <a href="./privacy.html">Privacy Policy</a>
+              <a href="./impressum.html">Impressum</a>
+            </div>
+          </section>
+        </div>
 
-        <hr />
+        <div id="settings-panel-account" class="settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-account" data-tab="account" hidden>
+          <section class="settings-section">
+            <h4>Sync across devices</h4>
+            <div class="auth-row" id="auth-row">
+              <input
+                id="auth-email"
+                type="text"
+                placeholder="you@example.com"
+                autocomplete="email"
+                autocorrect="on"
+                spellcheck="true"
+                autocapitalize="none"
+                inputmode="email"
+              />
+              <button id="auth-send" type="button">Send magic link</button>
+            </div>
+            <div class="cloud-sync-row">
+              <div class="cloud-sync-info">
+                <div class="auth-status" id="auth-status"></div>
+                <div class="auth-status muted" id="sync-status"></div>
+              </div>
+              <button id="auth-signout" type="button" class="hidden">Sign out</button>
+            </div>
+          </section>
 
-        <section class="settings-section">
-          <h4>Billing</h4>
-          <p id="billing-status" class="muted">Free plan: up to 6 dot types.</p>
-          <div class="billing-actions">
-            <button id="billing-upgrade" type="button" class="outline-button">Upgrade to Pro</button>
-            <button id="billing-manage" type="button" class="outline-button hidden">Manage subscription</button>
-          </div>
-        </section>
+          <hr />
 
-        <hr />
-
-        <section class="settings-section">
-          <h4>Your data</h4>
-          <div class="data-action-row">
-            <p class="muted">
-              You can download all your dot names, colors, entries, positions, and preferences and upload them on
-              another device.
-            </p>
-            <button id="download-data" type="button">Download</button>
-          </div>
-          <div class="data-action-row">
-            <p class="muted">
-              Already downloaded your data from another device? Upload it here to keep going where you left off.
-            </p>
-            <button id="upload-data" type="button">Upload</button>
-          </div>
-          <input id="upload-data-input" type="file" accept="application/json,.json" class="hidden" />
-          <div class="muted legal-link-row legal-link-group">
-            <a href="./privacy.html">Privacy Policy</a>
-            <a href="./impressum.html">Impressum</a>
-          </div>
-        </section>
+          <section class="settings-section">
+            <h4>Billing</h4>
+            <p id="billing-status" class="muted">Free plan: up to 6 dot types.</p>
+            <div class="billing-actions">
+              <button id="billing-upgrade" type="button" class="outline-button">Upgrade to Pro</button>
+              <button id="billing-manage" type="button" class="outline-button hidden">Manage subscription</button>
+            </div>
+          </section>
+        </div>
 
         <!--
         <hr />

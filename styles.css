@@ -1193,10 +1193,12 @@ button:active {
   transition-duration: 140ms;
 }
 
-.app-shell .brand-link,
-.app-shell .brand-link:hover,
-.app-shell .brand-link:active {
-  transform: translateY(-50%);
+@media (min-width: 921px) {
+  .app-shell .brand-link,
+  .app-shell .brand-link:hover,
+  .app-shell .brand-link:active {
+    transform: translateY(-50%);
+  }
 }
 
 :where(
@@ -2948,21 +2950,91 @@ button:active {
   position: relative;
 }
 
-.settings-back {
-  border: 2px solid var(--line);
-  background: transparent;
-  padding: 8px 12px;
-  margin-bottom: 16px;
-  font: inherit;
-  color: var(--ink);
-  cursor: pointer;
-  display: none;
+.settings-header {
+  display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.settings-back svg path {
-  stroke: currentColor;
+.settings-header h3 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.settings-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.settings-close:hover,
+.settings-close:focus-visible {
+  background: var(--line);
+  opacity: 0.1;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 28px;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.settings-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px 2px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  opacity: 0.55;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.settings-tab:hover {
+  opacity: 0.85;
+}
+
+.settings-tab.is-active {
+  opacity: 1;
+  border-bottom-color: var(--ink);
+  font-weight: 600;
+}
+
+.settings-tab-panel[hidden] {
+  display: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .settings-card .dot-type-list,
@@ -3406,12 +3478,6 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   .auth-row button {
     width: 100%;
-  }
-
-  .settings-back {
-    display: inline-flex;
-    width: 100%;
-    justify-content: center;
   }
 
   .data-action-row button {

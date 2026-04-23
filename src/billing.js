@@ -1,9 +1,13 @@
 import { FREE_DOT_TYPE_LIMIT } from "./constants.js";
 import { billingManage, billingStatus, billingUpgrade } from "./dom.js";
+import { requestRender } from "./state.js";
 import { showToast } from "./toast.js";
 
 let cachedIsPro = false;
 let fetchInFlight = null;
+let fetchRequestId = 0;
+let checkoutInFlight = false;
+let portalInFlight = false;
 
 /**
  * Returns true when the current user has an active Pro subscription.
@@ -20,29 +24,31 @@ export function isPro() {
  */
 export async function fetchBillingStatus(accessToken) {
   if (!accessToken) {
-    cachedIsPro = false;
-    renderBillingUI();
+    updateBillingState(false);
     return;
   }
-  if (fetchInFlight) return fetchInFlight;
+  const requestId = ++fetchRequestId;
   fetchInFlight = (async () => {
     try {
       const response = await fetch("/api/billing/status", {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
+      if (requestId !== fetchRequestId) return;
       if (!response.ok) {
-        cachedIsPro = false;
-        renderBillingUI();
+        updateBillingState(false);
         return;
       }
       const data = await response.json();
-      cachedIsPro = Boolean(data?.isPro);
+      if (requestId !== fetchRequestId) return;
+      updateBillingState(Boolean(data?.isPro));
     } catch {
-      cachedIsPro = false;
+      if (requestId !== fetchRequestId) return;
+      updateBillingState(false);
     } finally {
-      fetchInFlight = null;
+      if (requestId === fetchRequestId) {
+        fetchInFlight = null;
+      }
     }
-    renderBillingUI();
   })();
   return fetchInFlight;
 }
@@ -51,8 +57,9 @@ export async function fetchBillingStatus(accessToken) {
  * Resets the cached billing state (used on sign-out).
  */
 export function resetBilling() {
-  cachedIsPro = false;
-  renderBillingUI();
+  fetchRequestId += 1;
+  fetchInFlight = null;
+  updateBillingState(false);
 }
 
 /**
@@ -84,6 +91,15 @@ function renderBillingUI() {
     if (billingUpgrade) billingUpgrade.classList.remove("hidden");
     if (billingManage) billingManage.classList.add("hidden");
   }
+  if (billingUpgrade) billingUpgrade.disabled = checkoutInFlight;
+  if (billingManage) billingManage.disabled = portalInFlight;
+}
+
+function updateBillingState(nextIsPro) {
+  const changed = cachedIsPro !== nextIsPro;
+  cachedIsPro = nextIsPro;
+  renderBillingUI();
+  if (changed) requestRender();
 }
 
 /**
@@ -94,6 +110,9 @@ export async function startCheckout(accessToken, cycle = "monthly") {
     showToast("Sign in first to upgrade.");
     return;
   }
+  if (checkoutInFlight) return;
+  checkoutInFlight = true;
+  renderBillingUI();
   try {
     const response = await fetch("/api/billing/checkout", {
       method: "POST",
@@ -111,6 +130,9 @@ export async function startCheckout(accessToken, cycle = "monthly") {
     }
   } catch {
     showToast("Could not start checkout.");
+  } finally {
+    checkoutInFlight = false;
+    renderBillingUI();
   }
 }
 
@@ -122,6 +144,9 @@ export async function openBillingPortal(accessToken) {
     showToast("Sign in first to manage billing.");
     return;
   }
+  if (portalInFlight) return;
+  portalInFlight = true;
+  renderBillingUI();
   try {
     const response = await fetch("/api/billing/portal", {
       method: "POST",
@@ -138,5 +163,8 @@ export async function openBillingPortal(accessToken) {
     }
   } catch {
     showToast("Could not open billing portal.");
+  } finally {
+    portalInFlight = false;
+    renderBillingUI();
   }
 }

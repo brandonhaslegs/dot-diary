@@ -33,7 +33,9 @@ import {
   periodPickerToggle,
   popoverScrim,
   resetOnboardingButton,
-  settingsBackButton,
+  settingsCloseButton,
+  settingsTabButtons,
+  settingsTabPanels,
   showKeyboardHintsInput,
   todayButton,
   uploadDataButton,
@@ -149,7 +151,24 @@ brandHomeButton?.addEventListener("click", () => {
 authSendButton?.addEventListener("click", () => handleMagicLink(undefined, authSendButton));
 submitMagicLinkOnEnter(authEmailInput, () => handleMagicLink(authEmailInput?.value, authSendButton));
 authSignOutButton?.addEventListener("click", signOutSupabase);
-settingsBackButton?.addEventListener("click", closeSettingsModal);
+settingsCloseButton?.addEventListener("click", closeSettingsModal);
+
+function activateSettingsTab(tabId) {
+  settingsTabButtons.forEach((button) => {
+    const isActive = button.dataset.tab === tabId;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+  settingsTabPanels.forEach((panel) => {
+    const isActive = panel.dataset.tab === tabId;
+    panel.classList.toggle("is-active", isActive);
+    panel.hidden = !isActive;
+  });
+}
+
+settingsTabButtons.forEach((button) => {
+  button.addEventListener("click", () => activateSettingsTab(button.dataset.tab));
+});
 openSettings?.addEventListener("click", async () => {
   closePopover();
   try {
