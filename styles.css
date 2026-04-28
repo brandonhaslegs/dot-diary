@@ -2997,10 +2997,21 @@ button:active {
   display: none;
 }
 
+.settings-tab,
+.settings-tab:hover,
+.settings-tab:active,
+.settings-tab.is-active {
+  transform: none;
+  filter: none;
+  box-shadow: none;
+  text-shadow: none;
+}
+
 .settings-tab {
   background: transparent;
   border: 0;
   border-bottom: 2px solid transparent;
+  border-radius: 0;
   margin-bottom: -2px;
   padding: 10px 2px;
   font: inherit;
@@ -3009,6 +3020,7 @@ button:active {
   opacity: 0.55;
   cursor: pointer;
   white-space: nowrap;
+  transition: opacity 140ms ease, border-color 140ms ease;
 }
 
 .settings-tab:hover {
@@ -3018,7 +3030,12 @@ button:active {
 .settings-tab.is-active {
   opacity: 1;
   border-bottom-color: var(--ink);
-  font-weight: 600;
+}
+
+.settings-tab:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .settings-tab-panel[hidden] {
