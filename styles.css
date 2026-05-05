@@ -2943,11 +2943,19 @@ button:active {
 
 .settings-card {
   width: min(760px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
-  max-height: calc(100dvh - 24px);
-  overflow: auto;
+  height: min(640px, calc(100vh - 24px));
+  height: min(640px, calc(100dvh - 24px));
+  overflow: hidden;
   text-align: left;
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-card .settings-tab-panel:not([hidden]) {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .settings-header {
@@ -3327,7 +3335,8 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   /* Settings modal: wider, tighter padding */
   .settings-card {
     width: min(760px, calc(100vw - 16px));
-    max-height: calc(100vh - 16px);
+    height: min(640px, calc(100vh - 16px));
+    height: min(640px, calc(100dvh - 16px));
     border-radius: 24px;
     padding: 20px;
   }
@@ -3579,8 +3588,8 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   /* Settings modal: nearly full screen */
   .settings-card {
     width: 100vw;
-    max-height: 100vh;
-    max-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
     border: 0;
     border-radius: 0;
     padding: 16px;
