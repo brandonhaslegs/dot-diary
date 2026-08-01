@@ -31,6 +31,8 @@ import {
   deleteModal,
   deleteText,
   dotTypeList,
+  filterDotTypeList,
+  filterMenu,
   hideSuggestionsInput,
   marketingCalendar,
   marketingHero,
@@ -49,7 +51,9 @@ import {
   popover,
   popoverItemTemplate,
   popoverScrim,
+  openFilters,
   showKeyboardHintsInput,
+  showCalendarNotesInput,
   settingsModal,
   suggestedDotContent,
   suggestedDotList,
@@ -104,6 +108,7 @@ let lastObservedMobileMonthIso = null;
 let settingsModalHideTimer = null;
 let popoverHideTimer = null;
 let menuScrimHideTimer = null;
+let filterMenuHideTimer = null;
 let hasEnteredApp = false;
 let loginMode = false;
 let updateAuthUIFn = () => {};
@@ -279,12 +284,14 @@ export function render() {
 
   applyTheme();
   renderPeriodPicker();
+  renderFilterMenu();
   renderDiaryGrid();
   updateTodayButtonVisibility();
   renderDotTypeList();
   if (weekStartMondayInput) weekStartMondayInput.checked = Boolean(state.weekStartsMonday);
   if (hideSuggestionsInput) hideSuggestionsInput.checked = !state.hideSuggestions;
   if (showKeyboardHintsInput) showKeyboardHintsInput.checked = Boolean(state.showKeyboardHints);
+  if (showCalendarNotesInput) showCalendarNotesInput.checked = Boolean(state.showCalendarNotes);
   document.documentElement.classList.toggle("hide-keyboard-hints", !state.showKeyboardHints);
   if (suggestedDotContent) {
     suggestedDotContent.classList.toggle("hidden", Boolean(state.hideSuggestions));
@@ -295,6 +302,74 @@ export function render() {
   renderSuggestedDotTypes();
   renderOnboardingLists();
   updateAuthUIFn();
+}
+
+function getActiveFilterDotIds() {
+  const validIds = new Set(state.dotTypes.map((dotType) => dotType.id));
+  return state.filterDotTypeIds.filter((id) => validIds.has(id));
+}
+
+function getVisibleDayDotIds(isoDate) {
+  const dayDotIds = getDayDotIds(isoDate);
+  const activeFilterIds = getActiveFilterDotIds();
+  if (activeFilterIds.length === 0) return dayDotIds;
+  const allowedIds = new Set(activeFilterIds);
+  return dayDotIds.filter((dotId) => allowedIds.has(dotId));
+}
+
+function shouldRenderCalendarNote() {
+  return Boolean(state.showCalendarNotes);
+}
+
+export function renderFilterMenu() {
+  if (!filterDotTypeList) return;
+
+  const activeFilterIds = new Set(getActiveFilterDotIds());
+  filterDotTypeList.innerHTML = "";
+
+  if (state.dotTypes.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "muted filter-empty";
+    empty.textContent = "Add a dot type to filter the calendar.";
+    filterDotTypeList.appendChild(empty);
+  } else {
+    state.dotTypes.forEach((dotType) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "filter-dot-button";
+      button.dataset.filterDotId = dotType.id;
+      button.style.setProperty("--filter-dot-color", dotType.color);
+      button.setAttribute("aria-label", `Filter by ${dotType.name}`);
+      button.title = dotType.name;
+      if (activeFilterIds.has(dotType.id)) {
+        button.classList.add("is-selected");
+        button.setAttribute("aria-pressed", "true");
+      } else {
+        button.setAttribute("aria-pressed", "false");
+      }
+      filterDotTypeList.appendChild(button);
+    });
+
+    if (activeFilterIds.size > 0) {
+      const clearButton = document.createElement("button");
+      clearButton.type = "button";
+      clearButton.className = "filter-dot-button filter-dot-button-clear";
+      clearButton.dataset.clearDotFilters = "true";
+      clearButton.setAttribute("aria-label", "Clear dot type filters");
+      clearButton.title = "Clear filters";
+      clearButton.innerHTML = `
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+          <path d="M1.25 1.25L6.75 6.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M6.75 1.25L1.25 6.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+      `;
+      filterDotTypeList.appendChild(clearButton);
+    }
+  }
+
+  const hasActiveFilters = activeFilterIds.size > 0 || !state.showCalendarNotes;
+  openFilters?.classList.toggle("is-active", hasActiveFilters);
+  openFilters?.setAttribute("aria-expanded", filterMenu?.classList.contains("hidden") ? "false" : "true");
 }
 
 function isViewingTodayMonth() {
@@ -474,7 +549,7 @@ export function renderYearGrid() {
 
       const dotLayer = document.createElement("div");
       dotLayer.className = "dot-layer";
-      const dayDotIds = getDayDotIds(iso);
+      const dayDotIds = getVisibleDayDotIds(iso);
       const resolvedPositions = resolveDotPositionsForDay({
         isoDate: iso,
         dotIds: dayDotIds,
@@ -503,7 +578,7 @@ export function renderYearGrid() {
       const note = getDayNote(iso);
       if (activeNoteEdit === iso) {
         row.appendChild(buildNoteEditor(iso, "day-note", null));
-      } else if (note) {
+      } else if (note && shouldRenderCalendarNote()) {
         const noteNode = document.createElement("span");
         noteNode.className = "day-note";
         noteNode.textContent = note;
@@ -553,7 +628,7 @@ export function renderMonthGrid() {
 
     const dotLayer = document.createElement("div");
     dotLayer.className = "dot-layer";
-    const dayDotIds = getDayDotIds(day.iso);
+    const dayDotIds = getVisibleDayDotIds(day.iso);
     const resolvedPositions = resolveDotPositionsForDay({
       isoDate: day.iso,
       dotIds: dayDotIds,
@@ -582,7 +657,7 @@ export function renderMonthGrid() {
     const note = getDayNote(day.iso);
     if (isEditingThisDay) {
       cell.appendChild(buildNoteEditor(day.iso, "month-note", monthIso));
-    } else if (note) {
+    } else if (note && shouldRenderCalendarNote()) {
       const noteNode = document.createElement("span");
       noteNode.className = "month-note";
       noteNode.textContent = note;
@@ -1435,6 +1510,36 @@ export function closeSettingsModal() {
   restoreFocus();
 }
 
+export function closeFiltersMenu() {
+  if (!filterMenu) return;
+  if (filterMenuHideTimer) {
+    clearTimeout(filterMenuHideTimer);
+    filterMenuHideTimer = null;
+  }
+  filterMenu.classList.remove("visible");
+  filterMenuHideTimer = window.setTimeout(() => {
+    filterMenu.classList.add("hidden");
+    filterMenuHideTimer = null;
+    renderFilterMenu();
+  }, POPOVER_ANIMATION_MS);
+  updateMenuScrim();
+}
+
+export function openFiltersMenu() {
+  if (!filterMenu) return;
+  if (filterMenuHideTimer) {
+    clearTimeout(filterMenuHideTimer);
+    filterMenuHideTimer = null;
+  }
+  closePeriodMenu();
+  showAnimated(filterMenu);
+  updateMenuScrim();
+  requestAnimationFrame(() => {
+    renderFilterMenu();
+    filterMenu.querySelector("input, button")?.focus();
+  });
+}
+
 export function openSettingsModal() {
   if (settingsModalHideTimer) {
     clearTimeout(settingsModalHideTimer);
@@ -1670,6 +1775,9 @@ export function handleGlobalPointerDown(event) {
   if (!event.target.closest(".period-picker")) {
     closePeriodMenu();
   }
+  if (!event.target.closest(".filter-menu-wrap")) {
+    closeFiltersMenu();
+  }
   if (!event.target.closest(".dot-actions, .dot-actions-menu")) {
     closeDotMenus();
   }
@@ -1708,6 +1816,7 @@ export function handleGlobalKeyDown(event) {
   const isPlainShortcutKey = !event.metaKey && !event.ctrlKey && !event.altKey;
   const key = String(event.key || "").toLowerCase();
   const isPeriodMenuOpen = !periodPickerMenu.classList.contains("hidden");
+  const isFilterMenuOpen = !filterMenu.classList.contains("hidden");
   const isSettingsOpen = !settingsModal.classList.contains("hidden");
   const isDotPopoverOpen = Boolean(activePopover) && !popover.classList.contains("hidden");
 
@@ -1733,6 +1842,10 @@ export function handleGlobalKeyDown(event) {
 
   if (isSettingsOpen && event.key === "Tab") {
     trapFocus(settingsModal, event);
+  }
+
+  if (isFilterMenuOpen && event.key === "Tab") {
+    trapFocus(filterMenu, event);
   }
 
   if (isPeriodMenuOpen && !isEditableTarget) {
@@ -1781,6 +1894,7 @@ export function handleGlobalKeyDown(event) {
     isPlainShortcutKey &&
     !isEditableTarget &&
     !isPeriodMenuOpen &&
+    !isFilterMenuOpen &&
     !isSettingsOpen &&
     !isDotPopoverOpen &&
     (event.key === "ArrowLeft" || event.key === "ArrowRight");
@@ -1836,6 +1950,7 @@ export function handleGlobalKeyDown(event) {
   if (event.key !== "Escape") return;
   closePopover();
   closePeriodMenu();
+  closeFiltersMenu();
   closeSettingsModal();
   closeDeleteModal();
 }
@@ -2131,7 +2246,8 @@ export function updateMenuScrim() {
   const hasDotMenu = Boolean(document.querySelector(".dot-actions-menu:not(.hidden)"));
   const hasColorPicker = Boolean(document.querySelector(".color-picker:not(.hidden)"));
   const hasPeriodMenu = !periodPickerMenu.classList.contains("hidden");
-  const shouldShow = isMobileSheet && (hasDotMenu || hasPeriodMenu || hasColorPicker);
+  const hasFilterMenu = !filterMenu.classList.contains("hidden");
+  const shouldShow = isMobileSheet && (hasDotMenu || hasPeriodMenu || hasColorPicker || hasFilterMenu);
   if (menuScrimHideTimer) {
     clearTimeout(menuScrimHideTimer);
     menuScrimHideTimer = null;

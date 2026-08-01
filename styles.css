@@ -1002,6 +1002,10 @@ textarea {
   z-index: 19;
 }
 
+.filter-menu-wrap {
+  position: relative;
+}
+
 .today-button {
   border-radius: 999px;
   padding: 6px 12px;
@@ -1023,6 +1027,16 @@ textarea {
   box-shadow: none;
   transform: none;
   transition: none;
+}
+
+#open-filters.is-active {
+  background: transparent;
+  color: inherit;
+}
+
+#open-filters.is-active svg path,
+#open-filters.is-active svg circle {
+  stroke: currentColor;
 }
 
 .key-hint {
@@ -2142,6 +2156,104 @@ button:active {
 
 .popover.hidden {
   display: none;
+}
+
+.filter-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(280px, calc(100vw - 24px));
+  border: 2px solid var(--line);
+  background: var(--card);
+  border-radius: 20px;
+  padding: 14px;
+  z-index: 20;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 180ms ease;
+}
+
+.filter-menu.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.filter-menu.hidden {
+  display: none;
+}
+
+.filter-dot-types p {
+  margin: 0;
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-height: auto;
+  font: inherit;
+  font-weight: 700;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.filter-notes-toggle {
+  margin-bottom: 14px;
+}
+
+.filter-dot-types {
+  display: grid;
+  gap: 10px;
+}
+
+.filter-dot-type-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-dot-button {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid var(--line);
+  background: var(--filter-dot-color, var(--foreground));
+  flex-shrink: 0;
+  padding: 0;
+  min-height: 18px;
+  box-shadow: none;
+  transform: none;
+}
+
+.filter-dot-button.is-selected {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
+}
+
+.filter-dot-button.filter-dot-button-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.filter-dot-button.filter-dot-button-clear svg {
+  display: block;
+}
+
+.filter-dot-button:hover,
+.filter-dot-button:focus-visible {
+  transform: none;
+  box-shadow: none;
+}
+
+.filter-empty {
+  margin: 0;
 }
 
 .modal {
@@ -3264,6 +3376,11 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     flex-shrink: 0;
     align-items: center;
     z-index: 19;
+  }
+
+  .filter-menu {
+    right: 0;
+    width: min(260px, calc(100vw - 32px));
   }
 
   /* Hide "Settings" text label, keep icon */

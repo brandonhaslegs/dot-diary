@@ -189,6 +189,26 @@
         </div>
         <nav class="view-nav" aria-label="Sections">
           <button id="today-button" type="button" class="outline-button today-button hidden">Today</button>
+          <div class="filter-menu-wrap">
+            <button id="open-filters" type="button" class="icon-button" aria-label="Filters" aria-expanded="false" aria-controls="filter-menu">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2 3.25H14" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+                <path d="M4.75 8H11.25" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+                <path d="M6.5 12.75H9.5" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+              <span class="icon-button-label">Filter</span>
+            </button>
+            <div id="filter-menu" class="filter-menu hidden" role="dialog" aria-label="Calendar filters">
+              <label class="settings-toggle compact-toggle filter-notes-toggle">
+                <span>Show notes</span>
+                <input id="show-calendar-notes" type="checkbox" checked />
+              </label>
+              <div class="filter-dot-types">
+                <p>Dot types</p>
+                <div id="filter-dot-type-list" class="filter-dot-type-list"></div>
+              </div>
+            </div>
+          </div>
           <button id="open-settings" type="button" class="icon-button" aria-label="Settings">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <circle cx="8" cy="8" r="7.25" stroke="black" stroke-width="1.5" />

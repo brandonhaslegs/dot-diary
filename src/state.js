@@ -7,6 +7,8 @@ export const defaultState = {
   weekStartsMonday: false,
   hideSuggestions: false,
   showKeyboardHints: true,
+  filterDotTypeIds: [],
+  showCalendarNotes: true,
   darkMode: null,
   lastModified: null,
   dotTypes: [],
@@ -270,6 +272,8 @@ export function createDemoState() {
     weekStartsMonday: false,
     hideSuggestions: false,
     showKeyboardHints: true,
+    filterDotTypeIds: [],
+    showCalendarNotes: true,
     darkMode: null,
     lastModified: new Date().toISOString(),
     dotTypes,
@@ -357,6 +361,11 @@ export function normalizeImportedState(parsed) {
     hideSuggestions: Boolean(parsed.hideSuggestions),
     showKeyboardHints:
       typeof parsed.showKeyboardHints === "boolean" ? parsed.showKeyboardHints : defaultState.showKeyboardHints,
+    filterDotTypeIds: Array.isArray(parsed.filterDotTypeIds)
+      ? parsed.filterDotTypeIds.filter((id) => typeof id === "string")
+      : defaultState.filterDotTypeIds,
+    showCalendarNotes:
+      typeof parsed.showCalendarNotes === "boolean" ? parsed.showCalendarNotes : defaultState.showCalendarNotes,
     darkMode: typeof parsed.darkMode === "boolean" ? parsed.darkMode : null,
     lastModified: typeof parsed.lastModified === "string" ? parsed.lastModified : defaultState.lastModified,
     dotTypes: normalizeDotTypes(parsed.dotTypes),

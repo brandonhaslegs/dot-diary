@@ -13,6 +13,8 @@ import {
   deleteConfirm,
   downloadDataButton,
   enterAppButton,
+  filterDotTypeList,
+  filterMenu,
   hideSuggestionsInput,
   loginBackButton,
   loginEmailInput,
@@ -27,6 +29,7 @@ import {
   onboardingSendButton,
   onboardingSkipButton,
   onboardingSkipIntroButton,
+  openFilters,
   openLoginButton,
   openSettings,
   periodPickerMenu,
@@ -36,6 +39,7 @@ import {
   settingsCloseButton,
   settingsTabButtons,
   settingsTabPanels,
+  showCalendarNotesInput,
   showKeyboardHintsInput,
   todayButton,
   uploadDataButton,
@@ -49,6 +53,7 @@ import {
   closeColorPickers,
   closeDeleteModal,
   closeDotMenus,
+  closeFiltersMenu,
   closePeriodMenu,
   closePopover,
   closeSettingsModal,
@@ -61,9 +66,11 @@ import {
   handlePeriodPickerScroll,
   handleResetOnboarding,
   openPeriodMenu,
+  openFiltersMenu,
   openSettingsModal,
   registerAuthUpdater,
   render,
+  renderFilterMenu,
   renderMarketingCalendar,
   scrollToToday,
   downloadDataExport,
@@ -169,7 +176,14 @@ function activateSettingsTab(tabId) {
 settingsTabButtons.forEach((button) => {
   button.addEventListener("click", () => activateSettingsTab(button.dataset.tab));
 });
+openFilters?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  closePopover();
+  if (filterMenu.classList.contains("hidden")) openFiltersMenu();
+  else closeFiltersMenu();
+});
 openSettings?.addEventListener("click", async () => {
+  closeFiltersMenu();
   closePopover();
   try {
     await refreshAuthSession({ loadCloud: false });
@@ -205,6 +219,7 @@ periodPickerToggle?.addEventListener("click", (event) => {
 });
 menuScrim?.addEventListener("click", () => {
   closePeriodMenu();
+  closeFiltersMenu();
   closeDotMenus();
   closeColorPickers();
 });
@@ -231,6 +246,37 @@ showKeyboardHintsInput?.addEventListener("change", () => {
   state.showKeyboardHints = Boolean(showKeyboardHintsInput.checked);
   saveAndRender();
   showToast(state.showKeyboardHints ? "Keyboard hints shown." : "Keyboard hints hidden.");
+});
+
+showCalendarNotesInput?.addEventListener("change", () => {
+  state.showCalendarNotes = Boolean(showCalendarNotesInput.checked);
+  saveAndRender();
+  showToast(state.showCalendarNotes ? "Notes shown in the calendar." : "Notes hidden in the calendar.");
+});
+
+filterDotTypeList?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  const button = target.closest("button[data-filter-dot-id], button[data-clear-dot-filters]");
+  if (!(button instanceof HTMLButtonElement)) return;
+
+  if (button.dataset.clearDotFilters === "true") {
+    state.filterDotTypeIds = [];
+    saveAndRender();
+    renderFilterMenu();
+    showToast("Calendar filters cleared.");
+    return;
+  }
+
+  const dotId = button.dataset.filterDotId;
+  if (!dotId) return;
+
+  const selected = new Set(state.filterDotTypeIds);
+  if (selected.has(dotId)) selected.delete(dotId);
+  else selected.add(dotId);
+  state.filterDotTypeIds = [...selected];
+  saveAndRender();
+  renderFilterMenu();
 });
 
 colorModeLightButton?.addEventListener("click", () => {
@@ -269,7 +315,9 @@ document.addEventListener("keydown", handleGlobalKeyDown);
 // Initial render and first-view routing.
 render();
 try {
-  if (!DEMO_MODE) {
+  if (DEMO_MODE) {
+    enterApp({ skipOnboarding: true });
+  } else {
     const lastView = localStorage.getItem(VIEW_MODE_KEY);
     const hasAuthState = localStorage.getItem(AUTH_STATE_KEY) === "1";
     if (lastView === "marketing") {

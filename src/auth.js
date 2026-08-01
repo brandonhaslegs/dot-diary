@@ -2,6 +2,7 @@ import {
   AUTH_INTENT_KEY,
   AUTH_STATE_KEY,
   BUTTON_RESET_DELAY_MS,
+  DEMO_MODE,
   ONBOARDING_KEY,
   STORAGE_KEY,
   SUPABASE_ANON_KEY,
@@ -139,6 +140,13 @@ export async function initSupabaseAuth() {
       }
       startSyncPolling();
     } else {
+      if (DEMO_MODE) {
+        lastSyncError = "";
+        stopSyncPolling();
+        resetBilling();
+        updateAuthUI();
+        return;
+      }
       lastSyncError = "";
       stopSyncPolling();
       resetBilling();
