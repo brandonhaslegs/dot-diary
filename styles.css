@@ -3055,8 +3055,8 @@ button:active {
 
 .settings-card {
   width: min(760px, calc(100vw - 24px));
-  height: min(640px, calc(100vh - 24px));
-  height: min(640px, calc(100dvh - 24px));
+  height: min(680px, calc(100vh - 24px));
+  height: min(680px, calc(100dvh - 24px));
   overflow: hidden;
   text-align: left;
   position: relative;
@@ -3068,6 +3068,20 @@ button:active {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+}
+
+/* On short landscape viewports, let the complete settings card scroll. Keeping
+   the header fixed in the flex layout can otherwise leave the active panel only
+   a few pixels tall, which visibly slices through the dot-type chips. */
+@media (max-height: 400px) {
+  .settings-card {
+    display: block;
+    overflow-y: auto;
+  }
+
+  .settings-card .settings-tab-panel:not([hidden]) {
+    overflow: visible;
+  }
 }
 
 .settings-header {
@@ -3108,7 +3122,7 @@ button:active {
   display: flex;
   gap: 28px;
   border-bottom: 2px solid var(--line);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -3452,8 +3466,8 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   /* Settings modal: wider, tighter padding */
   .settings-card {
     width: min(760px, calc(100vw - 16px));
-    height: min(640px, calc(100vh - 16px));
-    height: min(640px, calc(100dvh - 16px));
+    height: min(680px, calc(100vh - 16px));
+    height: min(680px, calc(100dvh - 16px));
     border-radius: 24px;
     padding: 20px;
   }
