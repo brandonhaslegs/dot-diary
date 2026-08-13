@@ -156,8 +156,8 @@ openLoginButton?.addEventListener("click", showLogin);
 loginBackButton?.addEventListener("click", showMarketingHero);
 loginSendButton?.addEventListener("click", () => handleMagicLink(loginEmailInput?.value, loginSendButton));
 submitMagicLinkOnEnter(loginEmailInput, () => handleMagicLink(loginEmailInput?.value, loginSendButton));
-loginCallbackSubmitButton?.addEventListener("click", () => finishMagicLinkSignIn(loginCallbackUrlInput?.value));
-submitMagicLinkOnEnter(loginCallbackUrlInput, () => finishMagicLinkSignIn(loginCallbackUrlInput?.value));
+loginCallbackSubmitButton?.addEventListener("click", () => finishMagicLinkSignIn(loginCallbackUrlInput?.value, loginCallbackSubmitButton));
+submitMagicLinkOnEnter(loginCallbackUrlInput, () => finishMagicLinkSignIn(loginCallbackUrlInput?.value, loginCallbackSubmitButton));
 loginCallbackCopyButton?.addEventListener("click", async () => {
   const link = loginCallbackUrlInput?.value?.trim();
   if (!link) {

@@ -244,7 +244,7 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
 // iOS opens email links in Safari instead of an installed web app. Let the user
 // move that callback URL into the PWA so the session is saved in the PWA's own
 // storage, rather than Safari's separate storage container.
-export async function finishMagicLinkSignIn(callbackUrl) {
+export async function finishMagicLinkSignIn(callbackUrl, sourceButton) {
   if (!supabase) return;
   const value = callbackUrl?.trim();
   if (!value) {
@@ -265,6 +265,10 @@ export async function finishMagicLinkSignIn(callbackUrl) {
   const refreshToken = hash.get("refresh_token");
   const code = url.searchParams.get("code");
 
+  if (sourceButton) {
+    sourceButton.disabled = true;
+    sourceButton.textContent = "Signing in...";
+  }
   try {
     if (accessToken && refreshToken) {
       const { error } = await supabase.auth.setSession({
@@ -283,12 +287,21 @@ export async function finishMagicLinkSignIn(callbackUrl) {
     syncUser = data?.session?.user || null;
     if (!syncUser) throw new Error("The sign-in session could not be restored.");
     persistAuthMarker(syncUser);
-    await loadFromCloud({ fromAuthBootstrap: true });
-    startSyncPolling();
     if (!getHasEnteredApp()) enterApp({ skipOnboarding: true });
     showToast("Signed in.");
+    // Do not hold the completed sign-in behind a network sync. It will retry
+    // through the normal polling path if the device is currently offline.
+    loadFromCloud({ fromAuthBootstrap: true, silentError: true }).catch(() => {});
+    startSyncPolling();
   } catch (error) {
-    showToast(error?.message || "Could not finish signing in with that link.");
+    const message = error?.message || "Could not finish signing in with that link.";
+    console.error("Magic-link handoff error:", error);
+    showToast(message);
+  } finally {
+    if (sourceButton) {
+      sourceButton.disabled = false;
+      sourceButton.textContent = "Finish sign-in";
+    }
   }
 }
 
