@@ -136,6 +136,22 @@
           />
           <button id="login-send" type="button">Send magic link</button>
         </div>
+        <div class="magic-link-handoff">
+          <p>Opened the email link in your browser? Copy its full address, return to Dot Diary, and paste it here to finish signing in.</p>
+          <div class="auth-row">
+            <input
+              id="login-callback-url"
+              type="url"
+              placeholder="Paste magic-link address"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+            />
+            <button id="login-callback-submit" type="button">Finish sign-in</button>
+          </div>
+          <button id="login-callback-copy" type="button" class="text-button">Copy sign-in link</button>
+        </div>
         <div class="marketing-actions">
           <button id="login-back" type="button" class="outline-button">Back</button>
         </div>
@@ -226,6 +242,20 @@
     </div>
 
     <div id="day-popover" class="popover hidden" role="dialog" aria-label="Pick a dot"></div>
+
+    <div id="pwa-install-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pwa-install-title" aria-describedby="pwa-install-description">
+      <div class="modal-card pwa-install-card">
+        <div class="pwa-install-mark" aria-hidden="true"><span class="brand-mark"></span></div>
+        <div>
+          <h3 id="pwa-install-title">Keep Dot Diary close</h3>
+          <p id="pwa-install-description" data-install-copy>Install the app for a faster, full-screen experience.</p>
+        </div>
+        <div class="modal-actions pwa-install-actions">
+          <button id="pwa-install-dismiss" type="button" class="outline-button">Not now</button>
+          <button id="pwa-install-confirm" type="button">Install app</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Onboarding -->
     <div id="onboarding-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">

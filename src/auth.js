@@ -15,6 +15,7 @@ import {
   authRow,
   authSignOutButton,
   authStatus,
+  loginCallbackUrlInput,
   marketingPage,
   syncStatus
 } from "./dom.js";
@@ -33,11 +34,13 @@ import {
   closeSettingsModal,
   enterApp,
   getHasEnteredApp,
+  showLogin,
   showMarketingPage,
   resetToLoggedOut
 } from "./ui.js";
 import { showToast } from "./toast.js";
 import { fetchBillingStatus, resetBilling } from "./billing.js";
+import { offerPwaInstallAfterLogin } from "./pwa-install.js";
 
 const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -63,9 +66,11 @@ export async function initSupabaseAuth() {
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const accessToken = hashParams.get("access_token");
   const refreshToken = hashParams.get("refresh_token");
-  const hadMagicLinkTokens = Boolean(accessToken && refreshToken);
+  const callbackCode = new URLSearchParams(window.location.search).get("code");
+  const hadMagicLinkCredentials = Boolean((accessToken && refreshToken) || callbackCode);
+  const shouldHandOffMagicLink = hadMagicLinkCredentials && shouldHandOffMagicLinkToPwa();
   const shouldFocusTodayOnEntry =
-    hadMagicLinkTokens ||
+    hadMagicLinkCredentials ||
     (() => {
       try {
         return sessionStorage.getItem(AUTH_INTENT_KEY) === "1";
@@ -73,7 +78,15 @@ export async function initSupabaseAuth() {
         return false;
       }
     })();
-  if (accessToken && refreshToken) {
+  if (shouldHandOffMagicLink) {
+    // Safari cannot return a magic link to an installed iOS web app. Keep the
+    // callback intact so it can be copied into the PWA's separate storage.
+    showMarketingPage();
+    showLogin();
+    if (loginCallbackUrlInput) loginCallbackUrlInput.value = window.location.href;
+    showToast("Copy this sign-in link, then open Dot Diary and paste it there.");
+    return;
+  } else if (accessToken && refreshToken) {
     try {
       await supabase.auth.setSession({
         access_token: accessToken,
@@ -92,14 +105,7 @@ export async function initSupabaseAuth() {
   }
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
-  if (!syncUser) {
-    // Prevent stale auth bootstrap state from implying cloud sync is active.
-    try {
-      localStorage.removeItem(AUTH_STATE_KEY);
-    } catch {
-      // ignore
-    }
-  }
+  persistAuthMarker(syncUser);
   const enteredFromMarketing = !getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden");
   if (enteredFromMarketing) {
     enterApp({ skipOnboarding: true });
@@ -112,6 +118,7 @@ export async function initSupabaseAuth() {
       focusPeriodToToday();
       clearAuthIntent();
     }
+    if (shouldFocusTodayOnEntry) offerPwaInstallAfterLogin();
     startSyncPolling();
   }
   supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -121,15 +128,7 @@ export async function initSupabaseAuth() {
     if (enteredFromMarketingNow) {
       enterApp({ skipOnboarding: true });
     }
-    try {
-      if (syncUser) {
-        localStorage.setItem(AUTH_STATE_KEY, "1");
-      } else {
-        localStorage.removeItem(AUTH_STATE_KEY);
-      }
-    } catch {
-      // ignore
-    }
+    persistAuthMarker(syncUser);
     updateAuthUI();
     if (syncUser) {
       await loadFromCloud({ fromAuthBootstrap: !wasSignedIn });
@@ -138,6 +137,7 @@ export async function initSupabaseAuth() {
         focusPeriodToToday();
         clearAuthIntent();
       }
+      if (!wasSignedIn) offerPwaInstallAfterLogin();
       startSyncPolling();
     } else {
       if (DEMO_MODE) {
@@ -163,15 +163,7 @@ export async function refreshAuthSession({ loadCloud = false } = {}) {
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
-  try {
-    if (syncUser) {
-      localStorage.setItem(AUTH_STATE_KEY, "1");
-    } else {
-      localStorage.removeItem(AUTH_STATE_KEY);
-    }
-  } catch {
-    // ignore
-  }
+  persistAuthMarker(syncUser);
   updateAuthUI();
   if (syncUser) {
     if (loadCloud) await loadFromCloud({ silentError: true });
@@ -246,6 +238,57 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
         sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
       }, BUTTON_RESET_DELAY_MS);
     }
+  }
+}
+
+// iOS opens email links in Safari instead of an installed web app. Let the user
+// move that callback URL into the PWA so the session is saved in the PWA's own
+// storage, rather than Safari's separate storage container.
+export async function finishMagicLinkSignIn(callbackUrl) {
+  if (!supabase) return;
+  const value = callbackUrl?.trim();
+  if (!value) {
+    showToast("Paste the full magic-link address first.");
+    return;
+  }
+
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    showToast("That doesn't look like a magic-link address.");
+    return;
+  }
+
+  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const accessToken = hash.get("access_token");
+  const refreshToken = hash.get("refresh_token");
+  const code = url.searchParams.get("code");
+
+  try {
+    if (accessToken && refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+      if (error) throw error;
+    } else if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+    } else {
+      throw new Error("No sign-in credentials were found in that link.");
+    }
+
+    const { data } = await supabase.auth.getSession();
+    syncUser = data?.session?.user || null;
+    if (!syncUser) throw new Error("The sign-in session could not be restored.");
+    persistAuthMarker(syncUser);
+    await loadFromCloud({ fromAuthBootstrap: true });
+    startSyncPolling();
+    if (!getHasEnteredApp()) enterApp({ skipOnboarding: true });
+    showToast("Signed in.");
+  } catch (error) {
+    showToast(error?.message || "Could not finish signing in with that link.");
   }
 }
 
@@ -449,8 +492,31 @@ function stopSyncPolling() {
 }
 
 function handleVisibilitySync() {
-  if (document.hidden || !syncUser) return;
-  loadFromCloud({ silentError: true });
+  if (document.hidden) return;
+  // An installed PWA can be suspended for long periods. Ask Supabase to restore
+  // or refresh its persisted session before deciding that the user is signed out.
+  refreshAuthSession({ loadCloud: true }).catch(() => {});
+}
+
+function persistAuthMarker(user) {
+  try {
+    if (user) {
+      localStorage.setItem(AUTH_STATE_KEY, "1");
+    } else {
+      // Prevent stale auth bootstrap state from implying cloud sync is active.
+      localStorage.removeItem(AUTH_STATE_KEY);
+    }
+  } catch {
+    // Storage can be unavailable in private browsing or under device policy.
+  }
+}
+
+function shouldHandOffMagicLinkToPwa() {
+  const standalone = window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone === true;
+  if (standalone) return false;
+  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return iOS;
 }
 
 function getMagicLinkRedirectTo() {

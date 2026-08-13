@@ -17,6 +17,9 @@ import {
   filterMenu,
   hideSuggestionsInput,
   loginBackButton,
+  loginCallbackCopyButton,
+  loginCallbackSubmitButton,
+  loginCallbackUrlInput,
   loginEmailInput,
   loginSendButton,
   menuScrim,
@@ -85,6 +88,7 @@ import {
 } from "./ui.js";
 import {
   getAccessToken,
+  finishMagicLinkSignIn,
   handleMagicLink,
   initSupabaseAuth,
   refreshAuthSession,
@@ -94,6 +98,7 @@ import {
 } from "./auth.js";
 import { openBillingPortal, startCheckout } from "./billing.js";
 import { showToast } from "./toast.js";
+import { initPwaInstallPrompt } from "./pwa-install.js";
 
 // Wire cross-module callbacks so `state` can request UI work and cloud sync.
 registerRender(render);
@@ -151,6 +156,23 @@ openLoginButton?.addEventListener("click", showLogin);
 loginBackButton?.addEventListener("click", showMarketingHero);
 loginSendButton?.addEventListener("click", () => handleMagicLink(loginEmailInput?.value, loginSendButton));
 submitMagicLinkOnEnter(loginEmailInput, () => handleMagicLink(loginEmailInput?.value, loginSendButton));
+loginCallbackSubmitButton?.addEventListener("click", () => finishMagicLinkSignIn(loginCallbackUrlInput?.value));
+submitMagicLinkOnEnter(loginCallbackUrlInput, () => finishMagicLinkSignIn(loginCallbackUrlInput?.value));
+loginCallbackCopyButton?.addEventListener("click", async () => {
+  const link = loginCallbackUrlInput?.value?.trim();
+  if (!link) {
+    showToast("Open the magic link first.");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(link);
+    showToast("Sign-in link copied. Open Dot Diary and paste it there.");
+  } catch {
+    loginCallbackUrlInput?.focus();
+    loginCallbackUrlInput?.select();
+    showToast("Select and copy the sign-in link, then return to Dot Diary.");
+  }
+});
 brandHomeButton?.addEventListener("click", () => {
   showMarketingHero();
   showMarketingPage();
@@ -334,6 +356,7 @@ try {
 showOnboardingIfNeeded();
 
 // Startup services and background listeners.
+initPwaInstallPrompt();
 initSupabaseAuth();
 renderMarketingCalendar();
 setupDevAutoReload();
