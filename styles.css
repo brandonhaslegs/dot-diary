@@ -1749,22 +1749,6 @@ button:active {
   color: var(--ink);
 }
 
-.magic-link-handoff {
-  margin-top: 14px;
-}
-
-.magic-link-handoff p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.4;
-}
-
-.magic-link-handoff .text-button {
-  margin-top: 8px;
-  padding: 0;
-}
-
 .auth-status {
   margin-top: 8px;
   font-size: 0.9rem;

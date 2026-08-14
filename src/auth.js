@@ -15,7 +15,6 @@ import {
   authRow,
   authSignOutButton,
   authStatus,
-  loginCallbackUrlInput,
   marketingPage,
   syncStatus
 } from "./dom.js";
@@ -34,7 +33,6 @@ import {
   closeSettingsModal,
   enterApp,
   getHasEnteredApp,
-  showLogin,
   showMarketingPage,
   resetToLoggedOut
 } from "./ui.js";
@@ -42,11 +40,32 @@ import { showToast } from "./toast.js";
 import { fetchBillingStatus, resetBilling } from "./billing.js";
 import { offerPwaInstallAfterLogin } from "./pwa-install.js";
 
+const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+const AUTH_COOKIE_CHUNK_SIZE = 1000;
+
+// Safari and an installed iOS web app have separate localStorage containers,
+// but share first-party cookies for this origin. Mirror Supabase's session into
+// cookies so a magic-link callback in Safari is available on the next PWA launch.
+const sharedAuthStorage = {
+  getItem(key) {
+    return readSessionCookie(key) ?? readLocalStorage(key);
+  },
+  setItem(key, value) {
+    writeSessionCookie(key, value);
+    writeLocalStorage(key, value);
+  },
+  removeItem(key) {
+    removeSessionCookie(key);
+    removeLocalStorage(key);
+  }
+};
+
 const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    storage: sharedAuthStorage
   }
 });
 let syncUser = null;
@@ -66,9 +85,7 @@ export async function initSupabaseAuth() {
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const accessToken = hashParams.get("access_token");
   const refreshToken = hashParams.get("refresh_token");
-  const callbackCode = new URLSearchParams(window.location.search).get("code");
-  const hadMagicLinkCredentials = Boolean((accessToken && refreshToken) || callbackCode);
-  const shouldHandOffMagicLink = hadMagicLinkCredentials && shouldHandOffMagicLinkToPwa();
+  const hadMagicLinkCredentials = Boolean(accessToken && refreshToken);
   const shouldFocusTodayOnEntry =
     hadMagicLinkCredentials ||
     (() => {
@@ -78,15 +95,7 @@ export async function initSupabaseAuth() {
         return false;
       }
     })();
-  if (shouldHandOffMagicLink) {
-    // Safari cannot return a magic link to an installed iOS web app. Keep the
-    // callback intact so it can be copied into the PWA's separate storage.
-    showMarketingPage();
-    showLogin();
-    if (loginCallbackUrlInput) loginCallbackUrlInput.value = window.location.href;
-    showToast("Copy this sign-in link, then open Dot Diary and paste it there.");
-    return;
-  } else if (accessToken && refreshToken) {
+  if (accessToken && refreshToken) {
     try {
       await supabase.auth.setSession({
         access_token: accessToken,
@@ -237,70 +246,6 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
       window.setTimeout(() => {
         sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
       }, BUTTON_RESET_DELAY_MS);
-    }
-  }
-}
-
-// iOS opens email links in Safari instead of an installed web app. Let the user
-// move that callback URL into the PWA so the session is saved in the PWA's own
-// storage, rather than Safari's separate storage container.
-export async function finishMagicLinkSignIn(callbackUrl, sourceButton) {
-  if (!supabase) return;
-  const value = callbackUrl?.trim();
-  if (!value) {
-    showToast("Paste the full magic-link address first.");
-    return;
-  }
-
-  let url;
-  try {
-    url = new URL(value);
-  } catch {
-    showToast("That doesn't look like a magic-link address.");
-    return;
-  }
-
-  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const accessToken = hash.get("access_token");
-  const refreshToken = hash.get("refresh_token");
-  const code = url.searchParams.get("code");
-
-  if (sourceButton) {
-    sourceButton.disabled = true;
-    sourceButton.textContent = "Signing in...";
-  }
-  try {
-    if (accessToken && refreshToken) {
-      const { error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      });
-      if (error) throw error;
-    } else if (code) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) throw error;
-    } else {
-      throw new Error("No sign-in credentials were found in that link.");
-    }
-
-    const { data } = await supabase.auth.getSession();
-    syncUser = data?.session?.user || null;
-    if (!syncUser) throw new Error("The sign-in session could not be restored.");
-    persistAuthMarker(syncUser);
-    if (!getHasEnteredApp()) enterApp({ skipOnboarding: true });
-    showToast("Signed in.");
-    // Do not hold the completed sign-in behind a network sync. It will retry
-    // through the normal polling path if the device is currently offline.
-    loadFromCloud({ fromAuthBootstrap: true, silentError: true }).catch(() => {});
-    startSyncPolling();
-  } catch (error) {
-    const message = error?.message || "Could not finish signing in with that link.";
-    console.error("Magic-link handoff error:", error);
-    showToast(message);
-  } finally {
-    if (sourceButton) {
-      sourceButton.disabled = false;
-      sourceButton.textContent = "Finish sign-in";
     }
   }
 }
@@ -524,12 +469,74 @@ function persistAuthMarker(user) {
   }
 }
 
-function shouldHandOffMagicLinkToPwa() {
-  const standalone = window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone === true;
-  if (standalone) return false;
-  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  return iOS;
+function readSessionCookie(key) {
+  const chunks = [];
+  for (let index = 0; ; index += 1) {
+    const value = readCookie(`${key}.${index}`);
+    if (value === null) break;
+    chunks.push(value);
+  }
+  if (chunks.length > 0) return chunks.join("");
+  return readCookie(key);
+}
+
+function writeSessionCookie(key, value) {
+  removeSessionCookie(key);
+  const parts = String(value).match(new RegExp(`.{1,${AUTH_COOKIE_CHUNK_SIZE}}`, "g")) || [""];
+  parts.forEach((part, index) => {
+    writeCookie(`${key}.${index}`, encodeURIComponent(part), AUTH_COOKIE_MAX_AGE);
+  });
+}
+
+function removeSessionCookie(key) {
+  removeCookie(key);
+  for (let index = 0; readCookie(`${key}.${index}`) !== null; index += 1) {
+    removeCookie(`${key}.${index}`);
+  }
+}
+
+function readCookie(key) {
+  const prefix = `${encodeURIComponent(key)}=`;
+  const entry = document.cookie.split("; ").find((part) => part.startsWith(prefix));
+  if (!entry) return null;
+  try {
+    return decodeURIComponent(entry.slice(prefix.length));
+  } catch {
+    return null;
+  }
+}
+
+function writeCookie(key, value, maxAge) {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${encodeURIComponent(key)}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
+}
+
+function removeCookie(key) {
+  writeCookie(key, "", 0);
+}
+
+function readLocalStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Cookie storage remains available when localStorage is unavailable.
+  }
+}
+
+function removeLocalStorage(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
 }
 
 function getMagicLinkRedirectTo() {
