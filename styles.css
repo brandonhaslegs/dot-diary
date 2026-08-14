@@ -3423,7 +3423,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .view-nav {
-    position: relative;
+    position: static;
     transform: none;
     gap: 6px;
     flex-shrink: 0;
@@ -3432,13 +3432,12 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .filter-menu {
-    right: 0;
-    width: min(260px, calc(100vw - 32px));
-  }
-
-  /* Hide "Settings" text label, keep icon */
-  .view-nav .icon-button .icon-button-label {
-    font-size: 14px;
+    position: fixed;
+    top: calc(52px + env(safe-area-inset-top, 0px));
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-width: none;
   }
 
   .today-button {
@@ -3447,10 +3446,22 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .icon-button {
+    min-width: 34px;
     min-height: 34px;
     padding: 4px 8px;
-    gap: 5px;
+    gap: 6px;
     font-size: 16px;
+  }
+
+  .filter-dot-button {
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+  }
+
+  .filter-dot-button.filter-dot-button-clear svg {
+    width: 10px;
+    height: 10px;
   }
 
   /* Month grid: tighter gap, better cell sizing */
@@ -3535,6 +3546,14 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 }
 
+/* Keep labelled controls wherever the toolbar has room; compact them only on
+   the narrowest phones. */
+@media (max-width: 374px) {
+  .view-nav .icon-button .icon-button-label {
+    display: none;
+  }
+}
+
 /* ── Small mobile: <= 480px ──────────────────────────────── */
 @media (max-width: 480px) {
   .topbar {
@@ -3601,6 +3620,23 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   .month-note {
     font-size: 9px;
+  }
+
+  .filter-menu {
+    top: calc(48px + env(safe-area-inset-top, 0px));
+    right: 6px;
+    left: 6px;
+    padding: 12px;
+  }
+
+  .filter-dot-type-list {
+    gap: 10px;
+  }
+
+  .filter-dot-button {
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
   }
 
   .marketing-actions {
