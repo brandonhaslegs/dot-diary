@@ -102,6 +102,7 @@ let loadedMobileMonthCount = 24;
 let desktopPeriodMode = "last-12-months";
 let periodLoadInProgress = false;
 let suppressDayOpenUntil = 0;
+let blockNextDayOpen = false;
 let monthScrollAttached = false;
 let hasInitializedMobileMonthScroll = false;
 let pendingMobileMonthAnchorIso = null;
@@ -395,6 +396,10 @@ function updateTodayButtonVisibility() {
 }
 
 function shouldBlockDayOpen() {
+  if (blockNextDayOpen) {
+    blockNextDayOpen = false;
+    return true;
+  }
   return (
     Date.now() < suppressDayOpenUntil ||
     !menuScrim?.classList.contains("hidden") ||
@@ -1624,6 +1629,12 @@ export function interceptMobileMenuBackdropTap(event) {
   );
   if (clickedMenu) return false;
 
+  // Safari can report a backdrop tap as targeting the fixed calendar beneath
+  // the sheet. Consume exactly that resulting day click, without relying on a
+  // timing window that may expire before Safari dispatches it.
+  if (event.target?.closest?.(".year-day, .month-day")) {
+    blockNextDayOpen = true;
+  }
   suppressDayOpenUntil = Date.now() + 600;
   event.preventDefault();
   event.stopImmediatePropagation();

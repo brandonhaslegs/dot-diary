@@ -3817,6 +3817,15 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     z-index: 1000;
   }
 
+  .period-picker-menu {
+    /* Keep the sheet visually connected to the bottom edge; reserve the iOS
+       safe area inside it instead of exposing a strip of the backdrop. */
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
   .color-picker {
     position: fixed;
     left: 0;
