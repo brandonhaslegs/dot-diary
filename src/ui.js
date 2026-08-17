@@ -262,6 +262,16 @@ export function showMarketingPage() {
   appShell?.classList.add("hidden");
 }
 
+// Used by public share links. It deliberately reuses the diary's native year
+// grid instead of maintaining a separate public-page representation.
+export function showSharedDiary() {
+  desktopPeriodMode = "year";
+  document.documentElement.classList.add("shared-diary-mode");
+  marketingPage?.classList.add("hidden");
+  appShell?.classList.remove("hidden");
+  render();
+}
+
 export function resetToLoggedOut() {
   hasEnteredApp = false;
   loginMode = false;

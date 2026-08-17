@@ -9,6 +9,8 @@ import {
 import { canShareDiary } from "./billing.js";
 import { DEMO_MODE } from "./constants.js";
 import { getAccessToken } from "./auth.js";
+import { defaultState, normalizeImportedState, setState } from "./state.js";
+import { showSharedDiary } from "./ui.js";
 import { state } from "./state.js";
 import { showToast } from "./toast.js";
 
@@ -234,61 +236,23 @@ export async function copyShareLink() {
 }
 
 function renderSharedDiary(payload) {
-  const dotMap = new Map((payload.dotTypes || []).map((dot) => [dot.id, dot]));
-  const dates = [...new Set([...Object.keys(payload.dayDots || {}), ...Object.keys(payload.dayNotes || {})])].sort();
-  document.body.replaceChildren();
-  const page = document.createElement("main");
-  page.className = "shared-diary";
-  const heading = document.createElement("header");
-  heading.innerHTML = '<p class="shared-brand"><span class="brand-mark"></span>Dot Diary</p><h1>A shared diary</h1>';
-  const summary = document.createElement("p");
-  summary.className = "shared-summary";
-  summary.textContent = `${payload.years?.join(", ") || "Selected"} · ${dates.length} shared day${dates.length === 1 ? "" : "s"}`;
-  heading.append(summary);
-  page.append(heading);
-  if (payload.dotTypes?.length) {
-    const legend = document.createElement("div");
-    legend.className = "shared-legend";
-    payload.dotTypes.forEach((dot) => {
-      const item = document.createElement("span");
-      item.innerHTML = `<i style="background:${dot.color}"></i>`;
-      item.append(document.createTextNode(dot.name));
-      legend.append(item);
-    });
-    page.append(legend);
-  }
-  const entries = document.createElement("section");
-  entries.className = "shared-entries";
-  if (!dates.length) entries.innerHTML = "<p>This link does not include any entries yet.</p>";
-  dates.forEach((iso) => {
-    const entry = document.createElement("article");
-    const date = document.createElement("time");
-    date.dateTime = iso;
-    date.textContent = new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-    entry.append(date);
-    const dots = payload.dayDots?.[iso] || [];
-    if (dots.length) {
-      const marks = document.createElement("div");
-      marks.className = "shared-dots";
-      dots.forEach((id) => {
-        const dot = dotMap.get(id);
-        if (!dot) return;
-        const mark = document.createElement("span");
-        mark.style.background = dot.color;
-        mark.title = dot.name;
-        marks.append(mark);
-      });
-      entry.append(marks);
-    }
-    if (payload.dayNotes?.[iso]) {
-      const note = document.createElement("p");
-      note.textContent = payload.dayNotes[iso];
-      entry.append(note);
-    }
-    entries.append(entry);
+  const years = (payload.years || []).map(Number).filter(Number.isInteger).sort((a, b) => b - a);
+  const year = years[0] || new Date().getFullYear();
+  const sharedState = normalizeImportedState({
+    ...structuredClone(defaultState),
+    dotTypes: payload.dotTypes || [],
+    dayDots: payload.dayDots || {},
+    dayNotes: payload.dayNotes || {},
+    dotPositions: {},
+    filterDotTypeIds: [],
+    showCalendarNotes: true,
+    yearCursor: year,
+    monthCursor: new Date(year, 0, 1).toISOString()
   });
-  page.append(entries);
-  document.body.append(page);
+  sharedState.yearCursor = year;
+  sharedState.monthCursor = new Date(year, 0, 1).toISOString();
+  setState(sharedState);
+  showSharedDiary();
   document.title = "Shared Dot Diary";
 }
 

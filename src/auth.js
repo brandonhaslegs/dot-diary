@@ -61,6 +61,9 @@ let lastSyncError = "";
 export async function initSupabaseAuth() {
   if (authInitStarted) return;
   authInitStarted = true;
+  // A public link must never hydrate or overwrite its intentionally-scoped
+  // snapshot with the viewer's local or cloud diary.
+  if (new URLSearchParams(window.location.search).has("share")) return;
   if (!supabase) return;
   const shouldFocusTodayOnEntry = (() => {
     try {

@@ -2485,6 +2485,12 @@ html[data-theme="dark"] .auth-row textarea {
 .shared-dots { display: flex; flex-wrap: wrap; gap: 5px; }
 @media (max-width: 480px) { .shared-diary { padding-top: 28px; } .shared-entries article { grid-template-columns: 1fr; gap: 8px; } .shared-entries p { grid-column: 1; } }
 
+/* A shared diary is the same calendar, shown read-only. */
+html.shared-diary-mode .view-nav { display: none; }
+html.shared-diary-mode .brand-link,
+html.shared-diary-mode .period-picker,
+html.shared-diary-mode .calendar-area { pointer-events: none; }
+
 #pwa-install-modal {
   z-index: 45;
 }
