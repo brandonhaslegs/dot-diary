@@ -4019,28 +4019,3 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     padding: 12px;
   }
 }
-
-/* Installed PWAs draw behind iOS's translucent status and home areas. Keep
-   app controls inside the safe area, while leaving regular browser layouts
-   unchanged. This comes last so it also applies to compact-phone overrides. */
-@media (max-width: 920px) and (display-mode: standalone) {
-  .topbar {
-    padding-top: calc(8px + env(safe-area-inset-top, 0px));
-  }
-
-  .calendar-area {
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-@media (max-width: 480px) and (display-mode: standalone) {
-  .settings-card {
-    padding-top: calc(16px + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  }
-
-  #onboarding-modal .modal-card {
-    padding-top: calc(20px + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  }
-}
