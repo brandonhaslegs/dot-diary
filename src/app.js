@@ -282,7 +282,9 @@ showCalendarNotesInput?.addEventListener("change", () => {
 
 filterDotTypeList?.addEventListener("click", (event) => {
   const target = event.target;
-  if (!(target instanceof HTMLElement)) return;
+  // The clear button contains an SVG, whose paths are SVGElement instances
+  // rather than HTMLElements. Let clicks on the icon resolve to its button.
+  if (!(target instanceof Element)) return;
   const button = target.closest("button[data-filter-dot-id], button[data-clear-dot-filters]");
   if (!(button instanceof HTMLButtonElement)) return;
 
