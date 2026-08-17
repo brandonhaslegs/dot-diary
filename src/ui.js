@@ -407,6 +407,39 @@ function shouldBlockDayOpen() {
   );
 }
 
+function bindDayPopoverTrigger(element, isoDate, contextMonthIso) {
+  let activePointerId = null;
+  const openForDay = (event) => {
+    if (shouldBlockDayOpen()) return;
+    if (activePopover && activePopover.isoDate !== isoDate) {
+      closePopover();
+      return;
+    }
+    openPopover(isoDate, event.clientX, event.clientY, contextMonthIso);
+  };
+
+  // A mobile sheet can be dismissed during a gesture. Safari may then emit a
+  // click for the calendar below it, even though the gesture began on the
+  // backdrop. Only open a day when its own pointerdown started the gesture.
+  element.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || event.target.closest?.(".dot-sticker")) return;
+    activePointerId = event.pointerId;
+  });
+  element.addEventListener("pointercancel", (event) => {
+    if (event.pointerId === activePointerId) activePointerId = null;
+  });
+  element.addEventListener("pointerup", (event) => {
+    if (event.pointerId !== activePointerId) return;
+    activePointerId = null;
+    openForDay(event);
+  });
+  // Keep keyboard activation accessible without accepting synthetic pointer
+  // clicks (which have a non-zero detail value).
+  element.addEventListener("click", (event) => {
+    if (event.detail === 0) openForDay(event);
+  });
+}
+
 export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0) {
   if (!periodPickerMenu || !periodPickerLabel) return;
   const currentYear = new Date().getFullYear();
@@ -628,14 +661,7 @@ export function renderYearGrid() {
       }
 
       if (!isEditingThisDay) {
-        row.addEventListener("click", (event) => {
-          if (shouldBlockDayOpen()) return;
-          if (activePopover && activePopover.isoDate !== iso) {
-            closePopover();
-            return;
-          }
-          openPopover(iso, event.clientX, event.clientY, null);
-        });
+        bindDayPopoverTrigger(row, iso, null);
       }
       column.appendChild(row);
     }
@@ -707,14 +733,7 @@ export function renderMonthGrid() {
     }
 
     if (!isEditingThisDay) {
-      cell.addEventListener("click", (event) => {
-        if (shouldBlockDayOpen()) return;
-        if (activePopover && activePopover.isoDate !== day.iso) {
-          closePopover();
-          return;
-        }
-        openPopover(day.iso, event.clientX, event.clientY, monthIso);
-      });
+      bindDayPopoverTrigger(cell, day.iso, monthIso);
     }
     return cell;
   };
