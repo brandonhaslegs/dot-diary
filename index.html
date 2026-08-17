@@ -124,16 +124,18 @@
         <h1>Log in</h1>
         <p>We’ll email you a sign-in code.</p>
         <div class="auth-row">
-          <input
+          <textarea
             id="login-email"
-            type="text"
+            rows="1"
             placeholder="you@example.com"
             autocomplete="off"
             autocorrect="on"
             spellcheck="true"
             autocapitalize="none"
             inputmode="text"
-          />
+            enterkeyhint="send"
+            aria-label="Email address"
+          ></textarea>
           <button id="login-send" type="button">Send code</button>
         </div>
         <div class="auth-row hidden" id="login-code-row">

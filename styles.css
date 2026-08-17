@@ -1749,6 +1749,31 @@ button:active {
   color: var(--ink);
 }
 
+/* Keep the generic iOS text control visually identical to the email input. */
+.auth-row textarea {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 10px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  resize: none;
+  overflow: hidden;
+  font: inherit;
+  line-height: normal;
+  background: var(--card);
+  color: var(--ink);
+  caret-color: var(--ink);
+}
+
+html[data-theme="dark"] .auth-row textarea {
+  color-scheme: dark;
+}
+
 .auth-status {
   margin-top: 8px;
   font-size: 0.9rem;
@@ -3698,6 +3723,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .auth-row input,
+  .auth-row textarea,
   .auth-row button {
     width: 100%;
   }
