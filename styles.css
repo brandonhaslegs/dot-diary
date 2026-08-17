@@ -1957,6 +1957,9 @@ html[data-theme="dark"] .auth-row textarea {
   background: var(--card);
   overflow: hidden;
   text-align: left;
+  /* Calendar cells share the global button element reset, but must never
+     * receive its raised hover shadow: it visually doubles grid borders. */
+  filter: none;
 }
 
 .month-day.current-day,
@@ -1973,6 +1976,12 @@ html[data-theme="dark"] .auth-row textarea {
 
 .month-day:hover {
   transform: none;
+  filter: none;
+}
+
+.month-day:active {
+  transform: none;
+  filter: none;
 }
 
 .month-day.muted-day {
@@ -2056,6 +2065,8 @@ html[data-theme="dark"] .auth-row textarea {
   background: var(--card);
   text-align: left;
   overflow: hidden;
+  /* Keep calendar grid lines a consistent weight on interactive cells. */
+  filter: none;
 }
 
 .month-column.month-31 .year-day:last-child {
@@ -2064,6 +2075,12 @@ html[data-theme="dark"] .auth-row textarea {
 
 .year-day:hover {
   transform: none;
+  filter: none;
+}
+
+.year-day:active {
+  transform: none;
+  filter: none;
 }
 
 .month-day:focus-visible,
