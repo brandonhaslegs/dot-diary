@@ -75,6 +75,7 @@ export const SCHEMA_VERSION = 1;
 export const AUTH_STATE_KEY = "dot-diary-authenticated";
 export const AUTH_INTENT_KEY = "dot-diary-auth-intent";
 export const SYNC_DIRTY_KEY = "dot-diary-sync-dirty";
+export const PRE_AUTH_BACKUP_KEY = "dot-diary-pre-auth-backup-v1";
 
 // Development hostnames that enable local-only behaviors (auto reload checks).
 export const DEV_HOSTS = new Set(["localhost", "127.0.0.1"]);

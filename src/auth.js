@@ -4,12 +4,13 @@ import {
   BUTTON_RESET_DELAY_MS,
   DEMO_MODE,
   ONBOARDING_KEY,
+  PRE_AUTH_BACKUP_KEY,
   STORAGE_KEY,
   SUPABASE_ANON_KEY,
   SUPABASE_URL,
   SYNC_DEBOUNCE_MS,
   SYNC_POLL_MS
-} from "./constants.js";
+} from "./constants.js?v=auth-safety-20260817";
 import {
   authEmailInput,
   authRow,
@@ -77,6 +78,7 @@ export async function initSupabaseAuth() {
   }
   updateAuthUI();
   if (syncUser) {
+    preservePreAuthBackup();
     await loadFromCloud({ fromAuthBootstrap: true });
     fetchBillingStatus(await getAccessToken()).catch(() => {});
     if (shouldFocusTodayOnEntry) {
@@ -96,6 +98,7 @@ export async function initSupabaseAuth() {
     persistAuthMarker(syncUser);
     updateAuthUI();
     if (syncUser) {
+      if (!wasSignedIn) preservePreAuthBackup();
       await loadFromCloud({ fromAuthBootstrap: !wasSignedIn });
       fetchBillingStatus(await getAccessToken()).catch(() => {});
       if (!wasSignedIn && shouldFocusTodayOnEntry) {
@@ -135,6 +138,7 @@ export async function refreshAuthSession({ loadCloud = false } = {}) {
   persistAuthMarker(syncUser);
   updateAuthUI();
   if (syncUser) {
+    preservePreAuthBackup();
     if (loadCloud) await loadFromCloud({ silentError: true });
     fetchBillingStatus(await getAccessToken()).catch(() => {});
     startSyncPolling();
@@ -349,9 +353,15 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
   }
   const latest = pickLatestCloudRow(data);
   if (!latest?.data) {
-    // Initialize cloud row once if this account has no cloud data yet.
-    await syncToCloud();
-    if (!fromAuthBootstrap) showToast("Cloud data initialized.");
+    // Never create a cloud record from an empty device. A fresh install can
+    // otherwise overwrite the only recoverable copy during sign-in.
+    if (hasDiaryContent(state)) {
+      await syncToCloud();
+      if (!fromAuthBootstrap) showToast("Cloud backup created.");
+    } else {
+      lastSyncError = "";
+      updateAuthUI();
+    }
     return;
   }
   lastSyncError = "";
@@ -368,6 +378,9 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
     merged.yearCursor = localYearCursor;
     setState(merged);
     requestRender();
+    if (hasDiaryContent(merged) && !areStatesEqual(merged, remoteState)) {
+      scheduleSync();
+    }
   }
   lastSyncedAt = new Date().toISOString();
   updateAuthUI();
@@ -457,6 +470,26 @@ function persistAuthMarker(user) {
     }
   } catch {
     // Storage can be unavailable in private browsing or under device policy.
+  }
+}
+
+function hasDiaryContent(sourceState) {
+  if (!sourceState || typeof sourceState !== "object") return false;
+  if (Array.isArray(sourceState.dotTypes) && sourceState.dotTypes.length > 0) return true;
+  return [sourceState.dayDots, sourceState.dayNotes, sourceState.dotPositions].some(
+    (value) => value && typeof value === "object" && Object.keys(value).length > 0
+  );
+}
+
+function preservePreAuthBackup() {
+  if (!hasDiaryContent(state)) return;
+  try {
+    localStorage.setItem(
+      PRE_AUTH_BACKUP_KEY,
+      JSON.stringify({ backedUpAt: new Date().toISOString(), data: getCloudStateSnapshot(state) })
+    );
+  } catch {
+    // Local storage is an additional safeguard; sync remains available if it is blocked.
   }
 }
 
