@@ -108,6 +108,7 @@ let pendingMobileMonthAnchorIso = null;
 let lastObservedMobileMonthIso = null;
 let settingsModalHideTimer = null;
 let popoverHideTimer = null;
+let popoverScrimHideTimer = null;
 let menuScrimHideTimer = null;
 let filterMenuHideTimer = null;
 let hasEnteredApp = false;
@@ -1346,6 +1347,10 @@ export function closePopover() {
 
 export function showPopoverScrim() {
   if (!popoverScrim) return;
+  if (popoverScrimHideTimer) {
+    clearTimeout(popoverScrimHideTimer);
+    popoverScrimHideTimer = null;
+  }
   popoverScrim.classList.remove("hidden");
   requestAnimationFrame(() => {
     popoverScrim.classList.add("visible");
@@ -1355,8 +1360,10 @@ export function showPopoverScrim() {
 export function hidePopoverScrim() {
   if (!popoverScrim) return;
   popoverScrim.classList.remove("visible");
-  window.setTimeout(() => {
+  if (popoverScrimHideTimer) clearTimeout(popoverScrimHideTimer);
+  popoverScrimHideTimer = window.setTimeout(() => {
     popoverScrim.classList.add("hidden");
+    popoverScrimHideTimer = null;
   }, POPOVER_ANIMATION_MS);
 }
 

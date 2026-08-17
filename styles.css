@@ -2176,14 +2176,15 @@ html[data-theme="dark"] .auth-row textarea {
   inset: 0;
   background: rgba(0, 0, 0, 0.22);
   opacity: 0;
-  pointer-events: none;
+  /* Block the calendar as soon as the scrim enters the DOM, including while
+     its fade-in/fade-out animation is running. */
+  pointer-events: auto;
   transition: opacity 180ms ease;
   z-index: 18;
 }
 
 .popover-scrim.visible {
   opacity: 1;
-  pointer-events: auto;
 }
 
 .popover-scrim.hidden {
