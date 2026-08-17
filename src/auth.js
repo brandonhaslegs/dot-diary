@@ -61,36 +61,13 @@ export async function initSupabaseAuth() {
   if (authInitStarted) return;
   authInitStarted = true;
   if (!supabase) return;
-  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-  const accessToken = hashParams.get("access_token");
-  const refreshToken = hashParams.get("refresh_token");
-  const hadMagicLinkCredentials = Boolean(accessToken && refreshToken);
-  const shouldFocusTodayOnEntry =
-    hadMagicLinkCredentials ||
-    (() => {
-      try {
-        return sessionStorage.getItem(AUTH_INTENT_KEY) === "1";
-      } catch {
-        return false;
-      }
-    })();
-  if (accessToken && refreshToken) {
+  const shouldFocusTodayOnEntry = (() => {
     try {
-      await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      });
+      return sessionStorage.getItem(AUTH_INTENT_KEY) === "1";
     } catch {
-      // ignore session errors and continue
-    } finally {
-      try {
-        sessionStorage.removeItem(AUTH_INTENT_KEY);
-      } catch {
-        // ignore
-      }
-      history.replaceState(null, "", window.location.pathname + window.location.search);
+      return false;
     }
-  }
+  })();
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
   persistAuthMarker(syncUser);

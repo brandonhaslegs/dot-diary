@@ -50,7 +50,7 @@ import {
   weekStartMondayInput,
   yearNextButton,
   yearPrevButton
-} from "./dom.js";
+} from "./dom.js?v=otp-20260817";
 import { registerRender, registerScheduleSync, requestRender, saveAndRender, state } from "./state.js";
 import {
   closeColorPickers,
@@ -95,7 +95,7 @@ import {
   signOutSupabase,
   updateAuthUI,
   verifyEmailCode
-} from "./auth.js";
+} from "./auth.js?v=otp-20260817";
 import { openBillingPortal, startCheckout } from "./billing.js";
 import { showToast } from "./toast.js";
 import { initPwaInstallPrompt } from "./pwa-install.js";
