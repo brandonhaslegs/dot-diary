@@ -262,7 +262,14 @@ menuScrim?.addEventListener("pointerdown", (event) => {
 });
 popoverScrim?.addEventListener("pointerdown", dismissPopoverFromScrim);
 mobileMenuPortal?.addEventListener("pointerdown", (event) => {
-  if (event.target.closest(".period-picker-menu")) return;
+  if (event.target.closest(".period-picker-menu")) {
+    // The month picker is portaled outside .period-picker on mobile. Keep a
+    // gesture that begins inside it from reaching the document-level outside
+    // click handler, which would otherwise dismiss the sheet before a swipe
+    // can scroll it.
+    event.stopPropagation();
+    return;
+  }
   event.preventDefault();
   event.stopPropagation();
   closePeriodMenu();

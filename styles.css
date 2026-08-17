@@ -3939,6 +3939,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     bottom: 0;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     overflow-y: auto;
+    touch-action: pan-y;
     overscroll-behavior: contain;
   }
 
