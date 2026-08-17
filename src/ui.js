@@ -1606,6 +1606,34 @@ export function closePeriodMenu() {
   updateMenuScrim();
 }
 
+// On iOS, a tap on the backdrop can occasionally be hit-tested against the
+// calendar beneath a fixed sheet. Catch it during the capture phase so the
+// calendar never receives the same gesture.
+export function interceptMobileMenuBackdropTap(event) {
+  if (!isMobileView()) return false;
+
+  const hasOpenMenu =
+    !periodPickerMenu?.classList.contains("hidden") ||
+    !filterMenu?.classList.contains("hidden") ||
+    Boolean(document.querySelector(".dot-actions-menu:not(.hidden)")) ||
+    Boolean(document.querySelector(".color-picker:not(.hidden)"));
+  if (!hasOpenMenu) return false;
+
+  const clickedMenu = event.target?.closest?.(
+    ".period-picker-menu, .filter-menu, .dot-actions-menu, .color-picker"
+  );
+  if (clickedMenu) return false;
+
+  suppressDayOpenUntil = Date.now() + 600;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  closePeriodMenu();
+  closeFiltersMenu();
+  closeDotMenus();
+  closeColorPickers();
+  return true;
+}
+
 function getPeriodPickerItems() {
   return Array.from(periodPickerMenu.querySelectorAll(".period-picker-item"));
 }

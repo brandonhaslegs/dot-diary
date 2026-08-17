@@ -66,6 +66,7 @@ import {
   handleDataImport,
   handleGlobalKeyDown,
   handleGlobalPointerDown,
+  interceptMobileMenuBackdropTap,
   handlePeriodPickerScroll,
   handleResetOnboarding,
   openPeriodMenu,
@@ -341,6 +342,7 @@ uploadDataButton?.addEventListener("click", () => {
 });
 uploadDataInput?.addEventListener("change", handleDataImport);
 
+document.addEventListener("pointerdown", interceptMobileMenuBackdropTap, true);
 document.addEventListener("pointerdown", handleGlobalPointerDown);
 document.addEventListener("keydown", handleGlobalKeyDown);
 
