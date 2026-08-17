@@ -3433,12 +3433,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .brand-link {
-    position: static;
-    transform: none;
-    font-size: 16px;
-    min-height: 34px;
-    padding: 4px 8px;
-    flex-shrink: 0;
+    display: none;
   }
 
   .period-picker {
@@ -3470,7 +3465,9 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     gap: 6px;
     flex-shrink: 0;
     align-items: center;
-    z-index: 19;
+    /* Let the fixed filter sheet escape this stacking context. Its backdrop
+       sits at z-index 900, so otherwise it intercepts every mobile tap. */
+    z-index: auto;
   }
 
   .filter-menu {
@@ -3480,6 +3477,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     left: 10px;
     width: auto;
     max-width: none;
+    z-index: 1001;
   }
 
   .today-button {
@@ -4019,5 +4017,30 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   .settings-card {
     padding: 12px;
+  }
+}
+
+/* Installed PWAs draw behind iOS's translucent status and home areas. Keep
+   app controls inside the safe area, while leaving regular browser layouts
+   unchanged. This comes last so it also applies to compact-phone overrides. */
+@media (max-width: 920px) and (display-mode: standalone) {
+  .topbar {
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  }
+
+  .calendar-area {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 480px) and (display-mode: standalone) {
+  .settings-card {
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #onboarding-modal .modal-card {
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   }
 }
