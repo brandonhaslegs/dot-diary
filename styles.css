@@ -2346,19 +2346,13 @@ button:active {
   text-align: center;
 }
 
-.pwa-install-mark {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
+.pwa-install-icon {
+  display: block;
+  width: 62px;
+  height: 62px;
   margin: 0 auto 14px;
-  border: 2px solid var(--line);
-  border-radius: 16px;
-}
-
-.pwa-install-mark .brand-mark {
-  width: 22px;
-  height: 22px;
+  border-radius: 18px;
+  object-fit: cover;
 }
 
 .pwa-install-card h3 {
@@ -3812,6 +3806,29 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     width: calc(100vw - 48px);
     border-radius: 24px;
     border: 2px solid var(--line);
+  }
+
+  #pwa-install-modal {
+    align-items: end;
+    padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #pwa-install-modal .pwa-install-card {
+    box-sizing: border-box;
+    width: min(390px, 100%);
+    border: 2px solid var(--line);
+    border-radius: 28px;
+    padding: 24px;
+  }
+
+  .pwa-install-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .pwa-install-actions button {
+    width: 100%;
   }
 
   #settings-modal .modal-card {
