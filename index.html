@@ -122,7 +122,7 @@
       <div class="marketing-card hidden" id="marketing-login">
         <p class="marketing-brand"><span class="brand-mark" aria-hidden="true"></span>Dot Diary</p>
         <h1>Log in</h1>
-        <p>We’ll email you a magic link.</p>
+        <p>We’ll email you a sign-in code.</p>
         <div class="auth-row">
           <input
             id="login-email"
@@ -134,7 +134,21 @@
             autocapitalize="none"
             inputmode="email"
           />
-          <button id="login-send" type="button">Send magic link</button>
+          <button id="login-send" type="button">Send code</button>
+        </div>
+        <div class="auth-row hidden" id="login-code-row">
+          <input
+            id="login-code"
+            type="text"
+            placeholder="Enter sign-in code"
+            autocomplete="one-time-code"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            inputmode="numeric"
+            maxlength="8"
+          />
+          <button id="login-verify" type="button">Sign in</button>
         </div>
         <div class="marketing-actions">
           <button id="login-back" type="button" class="outline-button">Back</button>
@@ -415,7 +429,7 @@
               </div>
             </div>
             <h2>Keep your data safe</h2>
-            <p class="muted">Enter your email and we’ll send a magic link so your dots sync across devices.</p>
+            <p class="muted">Enter your email and we’ll send a sign-in code so your dots sync across devices.</p>
             <div class="auth-row onboarding-auth-row">
               <input
                 id="onboarding-email"
@@ -427,7 +441,7 @@
                 autocapitalize="none"
                 inputmode="email"
               />
-              <button id="onboarding-send" type="button">Send magic link</button>
+              <button id="onboarding-send" type="button">Send code</button>
             </div>
             <p class="muted">Note: Your stuff is still saved on this device if you don't do this.</p>
           </div>
@@ -603,7 +617,7 @@
                 autocapitalize="none"
                 inputmode="email"
               />
-              <button id="auth-send" type="button">Send magic link</button>
+              <button id="auth-send" type="button">Send code</button>
             </div>
             <div class="cloud-sync-row">
               <div class="cloud-sync-info">

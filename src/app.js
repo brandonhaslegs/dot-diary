@@ -17,8 +17,11 @@ import {
   filterMenu,
   hideSuggestionsInput,
   loginBackButton,
+  loginCodeInput,
+  loginCodeRow,
   loginEmailInput,
   loginSendButton,
+  loginVerifyButton,
   menuScrim,
   onboardingEmailInput,
   onboardingBackButton,
@@ -85,12 +88,13 @@ import {
 } from "./ui.js";
 import {
   getAccessToken,
-  handleMagicLink,
+  requestEmailCode,
   initSupabaseAuth,
   refreshAuthSession,
   scheduleSync,
   signOutSupabase,
-  updateAuthUI
+  updateAuthUI,
+  verifyEmailCode
 } from "./auth.js";
 import { openBillingPortal, startCheckout } from "./billing.js";
 import { showToast } from "./toast.js";
@@ -139,7 +143,7 @@ window.addEventListener("resize", () => {
 });
 
 // Marketing/login navigation.
-function submitMagicLinkOnEnter(input, submit) {
+function submitOnEnter(input, submit) {
   input?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" || event.isComposing) return;
     event.preventDefault();
@@ -150,14 +154,23 @@ function submitMagicLinkOnEnter(input, submit) {
 enterAppButton?.addEventListener("click", () => enterApp());
 openLoginButton?.addEventListener("click", showLogin);
 loginBackButton?.addEventListener("click", showMarketingHero);
-loginSendButton?.addEventListener("click", () => handleMagicLink(loginEmailInput?.value, loginSendButton));
-submitMagicLinkOnEnter(loginEmailInput, () => handleMagicLink(loginEmailInput?.value, loginSendButton));
+async function requestLoginCode() {
+  const sent = await requestEmailCode(loginEmailInput?.value, loginSendButton);
+  if (!sent) return;
+  loginCodeRow?.classList.remove("hidden");
+  loginCodeInput?.focus();
+}
+
+loginSendButton?.addEventListener("click", requestLoginCode);
+submitOnEnter(loginEmailInput, requestLoginCode);
+loginVerifyButton?.addEventListener("click", () => verifyEmailCode(loginEmailInput?.value, loginCodeInput?.value, loginVerifyButton));
+submitOnEnter(loginCodeInput, () => verifyEmailCode(loginEmailInput?.value, loginCodeInput?.value, loginVerifyButton));
 brandHomeButton?.addEventListener("click", () => {
   showMarketingHero();
   showMarketingPage();
 });
-authSendButton?.addEventListener("click", () => handleMagicLink(undefined, authSendButton));
-submitMagicLinkOnEnter(authEmailInput, () => handleMagicLink(authEmailInput?.value, authSendButton));
+authSendButton?.addEventListener("click", () => requestEmailCode(undefined, authSendButton));
+submitOnEnter(authEmailInput, () => requestEmailCode(authEmailInput?.value, authSendButton));
 authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsCloseButton?.addEventListener("click", closeSettingsModal);
 
@@ -206,8 +219,8 @@ onboardingBackSyncButton?.addEventListener("click", () => showOnboardingStep("do
 onboardingDoneButton?.addEventListener("click", completeOnboarding);
 onboardingSkipIntroButton?.addEventListener("click", completeOnboarding);
 onboardingSkipButton?.addEventListener("click", completeOnboarding);
-onboardingSendButton?.addEventListener("click", () => handleMagicLink(onboardingEmailInput?.value));
-submitMagicLinkOnEnter(onboardingEmailInput, () => handleMagicLink(onboardingEmailInput?.value));
+onboardingSendButton?.addEventListener("click", () => requestEmailCode(onboardingEmailInput?.value, onboardingSendButton));
+submitOnEnter(onboardingEmailInput, () => requestEmailCode(onboardingEmailInput?.value, onboardingSendButton));
 
 // Period picker open/close and related dismiss behavior.
 periodPickerToggle?.addEventListener("click", (event) => {

@@ -40,32 +40,11 @@ import { showToast } from "./toast.js";
 import { fetchBillingStatus, resetBilling } from "./billing.js";
 import { offerPwaInstallAfterLogin } from "./pwa-install.js";
 
-const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-const AUTH_COOKIE_CHUNK_SIZE = 1000;
-
-// Safari and an installed iOS web app have separate localStorage containers,
-// but share first-party cookies for this origin. Mirror Supabase's session into
-// cookies so a magic-link callback in Safari is available on the next PWA launch.
-const sharedAuthStorage = {
-  getItem(key) {
-    return readSessionCookie(key) ?? readLocalStorage(key);
-  },
-  setItem(key, value) {
-    writeSessionCookie(key, value);
-    writeLocalStorage(key, value);
-  },
-  removeItem(key) {
-    removeSessionCookie(key);
-    removeLocalStorage(key);
-  }
-};
-
 const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: sharedAuthStorage
+    detectSessionInUrl: true
   }
 });
 let syncUser = null;
@@ -205,12 +184,12 @@ function clearAuthIntent() {
   }
 }
 
-export async function handleMagicLink(overrideEmail, sourceButton) {
-  if (!supabase) return;
+export async function requestEmailCode(overrideEmail, sourceButton) {
+  if (!supabase) return false;
   const email = overrideEmail?.trim() || authEmailInput?.value?.trim();
   if (!email) {
     showToast("Enter an email first.");
-    return;
+    return false;
   }
   if (sourceButton) {
     if (!sourceButton.dataset.defaultLabel) {
@@ -225,27 +204,58 @@ export async function handleMagicLink(overrideEmail, sourceButton) {
     // ignore
   }
   const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: getMagicLinkRedirectTo()
-    }
+    email
   });
   if (error) {
-    const message = error?.message ? `Magic link failed: ${error.message}` : "Could not send magic link.";
+    const message = error?.message ? `Could not send code: ${error.message}` : "Could not send a sign-in code.";
     showToast(message);
-    console.error("Magic link error:", error);
+    console.error("Email code error:", error);
     if (sourceButton) {
-      sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
+      sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send code";
       sourceButton.disabled = false;
     }
+    return false;
   } else {
-    showToast("Magic link sent. Check your email.");
+    showToast("Sign-in code sent. Check your email.");
     if (sourceButton) {
-      sourceButton.textContent = "Check your email";
+      sourceButton.textContent = "Code sent";
       sourceButton.disabled = false;
       window.setTimeout(() => {
-        sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send magic link";
+        sourceButton.textContent = sourceButton.dataset.defaultLabel || "Send code";
       }, BUTTON_RESET_DELAY_MS);
+    }
+    return true;
+  }
+}
+
+export async function verifyEmailCode(overrideEmail, overrideCode, sourceButton) {
+  if (!supabase) return false;
+  const email = overrideEmail?.trim() || authEmailInput?.value?.trim();
+  const token = String(overrideCode || "").replace(/\s/g, "");
+  if (!email) {
+    showToast("Enter your email first.");
+    return false;
+  }
+  if (!token) {
+    showToast("Enter the sign-in code from your email.");
+    return false;
+  }
+  if (sourceButton) {
+    sourceButton.disabled = true;
+    sourceButton.textContent = "Signing in...";
+  }
+  try {
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (error) throw error;
+    showToast("Signed in.");
+    return true;
+  } catch (error) {
+    showToast(error?.message || "That sign-in code did not work. Try requesting a new one.");
+    return false;
+  } finally {
+    if (sourceButton) {
+      sourceButton.disabled = false;
+      sourceButton.textContent = sourceButton.dataset.defaultLabel || "Sign in";
     }
   }
 }
@@ -467,80 +477,6 @@ function persistAuthMarker(user) {
   } catch {
     // Storage can be unavailable in private browsing or under device policy.
   }
-}
-
-function readSessionCookie(key) {
-  const chunks = [];
-  for (let index = 0; ; index += 1) {
-    const value = readCookie(`${key}.${index}`);
-    if (value === null) break;
-    chunks.push(value);
-  }
-  if (chunks.length > 0) return chunks.join("");
-  return readCookie(key);
-}
-
-function writeSessionCookie(key, value) {
-  removeSessionCookie(key);
-  const parts = String(value).match(new RegExp(`.{1,${AUTH_COOKIE_CHUNK_SIZE}}`, "g")) || [""];
-  parts.forEach((part, index) => {
-    writeCookie(`${key}.${index}`, encodeURIComponent(part), AUTH_COOKIE_MAX_AGE);
-  });
-}
-
-function removeSessionCookie(key) {
-  removeCookie(key);
-  for (let index = 0; readCookie(`${key}.${index}`) !== null; index += 1) {
-    removeCookie(`${key}.${index}`);
-  }
-}
-
-function readCookie(key) {
-  const prefix = `${encodeURIComponent(key)}=`;
-  const entry = document.cookie.split("; ").find((part) => part.startsWith(prefix));
-  if (!entry) return null;
-  try {
-    return decodeURIComponent(entry.slice(prefix.length));
-  } catch {
-    return null;
-  }
-}
-
-function writeCookie(key, value, maxAge) {
-  const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${encodeURIComponent(key)}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
-}
-
-function removeCookie(key) {
-  writeCookie(key, "", 0);
-}
-
-function readLocalStorage(key) {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeLocalStorage(key, value) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Cookie storage remains available when localStorage is unavailable.
-  }
-}
-
-function removeLocalStorage(key) {
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    // ignore
-  }
-}
-
-function getMagicLinkRedirectTo() {
-  return `${window.location.origin}${window.location.pathname}`;
 }
 
 function formatSyncStatus() {
