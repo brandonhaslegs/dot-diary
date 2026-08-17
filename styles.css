@@ -4019,3 +4019,29 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     padding: 12px;
   }
 }
+
+/* Standalone iOS apps use the full screen behind the status and home areas.
+   Reserve those areas on the shell itself so the calendar keeps its original
+   scroll and sizing behavior. */
+@media (max-width: 920px) and (display-mode: standalone) {
+  .app-shell {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Full-screen cards live outside the app shell, so size them to the padded
+   modal viewport instead of extending underneath the system controls. */
+@media (max-width: 480px) and (display-mode: standalone) {
+  #settings-modal,
+  #onboarding-modal {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  #settings-modal .settings-card,
+  #onboarding-modal .modal-card {
+    height: 100%;
+    max-height: 100%;
+  }
+}
