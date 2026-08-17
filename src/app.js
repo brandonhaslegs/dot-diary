@@ -87,7 +87,7 @@ import {
   showOnboardingIfNeeded,
   showOnboardingStep,
   shiftYearBy
-} from "./ui.js";
+} from "./ui.js?v=month-picker-portal-20260817";
 import {
   getAccessToken,
   requestEmailCode,
