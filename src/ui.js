@@ -99,7 +99,7 @@ let pendingDeleteMode = "safe";
 let pendingDeleteDotTypeName = "";
 let loadedYearBatchCount = 1;
 let loadedMobileMonthCount = 24;
-let desktopPeriodMode = "year";
+let desktopPeriodMode = "last-12-months";
 let periodLoadInProgress = false;
 let suppressDayOpenUntil = 0;
 let monthScrollAttached = false;
@@ -453,7 +453,7 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
   rollingPeriodItem.type = "button";
   rollingPeriodItem.className = "period-picker-item";
   if (desktopPeriodMode === "last-12-months") rollingPeriodItem.classList.add("active");
-  rollingPeriodItem.textContent = "Last 12 months";
+  rollingPeriodItem.textContent = "12 months";
   rollingPeriodItem.addEventListener("click", () => {
     desktopPeriodMode = "last-12-months";
     closePeriodMenu();
