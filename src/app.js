@@ -166,6 +166,7 @@ submitOnEnter(loginEmailInput, requestLoginCode);
 async function verifyLoginCode() {
   const signedIn = await verifyEmailCode(loginEmailInput?.value, loginCodeInput?.value, loginVerifyButton);
   if (!signedIn) return;
+  if (loginEmailInput) loginEmailInput.value = "";
   if (loginCodeInput) loginCodeInput.value = "";
   loginCodeRow?.classList.add("hidden");
   // A successful OTP verification is the user's explicit request to enter
