@@ -1750,7 +1750,7 @@ button:active {
 }
 
 /* Keep the generic iOS text control visually identical to the email input. */
-.auth-row textarea {
+#marketing-login .auth-row textarea {
   display: block;
   width: 100%;
   min-height: 44px;
