@@ -2341,7 +2341,16 @@ html[data-theme="dark"] .auth-row textarea {
   pointer-events: none;
 }
 
+#mobile-menu-portal.period-picker-open {
+  background: rgba(0, 0, 0, 0.22);
+  pointer-events: auto;
+}
+
 #mobile-menu-portal .dot-actions-menu {
+  pointer-events: auto;
+}
+
+#mobile-menu-portal .period-picker-menu {
   pointer-events: auto;
 }
 

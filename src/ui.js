@@ -1624,6 +1624,12 @@ export function closePeriodMenu() {
   const wasOpen = !periodPickerMenu.classList.contains("hidden");
   periodPickerMenu.classList.remove("visible");
   periodPickerMenu.classList.add("hidden");
+  if (periodPickerMenu.dataset.portalActive === "true") {
+    const parent = portalParents.get(periodPickerMenu);
+    if (parent) parent.appendChild(periodPickerMenu);
+    periodPickerMenu.dataset.portalActive = "";
+    mobileMenuPortal?.classList.remove("period-picker-open");
+  }
   if (wasOpen) {
     // A calendar tap first reaches the document-level pointer handler, which
     // closes this picker before the cell's click event fires. Suppress that
@@ -1754,6 +1760,13 @@ function focusPopoverDotItem(items, index) {
 }
 
 export function openPeriodMenu() {
+  const isMobile = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+  if (isMobile && mobileMenuPortal && !periodPickerMenu.dataset.portalActive) {
+    periodPickerMenu.dataset.portalActive = "true";
+    portalParents.set(periodPickerMenu, periodPickerMenu.parentElement);
+    mobileMenuPortal.appendChild(periodPickerMenu);
+    mobileMenuPortal.classList.add("period-picker-open");
+  }
   showAnimated(periodPickerMenu);
   updateMenuScrim();
   requestAnimationFrame(() => {
@@ -2356,9 +2369,8 @@ export function updateMenuScrim() {
   const isMobileSheet = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
   const hasDotMenu = Boolean(document.querySelector(".dot-actions-menu:not(.hidden)"));
   const hasColorPicker = Boolean(document.querySelector(".color-picker:not(.hidden)"));
-  const hasPeriodMenu = !periodPickerMenu.classList.contains("hidden");
   const hasFilterMenu = !filterMenu.classList.contains("hidden");
-  const shouldShow = isMobileSheet && (hasDotMenu || hasPeriodMenu || hasColorPicker || hasFilterMenu);
+  const shouldShow = isMobileSheet && (hasDotMenu || hasColorPicker || hasFilterMenu);
   if (menuScrimHideTimer) {
     clearTimeout(menuScrimHideTimer);
     menuScrimHideTimer = null;

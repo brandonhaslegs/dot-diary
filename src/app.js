@@ -23,6 +23,7 @@ import {
   loginSendButton,
   loginVerifyButton,
   menuScrim,
+  mobileMenuPortal,
   onboardingEmailInput,
   onboardingBackButton,
   onboardingBackSyncButton,
@@ -255,6 +256,12 @@ menuScrim?.addEventListener("pointerdown", (event) => {
   closeColorPickers();
 });
 popoverScrim?.addEventListener("pointerdown", dismissPopoverFromScrim);
+mobileMenuPortal?.addEventListener("pointerdown", (event) => {
+  if (event.target.closest(".period-picker-menu")) return;
+  event.preventDefault();
+  event.stopPropagation();
+  closePeriodMenu();
+});
 periodPickerMenu?.addEventListener("scroll", handlePeriodPickerScroll);
 
 deleteCancel?.addEventListener("click", closeDeleteModal);
