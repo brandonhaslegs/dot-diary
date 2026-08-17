@@ -445,7 +445,10 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
       ) {
         item.classList.add("active");
       }
-      item.textContent = optionDate.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+      item.textContent = optionDate.toLocaleDateString(undefined, {
+        month: "long",
+        ...(optionMonth === 0 || optionMonth === 11 ? { year: "numeric" } : {})
+      });
       item.addEventListener("click", () => {
         state.monthCursor = startOfMonth(optionDate).toISOString();
         state.yearCursor = optionYear;
