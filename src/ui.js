@@ -548,7 +548,7 @@ export function renderYearGrid() {
     monthTitle.className = "month-title";
     monthTitle.textContent = monthDate.toLocaleDateString(undefined, {
       month: "long",
-      ...(isRollingPeriod ? { year: "numeric" } : {})
+      ...(isRollingPeriod && [0, 11].includes(monthIndex) ? { year: "numeric" } : {})
     });
     column.appendChild(monthTitle);
 
