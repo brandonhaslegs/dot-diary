@@ -989,6 +989,13 @@ textarea {
   }
 }
 
+@media (min-width: 481px) {
+  .period-picker-item {
+    text-align: center;
+    font-size: 28px;
+  }
+}
+
 .period-picker-item.active {
   background: var(--foreground);
   color: var(--background);
