@@ -115,10 +115,14 @@ export async function initSupabaseAuth() {
       lastSyncError = "";
       stopSyncPolling();
       resetBilling();
-      setState(structuredClone(defaultState));
-      requestRender();
-      showMarketingPage();
-      resetToLoggedOut();
+      // An initial signed-out auth event is normal for a local-only diary.
+      // Keep its in-memory state intact so a subsequent sign-in can back it up
+      // instead of initializing the cloud from an empty snapshot.
+      if (wasSignedIn) {
+        showMarketingPage();
+        resetToLoggedOut();
+      }
+      updateAuthUI();
     }
   });
   document.addEventListener("visibilitychange", handleVisibilitySync);
