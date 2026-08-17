@@ -163,8 +163,19 @@ async function requestLoginCode() {
 
 loginSendButton?.addEventListener("click", requestLoginCode);
 submitOnEnter(loginEmailInput, requestLoginCode);
-loginVerifyButton?.addEventListener("click", () => verifyEmailCode(loginEmailInput?.value, loginCodeInput?.value, loginVerifyButton));
-submitOnEnter(loginCodeInput, () => verifyEmailCode(loginEmailInput?.value, loginCodeInput?.value, loginVerifyButton));
+async function verifyLoginCode() {
+  const signedIn = await verifyEmailCode(loginEmailInput?.value, loginCodeInput?.value, loginVerifyButton);
+  if (!signedIn) return;
+  if (loginCodeInput) loginCodeInput.value = "";
+  loginCodeRow?.classList.add("hidden");
+  // A successful OTP verification is the user's explicit request to enter
+  // the diary. Do not rely solely on the auth-state listener to navigate:
+  // it may already consider this screen entered on a restored session.
+  enterApp({ skipOnboarding: true });
+}
+
+loginVerifyButton?.addEventListener("click", verifyLoginCode);
+submitOnEnter(loginCodeInput, verifyLoginCode);
 brandHomeButton?.addEventListener("click", () => {
   showMarketingHero();
   showMarketingPage();
