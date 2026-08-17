@@ -3145,6 +3145,12 @@ html[data-theme="dark"] .auth-row textarea {
   min-height: 0;
 }
 
+/* This panel is short enough not to scroll, so let button hover effects render
+   outside its bounds instead of clipping them. */
+#settings-panel-import-export {
+  overflow: visible;
+}
+
 /* On short landscape viewports, let the complete settings card scroll. Keeping
    the header fixed in the flex layout can otherwise leave the active panel only
    a few pixels tall, which visibly slices through the dot-type chips. */
