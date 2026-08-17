@@ -6,6 +6,7 @@ import {
   authSignOutButton,
   billingManage,
   billingUpgrade,
+  billingUpgradeYearly,
   brandHomeButton,
   colorModeDarkButton,
   colorModeLightButton,
@@ -36,6 +37,7 @@ import {
   openFilters,
   openLoginButton,
   openSettings,
+  openShare,
   periodPickerMenu,
   periodPickerToggle,
   popoverScrim,
@@ -63,6 +65,7 @@ import {
   closeSettingsModal,
   completeOnboarding,
   confirmDeleteDotType,
+  activateSettingsTab,
   enterApp,
   handleDataImport,
   handleGlobalKeyDown,
@@ -88,6 +91,7 @@ import {
   showOnboardingStep,
   shiftYearBy
 } from "./ui.js?v=month-picker-portal-20260817";
+import { closeShareModal, copyShareLink, generateShareLink, openShareModal, toggleShareSelectAll, updateShareSelection } from "./share.js";
 import {
   getAccessToken,
   requestEmailCode,
@@ -188,19 +192,6 @@ submitOnEnter(authEmailInput, () => requestEmailCode(authEmailInput?.value, auth
 authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsCloseButton?.addEventListener("click", closeSettingsModal);
 
-function activateSettingsTab(tabId) {
-  settingsTabButtons.forEach((button) => {
-    const isActive = button.dataset.tab === tabId;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-selected", isActive ? "true" : "false");
-  });
-  settingsTabPanels.forEach((panel) => {
-    const isActive = panel.dataset.tab === tabId;
-    panel.classList.toggle("is-active", isActive);
-    panel.hidden = !isActive;
-  });
-}
-
 settingsTabButtons.forEach((button) => {
   button.addEventListener("click", () => activateSettingsTab(button.dataset.tab));
 });
@@ -219,6 +210,20 @@ openSettings?.addEventListener("click", async () => {
     // Don't let a failed auth check block opening settings.
   }
   openSettingsModal();
+});
+openShare?.addEventListener("click", openShareModal);
+document.querySelector("#share-close")?.addEventListener("click", closeShareModal);
+document.querySelector("#share-modal")?.addEventListener("pointerdown", (event) => {
+  if (event.target === event.currentTarget) closeShareModal();
+});
+document.querySelector("#share-selection")?.addEventListener("change", updateShareSelection);
+document.querySelector("#share-select-all")?.addEventListener("click", toggleShareSelectAll);
+document.querySelector("#generate-share-link")?.addEventListener("click", generateShareLink);
+document.querySelector("#copy-share-link")?.addEventListener("click", copyShareLink);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !document.querySelector("#share-modal")?.classList.contains("hidden")) {
+    closeShareModal();
+  }
 });
 todayButton?.addEventListener("click", scrollToToday);
 yearPrevButton?.addEventListener("click", () => shiftYearBy(-1));
@@ -334,6 +339,10 @@ colorModeDarkButton?.addEventListener("click", () => {
 billingUpgrade?.addEventListener("click", async () => {
   const token = await getAccessToken();
   startCheckout(token, "monthly");
+});
+billingUpgradeYearly?.addEventListener("click", async () => {
+  const token = await getAccessToken();
+  startCheckout(token, "yearly");
 });
 billingManage?.addEventListener("click", async () => {
   const token = await getAccessToken();

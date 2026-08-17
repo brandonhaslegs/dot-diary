@@ -55,6 +55,8 @@ import {
   showKeyboardHintsInput,
   showCalendarNotesInput,
   settingsModal,
+  settingsTabButtons,
+  settingsTabPanels,
   suggestedDotContent,
   suggestedDotList,
   todayButton,
@@ -1182,19 +1184,43 @@ export function renderDotTypeList(targetList = dotTypeList) {
       closeDotMenus();
       item.classList.toggle("menu-open", opening);
       if (opening) {
+        const isMobile = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+        if (isMobile && mobileMenuPortal && !menu.dataset.portalActive) {
+          // Move the sheet out of the settings panel before it is made visible.
+          // Otherwise its initial frame is clipped by the panel's overflow.
+          menu.dataset.portalActive = "true";
+          portalParents.set(menu, actions);
+          mobileMenuPortal.appendChild(menu);
+        }
+        if (!isMobile && !menu.dataset.desktopPortalActive) {
+          // The settings tab is a scroll container. A desktop menu kept inside
+          // it gets clipped as soon as it extends past that panel.
+          menu.dataset.desktopPortalActive = "true";
+          portalParents.set(menu, actions);
+          document.body.appendChild(menu);
+
+          // Measure and place the menu before revealing it so there is no
+          // clipped or incorrectly positioned first frame.
+          menu.style.visibility = "hidden";
+          menu.classList.remove("hidden");
+          const toggleRect = toggle.getBoundingClientRect();
+          const menuRect = menu.getBoundingClientRect();
+          const padding = 8;
+          const left = clamp(
+            toggleRect.right - menuRect.width,
+            padding,
+            window.innerWidth - menuRect.width - padding
+          );
+          const below = toggleRect.bottom + 6;
+          const top = below + menuRect.height <= window.innerHeight - padding
+            ? below
+            : Math.max(padding, toggleRect.top - menuRect.height - 6);
+          menu.style.left = `${left}px`;
+          menu.style.top = `${top}px`;
+          menu.style.visibility = "";
+        }
         showAnimated(menu);
         requestAnimationFrame(() => {
-          if (!window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches) {
-            positionDotActionsMenu(menu);
-          } else {
-            menu.style.removeProperty("--menu-offset-x");
-            menu.style.removeProperty("--menu-offset-y");
-            if (mobileMenuPortal && !menu.dataset.portalActive) {
-              menu.dataset.portalActive = "true";
-              portalParents.set(menu, actions);
-              mobileMenuPortal.appendChild(menu);
-            }
-          }
           updateMenuScrim();
         });
       } else {
@@ -1222,8 +1248,7 @@ export function renderDotTypeList(targetList = dotTypeList) {
     addButton.type = "button";
     addButton.className = "suggestion-chip add-new";
     addButton.textContent = atLimit ? `Upgrade to add more` : "Add New";
-    addButton.disabled = atLimit;
-    addButton.addEventListener("click", addNewDotType);
+    addButton.addEventListener("click", atLimit ? () => openSettingsModal("upgrade") : addNewDotType);
     addItem.appendChild(addButton);
     targetList.appendChild(addItem);
   }
@@ -1240,7 +1265,9 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "suggestion-chip";
-    chip.disabled = suggestionAtLimit;
+    // Keep suggestions clickable at the free-tier limit so the add handler can
+    // explain that an upgrade is needed.
+    chip.setAttribute("aria-disabled", String(suggestionAtLimit));
     const chipSwatch = document.createElement("span");
     chipSwatch.className = "swatch";
     chipSwatch.style.background = suggestion.color;
@@ -1256,8 +1283,7 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
   addNewChip.type = "button";
   addNewChip.className = "suggestion-chip add-new";
   addNewChip.textContent = atLimit ? "Upgrade to add more" : "Add New";
-  addNewChip.disabled = atLimit;
-  addNewChip.addEventListener("click", addNewDotType);
+  addNewChip.addEventListener("click", atLimit ? () => openSettingsModal("upgrade") : addNewDotType);
   targetList.appendChild(addNewChip);
 }
 
@@ -1610,11 +1636,25 @@ export function openFiltersMenu() {
   });
 }
 
-export function openSettingsModal() {
+export function activateSettingsTab(tabId) {
+  settingsTabButtons.forEach((button) => {
+    const isActive = button.dataset.tab === tabId;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+  settingsTabPanels.forEach((panel) => {
+    const isActive = panel.dataset.tab === tabId;
+    panel.classList.toggle("is-active", isActive);
+    panel.hidden = !isActive;
+  });
+}
+
+export function openSettingsModal(tabId) {
   if (settingsModalHideTimer) {
     clearTimeout(settingsModalHideTimer);
     settingsModalHideTimer = null;
   }
+  if (tabId) activateSettingsTab(tabId);
   lastFocusTrigger = document.activeElement;
   showAnimated(settingsModal);
 }
@@ -1780,7 +1820,7 @@ export function openPeriodMenu() {
 export function addSuggestedDotType(suggestion) {
   if (hasDotTypeName(suggestion.name)) return;
   if (!canAddDotType(state.dotTypes.length)) {
-    showToast(`Free plan allows ${FREE_DOT_TYPE_LIMIT} dot types. Upgrade to Pro for unlimited.`);
+    showToast(`Free plan allows ${FREE_DOT_TYPE_LIMIT} dot types. Upgrade to Unlimited for more.`);
     return;
   }
   state.dotTypes.push({
@@ -1794,7 +1834,7 @@ export function addSuggestedDotType(suggestion) {
 
 export function addNewDotType() {
   if (!canAddDotType(state.dotTypes.length)) {
-    showToast(`Free plan allows ${FREE_DOT_TYPE_LIMIT} dot types. Upgrade to Pro for unlimited.`);
+    showToast(`Free plan allows ${FREE_DOT_TYPE_LIMIT} dot types. Upgrade to Unlimited for more.`);
     return;
   }
   const dotId = crypto.randomUUID();
@@ -1896,7 +1936,9 @@ export function dismissPopoverFromScrim(event) {
 }
 
 export function handleGlobalPointerDown(event) {
-  if (!event.target.closest(".period-picker")) {
+  // On mobile the menu is portaled out of .period-picker, so it must be
+  // recognized directly or its initial touch is mistaken for a backdrop tap.
+  if (!event.target.closest(".period-picker, .period-picker-menu")) {
     closePeriodMenu();
   }
   if (!event.target.closest(".filter-menu-wrap")) {
@@ -2225,6 +2267,14 @@ export function closeDotMenus() {
       const parent = portalParents.get(menu);
       if (parent) parent.appendChild(menu);
       menu.dataset.portalActive = "";
+    }
+    if (menu.dataset.desktopPortalActive === "true") {
+      const parent = portalParents.get(menu);
+      if (parent) parent.appendChild(menu);
+      menu.dataset.desktopPortalActive = "";
+      menu.style.removeProperty("left");
+      menu.style.removeProperty("top");
+      menu.style.removeProperty("visibility");
     }
   });
   updateMenuScrim();

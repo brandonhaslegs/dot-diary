@@ -55,7 +55,7 @@ export const MODAL_ANIMATION_MS = 280;
 export const POPOVER_ANIMATION_MS = 180;
 
 // Timing constants used across UI interactions.
-export const TOAST_DISPLAY_MS = 1800;
+export const TOAST_DISPLAY_MS = 3000;
 export const TOAST_HIDE_MS = 280;
 export const SYNC_DEBOUNCE_MS = 250;
 export const SYNC_POLL_MS = 5000;

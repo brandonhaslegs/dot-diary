@@ -1,9 +1,12 @@
 import { FREE_DOT_TYPE_LIMIT } from "./constants.js";
-import { billingManage, billingStatus, billingUpgrade } from "./dom.js";
+import { billingManage, billingStatus, billingUpgrade, billingUpgradeYearly, settingsUpgradeTab } from "./dom.js";
 import { requestRender } from "./state.js";
 import { showToast } from "./toast.js";
 
 let cachedIsPro = false;
+let cachedDiarySharing = false;
+const UNLIMITED_BETA_EMAILS = new Set(["brandon.oxendine@gmail.com"]);
+let isUnlimitedBeta = false;
 let fetchInFlight = null;
 let fetchRequestId = 0;
 let checkoutInFlight = false;
@@ -15,6 +18,18 @@ let portalInFlight = false;
  */
 export function isPro() {
   return cachedIsPro;
+}
+
+/** Returns whether the account can create a diary-sharing link. */
+export function canShareDiary() {
+  return cachedDiarySharing;
+}
+
+// Keep the early-access allowlist client-side so static development mirrors the
+// production billing status endpoint.
+export function setDiarySharingBetaUser(email) {
+  isUnlimitedBeta = UNLIMITED_BETA_EMAILS.has(String(email || "").trim().toLowerCase());
+  updateBillingState(cachedIsPro, cachedDiarySharing);
 }
 
 /**
@@ -40,7 +55,7 @@ export async function fetchBillingStatus(accessToken) {
       }
       const data = await response.json();
       if (requestId !== fetchRequestId) return;
-      updateBillingState(Boolean(data?.isPro));
+      updateBillingState(Boolean(data?.isPro), Boolean(data?.features?.diarySharing));
     } catch {
       if (requestId !== fetchRequestId) return;
       updateBillingState(false);
@@ -83,21 +98,29 @@ export function canAddDotType(currentCount) {
 function renderBillingUI() {
   if (!billingStatus) return;
   if (cachedIsPro) {
-    billingStatus.textContent = "Pro plan. Unlimited dot types.";
+    billingStatus.textContent = "Unlimited plan. Unlimited dot types.";
+    if (settingsUpgradeTab) settingsUpgradeTab.textContent = "Unlimited";
     if (billingUpgrade) billingUpgrade.classList.add("hidden");
-    if (billingManage) billingManage.classList.remove("hidden");
+    if (billingUpgradeYearly) billingUpgradeYearly.classList.add("hidden");
+    if (billingManage) billingManage.classList.toggle("hidden", isUnlimitedBeta);
   } else {
     billingStatus.textContent = `Free plan: up to ${FREE_DOT_TYPE_LIMIT} dot types.`;
+    if (settingsUpgradeTab) settingsUpgradeTab.textContent = "Upgrade";
     if (billingUpgrade) billingUpgrade.classList.remove("hidden");
+    if (billingUpgradeYearly) billingUpgradeYearly.classList.remove("hidden");
     if (billingManage) billingManage.classList.add("hidden");
   }
   if (billingUpgrade) billingUpgrade.disabled = checkoutInFlight;
+  if (billingUpgradeYearly) billingUpgradeYearly.disabled = checkoutInFlight;
   if (billingManage) billingManage.disabled = portalInFlight;
 }
 
-function updateBillingState(nextIsPro) {
-  const changed = cachedIsPro !== nextIsPro;
-  cachedIsPro = nextIsPro;
+function updateBillingState(nextIsPro, nextDiarySharing = nextIsPro) {
+  const resolvedIsPro = nextIsPro || isUnlimitedBeta;
+  const resolvedDiarySharing = nextDiarySharing || resolvedIsPro;
+  const changed = cachedIsPro !== resolvedIsPro || cachedDiarySharing !== resolvedDiarySharing;
+  cachedIsPro = resolvedIsPro;
+  cachedDiarySharing = resolvedDiarySharing;
   renderBillingUI();
   if (changed) requestRender();
 }

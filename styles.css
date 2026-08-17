@@ -805,7 +805,7 @@ textarea {
 }
 
 .outline-button {
-  background: transparent;
+  background: var(--background);
   color: var(--ink);
 }
 
@@ -820,7 +820,7 @@ textarea {
 }
 
 .ghost-button {
-  background: transparent;
+  background: var(--background);
   color: var(--ink);
   border-color: transparent;
   padding-inline: 10px;
@@ -867,6 +867,14 @@ textarea {
   gap: 8px;
   transition: none;
   box-shadow: none;
+}
+
+.brand-unlimited {
+  font-family: "Borel", "Brush Script MT", cursive;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1;
+  margin-top: 4px;
 }
 
 .period-picker {
@@ -992,7 +1000,7 @@ textarea {
 @media (min-width: 481px) {
   .period-picker-item {
     text-align: center;
-    font-size: 28px;
+    font-size: 20px;
   }
 }
 
@@ -1028,7 +1036,7 @@ textarea {
 
 .icon-button {
   border: 0;
-  background: transparent;
+  background: var(--background);
   padding: 6px 12px;
   min-height: 40px;
   border-radius: 999px;
@@ -1179,7 +1187,8 @@ button {
   border: 2px solid var(--line);
   border-radius: 12px;
   padding: 9px 12px;
-  background: var(--card);
+  /* Buttons keep an opaque resting surface in both themes. */
+  background: var(--background);
   color: var(--ink);
   cursor: pointer;
   font: inherit;
@@ -1490,6 +1499,13 @@ button:active {
   transition:
     transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
     opacity 180ms ease;
+}
+
+/* Desktop action menus are portaled above the settings panel so its scrolling
+   viewport cannot clip them. Their viewport coordinates are set in ui.js. */
+.dot-actions-menu[data-desktop-portal-active="true"] {
+  position: fixed;
+  right: auto;
 }
 
 .dot-actions-menu.visible {
@@ -1826,6 +1842,44 @@ html[data-theme="dark"] .auth-row textarea {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
+}
+
+.upgrade-plan {
+  max-width: 510px;
+}
+
+.upgrade-plan h4 {
+  font-size: 32px;
+  letter-spacing: -0.04em;
+}
+
+.upgrade-price {
+  margin: 0 0 24px;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.upgrade-feature-list {
+  display: grid;
+  gap: 14px;
+  padding: 0;
+  margin: 0 0 26px;
+  list-style: none;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.upgrade-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.upgrade-feature-list .feature-dot {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
 }
 
 .display-row {
@@ -2401,6 +2455,42 @@ html[data-theme="dark"] .auth-row textarea {
 #delete-modal .modal-actions {
   justify-content: center;
 }
+
+#share-modal { z-index: 40; opacity: 0; pointer-events: none; transition: opacity 280ms ease; }
+#share-modal.visible { opacity: 1; pointer-events: auto; }
+#share-modal .share-card { transform: translateY(24px); opacity: 0; transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 280ms ease; }
+#share-modal.visible .share-card { transform: translateY(0); opacity: 1; }
+.share-card { width: min(560px, calc(100vw - 24px)); max-height: min(690px, calc(100dvh - 24px)); overflow: auto; }
+.share-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.share-select-all { margin-left: auto; padding: 4px 9px; font-size: 13px; }
+.modal-actions.share-generate-action { margin: 12px 0 20px; justify-content: flex-start; }
+.share-selection { display: grid; gap: 18px; margin-top: 4px; padding: 18px; border: 2px solid var(--line); border-radius: 20px; }
+.share-option-group { display: grid; gap: 8px; }
+.share-option-group h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 2px; font-size: 15px; }
+.share-option { display: grid; grid-template-columns: 20px 1fr; align-items: center; gap: 8px; padding: 7px 0; cursor: pointer; }
+.share-option input { width: 18px; height: 18px; margin: 0; accent-color: var(--foreground); }
+.share-option-label { display: inline-flex; align-items: center; gap: 8px; }
+.share-option-dot { width: 12px; height: 12px; border: 1.5px solid var(--line); border-radius: 50%; flex: 0 0 auto; }
+.share-option small { grid-column: 2; color: var(--muted); margin-top: -5px; }
+.share-privacy-note { color: var(--muted); font-size: 14px; }
+.share-link-result { margin-top: 18px; }
+.share-link-result label { display: block; margin-bottom: 7px; font-size: 14px; }
+.share-link-row { display: flex; gap: 8px; }
+.share-link-row input { min-width: 0; flex: 1; }
+
+.shared-diary { width: min(760px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 80px; }
+.shared-diary h1 { font-size: clamp(38px, 8vw, 68px); margin: 10px 0 0; }
+.shared-brand { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 700; }
+.shared-summary { color: var(--muted); margin: 10px 0 28px; }
+.shared-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 16px 0; border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); }
+.shared-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.shared-legend i, .shared-dots span { display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--line); border-radius: 999px; }
+.shared-entries { display: grid; gap: 0; margin-top: 22px; }
+.shared-entries article { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: start; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.shared-entries time { font-weight: 700; }
+.shared-entries p { grid-column: 2; margin: 0; white-space: pre-wrap; }
+.shared-dots { display: flex; flex-wrap: wrap; gap: 5px; }
+@media (max-width: 480px) { .shared-diary { padding-top: 28px; } .shared-entries article { grid-template-columns: 1fr; gap: 8px; } .shared-entries p { grid-column: 1; } }
 
 #pwa-install-modal {
   z-index: 45;
@@ -3214,8 +3304,8 @@ html[data-theme="dark"] .auth-row textarea {
   width: 32px;
   height: 32px;
   padding: 0;
-  border: 0;
-  background: transparent;
+  border: 2px solid var(--line);
+  background: var(--background);
   color: var(--ink);
   cursor: pointer;
   border-radius: 8px;
@@ -3233,6 +3323,9 @@ html[data-theme="dark"] .auth-row textarea {
   border-bottom: 2px solid var(--line);
   margin-bottom: 20px;
   overflow-x: auto;
+  overflow-y: hidden;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
 }
 
