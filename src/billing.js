@@ -1,5 +1,5 @@
 import { FREE_DOT_TYPE_LIMIT } from "./constants.js";
-import { billingManage, billingStatus, billingUpgrade, billingUpgradeYearly, settingsUpgradeTab } from "./dom.js";
+import { billingCancel, billingManage, billingStatus, billingUpgrade, billingUpgradeYearly, brandUnlimited, settingsUpgradeTab } from "./dom.js";
 import { requestRender } from "./state.js";
 import { showToast } from "./toast.js";
 
@@ -96,23 +96,27 @@ export function canAddDotType(currentCount) {
  * Updates the billing section in Settings to reflect current tier.
  */
 function renderBillingUI() {
+  if (brandUnlimited) brandUnlimited.classList.toggle("hidden", !cachedIsPro);
   if (!billingStatus) return;
   if (cachedIsPro) {
-    billingStatus.textContent = "Unlimited plan. Unlimited dot types.";
+    billingStatus.textContent = "You've got Unlimited.";
     if (settingsUpgradeTab) settingsUpgradeTab.textContent = "Unlimited";
     if (billingUpgrade) billingUpgrade.classList.add("hidden");
     if (billingUpgradeYearly) billingUpgradeYearly.classList.add("hidden");
     if (billingManage) billingManage.classList.toggle("hidden", isUnlimitedBeta);
+    if (billingCancel) billingCancel.classList.toggle("hidden", isUnlimitedBeta);
   } else {
     billingStatus.textContent = `Free plan: up to ${FREE_DOT_TYPE_LIMIT} dot types.`;
     if (settingsUpgradeTab) settingsUpgradeTab.textContent = "Upgrade";
     if (billingUpgrade) billingUpgrade.classList.remove("hidden");
     if (billingUpgradeYearly) billingUpgradeYearly.classList.remove("hidden");
     if (billingManage) billingManage.classList.add("hidden");
+    if (billingCancel) billingCancel.classList.add("hidden");
   }
   if (billingUpgrade) billingUpgrade.disabled = checkoutInFlight;
   if (billingUpgradeYearly) billingUpgradeYearly.disabled = checkoutInFlight;
   if (billingManage) billingManage.disabled = portalInFlight;
+  if (billingCancel) billingCancel.disabled = portalInFlight;
 }
 
 function updateBillingState(nextIsPro, nextDiarySharing = nextIsPro) {

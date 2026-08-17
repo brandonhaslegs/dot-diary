@@ -172,7 +172,7 @@
         <button id="brand-home" type="button" class="brand-link">
           <span class="brand-mark" aria-hidden="true"></span>
           <span>Dot Diary</span>
-          <span class="brand-unlimited">Unlimited</span>
+          <span id="brand-unlimited" class="brand-unlimited hidden">Unlimited</span>
         </button>
         <div class="period-picker">
           <div class="period-picker-main">
@@ -262,17 +262,14 @@
           </button>
         </div>
         <p class="share-privacy-note">Anyone with this link can see the items you select. You can make a new link anytime with a different selection.</p>
-        <div class="modal-actions share-generate-action">
-          <button id="generate-share-link" type="button" disabled>Generate link</button>
-        </div>
-        <div id="share-selection" class="share-selection"></div>
         <div id="share-link-result" class="share-link-result hidden" aria-live="polite">
           <label for="share-link-input">Your share link</label>
           <div class="share-link-row">
             <input id="share-link-input" type="text" readonly />
-            <button id="copy-share-link" type="button">Copy</button>
+            <button id="copy-share-link" type="button" disabled>Copy</button>
           </div>
         </div>
+        <div id="share-selection" class="share-selection"></div>
         <button id="share-select-all" type="button" class="share-select-all">Select all</button>
       </div>
     </div>
@@ -670,7 +667,6 @@
         <div id="settings-panel-upgrade" class="settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-upgrade" data-tab="upgrade" hidden>
           <section class="settings-section upgrade-plan">
             <h4>Unlimited</h4>
-            <p class="upgrade-price">$2 a month, or $14 yearly</p>
             <ul class="upgrade-feature-list">
               <li><span class="feature-dot dot-d" aria-hidden="true"></span>Year-end wrap up with trends</li>
               <li><span class="feature-dot dot-a" aria-hidden="true"></span>Shareable link to your diary</li>
@@ -679,9 +675,10 @@
             </ul>
             <p id="billing-status" class="muted">Free plan: up to 6 dot types.</p>
             <div class="billing-actions" aria-label="Choose a subscription">
-              <button id="billing-upgrade" type="button">Monthly: $2</button>
-              <button id="billing-upgrade-yearly" type="button" class="outline-button">Yearly: $14</button>
+              <button id="billing-upgrade" type="button">Upgrade monthly</button>
+              <button id="billing-upgrade-yearly" type="button" class="outline-button">Upgrade yearly</button>
               <button id="billing-manage" type="button" class="outline-button hidden">Manage subscription</button>
+              <button id="billing-cancel" type="button" class="outline-button hidden">Cancel plan</button>
             </div>
           </section>
         </div>

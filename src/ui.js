@@ -523,7 +523,7 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
     const item = document.createElement("button");
     item.type = "button";
     item.className = "period-picker-item";
-    if (year === state.yearCursor) item.classList.add("active");
+    if (desktopPeriodMode === "year" && year === state.yearCursor) item.classList.add("active");
     item.textContent = String(year);
     item.addEventListener("click", () => {
       desktopPeriodMode = "year";

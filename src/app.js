@@ -4,6 +4,7 @@ import {
   authEmailInput,
   authSendButton,
   authSignOutButton,
+  billingCancel,
   billingManage,
   billingUpgrade,
   billingUpgradeYearly,
@@ -91,7 +92,7 @@ import {
   showOnboardingStep,
   shiftYearBy
 } from "./ui.js?v=month-picker-portal-20260817";
-import { closeShareModal, copyShareLink, generateShareLink, openShareModal, toggleShareSelectAll, updateShareSelection } from "./share.js";
+import { closeShareModal, copyShareLink, openShareModal, toggleShareSelectAll, updateShareSelection } from "./share.js";
 import {
   getAccessToken,
   requestEmailCode,
@@ -195,6 +196,43 @@ settingsCloseButton?.addEventListener("click", closeSettingsModal);
 settingsTabButtons.forEach((button) => {
   button.addEventListener("click", () => activateSettingsTab(button.dataset.tab));
 });
+const settingsTabs = settingsTabButtons[0]?.closest(".settings-tabs");
+let settingsTabsTouchX = null;
+settingsTabs?.addEventListener(
+  "wheel",
+  (event) => {
+    // Keep gestures that start on the horizontal tab strip from scrolling the
+    // settings panel vertically. Only the trackpad or wheel's X movement is
+    // applied to this nav.
+    event.preventDefault();
+    settingsTabs.scrollLeft += event.deltaX;
+  },
+  { passive: false }
+);
+settingsTabs?.addEventListener(
+  "touchstart",
+  (event) => {
+    if (event.touches.length === 1) settingsTabsTouchX = event.touches[0].clientX;
+  },
+  { passive: true }
+);
+settingsTabs?.addEventListener(
+  "touchmove",
+  (event) => {
+    if (settingsTabsTouchX === null || event.touches.length !== 1) return;
+    const touchX = event.touches[0].clientX;
+    event.preventDefault();
+    settingsTabs.scrollLeft += settingsTabsTouchX - touchX;
+    settingsTabsTouchX = touchX;
+  },
+  { passive: false }
+);
+settingsTabs?.addEventListener("touchend", () => {
+  settingsTabsTouchX = null;
+});
+settingsTabs?.addEventListener("touchcancel", () => {
+  settingsTabsTouchX = null;
+});
 openFilters?.addEventListener("click", (event) => {
   event.stopPropagation();
   closePopover();
@@ -218,7 +256,6 @@ document.querySelector("#share-modal")?.addEventListener("pointerdown", (event) 
 });
 document.querySelector("#share-selection")?.addEventListener("change", updateShareSelection);
 document.querySelector("#share-select-all")?.addEventListener("click", toggleShareSelectAll);
-document.querySelector("#generate-share-link")?.addEventListener("click", generateShareLink);
 document.querySelector("#copy-share-link")?.addEventListener("click", copyShareLink);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !document.querySelector("#share-modal")?.classList.contains("hidden")) {
@@ -352,6 +389,10 @@ billingUpgradeYearly?.addEventListener("click", async () => {
   startCheckout(token, "yearly");
 });
 billingManage?.addEventListener("click", async () => {
+  const token = await getAccessToken();
+  openBillingPortal(token);
+});
+billingCancel?.addEventListener("click", async () => {
   const token = await getAccessToken();
   openBillingPortal(token);
 });

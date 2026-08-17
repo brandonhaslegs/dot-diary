@@ -871,10 +871,10 @@ textarea {
 
 .brand-unlimited {
   font-family: "Borel", "Brush Script MT", cursive;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 400;
   line-height: 1;
-  margin-top: 4px;
+  margin-top: 14px;
 }
 
 .period-picker {
@@ -1851,13 +1851,6 @@ html[data-theme="dark"] .auth-row textarea {
 .upgrade-plan h4 {
   font-size: 32px;
   letter-spacing: -0.04em;
-}
-
-.upgrade-price {
-  margin: 0 0 24px;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
 }
 
 .upgrade-feature-list {
@@ -3326,6 +3319,7 @@ html[data-theme="dark"] .auth-row textarea {
   overflow-y: hidden;
   touch-action: pan-x;
   overscroll-behavior-x: contain;
+  overscroll-behavior-y: none;
   scrollbar-width: none;
 }
 

@@ -1,6 +1,5 @@
 import {
   copyShareLinkButton,
-  generateShareLinkButton,
   shareLinkInput,
   shareLinkResult,
   shareModal,
@@ -15,6 +14,8 @@ import { showToast } from "./toast.js";
 
 const SHARE_PREFIX = "share=";
 const COMPRESSED_SHARE_PREFIX = "share-gz=";
+let shareGenerateTimer = null;
+let shareGenerationVersion = 0;
 
 function encodeBytes(bytes) {
   let binary = "";
@@ -98,16 +99,28 @@ function selectedOptions() {
   };
 }
 
-export function updateShareSelection() {
-  if (!generateShareLinkButton) return;
+export function updateShareSelection({ shouldGenerate = true } = {}) {
   const selection = selectedOptions();
-  generateShareLinkButton.disabled = selection.years.size === 0 || (selection.dotIds.size === 0 && !selection.notes);
-  shareLinkResult?.classList.add("hidden");
+  const isValid = selection.years.size > 0 && (selection.dotIds.size > 0 || selection.notes);
   if (shareSelectAllButton) {
     const inputs = Array.from(shareSelection?.querySelectorAll("input") || []);
     const everyOptionIsSelected = inputs.length > 0 && inputs.every((input) => input.checked);
     shareSelectAllButton.textContent = everyOptionIsSelected ? "Clear all" : "Select all";
   }
+  if (shouldGenerate) queueShareLinkGeneration(isValid);
+}
+
+function queueShareLinkGeneration(isValid) {
+  if (shareGenerateTimer) clearTimeout(shareGenerateTimer);
+  const version = ++shareGenerationVersion;
+  if (!isValid) {
+    shareLinkResult?.classList.add("hidden");
+    return;
+  }
+  if (shareLinkInput) shareLinkInput.value = "Updating link…";
+  if (copyShareLinkButton) copyShareLinkButton.disabled = true;
+  shareLinkResult?.classList.remove("hidden");
+  shareGenerateTimer = window.setTimeout(() => generateShareLink(version), 350);
 }
 
 export function toggleShareSelectAll() {
@@ -145,10 +158,13 @@ export function openShareModal() {
 export function closeShareModal() {
   if (!shareModal || shareModal.classList.contains("hidden")) return;
   shareModal.classList.remove("visible");
+  if (shareGenerateTimer) clearTimeout(shareGenerateTimer);
+  shareGenerateTimer = null;
+  shareGenerationVersion += 1;
   window.setTimeout(() => shareModal.classList.add("hidden"), 280);
 }
 
-export async function generateShareLink() {
+async function generateShareLink(version) {
   const selected = selectedOptions();
   if (selected.years.size === 0 || (selected.dotIds.size === 0 && !selected.notes)) return;
   const inScope = (iso) => selected.years.has(iso.slice(0, 4));
@@ -173,11 +189,9 @@ export async function generateShareLink() {
   };
   const token = await getAccessToken();
   if (!token) {
-    showToast("Sign in to create a share link.");
+    if (version === shareGenerationVersion) showToast("Sign in to create a share link.");
     return;
   }
-  generateShareLinkButton.disabled = true;
-  generateShareLinkButton.textContent = "Creating link...";
   let link;
   try {
     const response = await fetch("/api/shares/create", {
@@ -196,15 +210,13 @@ export async function generateShareLink() {
     }
     link = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(result.id)}`;
   } catch (error) {
-    showToast(error?.message || "Could not create share link.");
+    if (version === shareGenerationVersion) showToast(error?.message || "Could not create share link.");
     return;
-  } finally {
-    generateShareLinkButton.textContent = "Generate link";
-    updateShareSelection();
   }
+  if (version !== shareGenerationVersion) return;
   if (shareLinkInput) shareLinkInput.value = link;
+  if (copyShareLinkButton) copyShareLinkButton.disabled = false;
   shareLinkResult?.classList.remove("hidden");
-  copyShareLinkButton?.focus();
 }
 
 export async function copyShareLink() {
