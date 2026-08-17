@@ -3129,9 +3129,11 @@ html[data-theme="dark"] .auth-row textarea {
 }
 
 .settings-card {
+  --settings-card-padding: 32px;
   width: min(760px, calc(100vw - 24px));
   height: min(680px, calc(100vh - 24px));
   height: min(680px, calc(100dvh - 24px));
+  padding: var(--settings-card-padding) var(--settings-card-padding) 0;
   overflow: hidden;
   text-align: left;
   position: relative;
@@ -3143,6 +3145,7 @@ html[data-theme="dark"] .auth-row textarea {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  padding-bottom: var(--settings-card-padding);
 }
 
 /* This panel is short enough not to scroll, so let button hover effects render
@@ -3555,11 +3558,11 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   /* Settings modal: wider, tighter padding */
   .settings-card {
+    --settings-card-padding: 20px;
     width: min(760px, calc(100vw - 16px));
     height: min(680px, calc(100vh - 16px));
     height: min(680px, calc(100dvh - 16px));
     border-radius: 24px;
-    padding: 20px;
   }
 
   .modal-card {
@@ -3834,12 +3837,12 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
 
   /* Settings modal: nearly full screen */
   .settings-card {
+    --settings-card-padding: 16px;
     width: 100vw;
     height: 100vh;
     height: 100dvh;
     border: 0;
     border-radius: 0;
-    padding: 16px;
   }
 
   .modal-card {
@@ -4016,7 +4019,7 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .settings-card {
-    padding: 12px;
+    --settings-card-padding: 12px;
   }
 }
 
