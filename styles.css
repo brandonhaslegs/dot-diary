@@ -1739,8 +1739,7 @@ button:active {
   margin-top: 8px;
 }
 
-.auth-row input,
-.auth-row textarea {
+.auth-row input {
   width: 100%;
   border: 2px solid var(--line);
   border-radius: 12px;
@@ -1748,7 +1747,6 @@ button:active {
   font: inherit;
   background: var(--card);
   color: var(--ink);
-  resize: none;
 }
 
 .auth-status {
@@ -3700,7 +3698,6 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .auth-row input,
-  .auth-row textarea,
   .auth-row button {
     width: 100%;
   }
