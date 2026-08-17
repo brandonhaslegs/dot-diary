@@ -99,6 +99,7 @@ let pendingDeleteMode = "safe";
 let pendingDeleteDotTypeName = "";
 let loadedYearBatchCount = 1;
 let loadedMobileMonthCount = 24;
+let desktopPeriodMode = "year";
 let periodLoadInProgress = false;
 let suppressDayOpenUntil = 0;
 let monthScrollAttached = false;
@@ -447,7 +448,19 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
     return;
   }
 
-  periodPickerLabel.textContent = String(state.yearCursor);
+  periodPickerLabel.textContent = desktopPeriodMode === "last-12-months" ? "Last 12 months" : String(state.yearCursor);
+  const rollingPeriodItem = document.createElement("button");
+  rollingPeriodItem.type = "button";
+  rollingPeriodItem.className = "period-picker-item";
+  if (desktopPeriodMode === "last-12-months") rollingPeriodItem.classList.add("active");
+  rollingPeriodItem.textContent = "Last 12 months";
+  rollingPeriodItem.addEventListener("click", () => {
+    desktopPeriodMode = "last-12-months";
+    closePeriodMenu();
+    requestRender();
+  });
+  periodPickerMenu.appendChild(rollingPeriodItem);
+
   const minLoadedYear = currentYear - loadedYearBatchCount * YEAR_BATCH_SIZE + 1;
   if (state.yearCursor < minLoadedYear) {
     loadedYearBatchCount = Math.ceil((currentYear - state.yearCursor + 1) / YEAR_BATCH_SIZE);
@@ -461,6 +474,7 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
     if (year === state.yearCursor) item.classList.add("active");
     item.textContent = String(year);
     item.addEventListener("click", () => {
+      desktopPeriodMode = "year";
       state.yearCursor = year;
       const monthDate = new Date(state.monthCursor);
       monthDate.setFullYear(year);
@@ -478,6 +492,7 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
 
 export function shiftYearBy(delta) {
   if (isMobileView()) return;
+  if (desktopPeriodMode === "last-12-months") return;
   const amount = Number(delta) || 0;
   if (!amount) return;
   const currentYear = new Date().getFullYear();
@@ -508,23 +523,36 @@ export function renderDiaryGrid() {
 }
 
 export function renderYearGrid() {
+  const isRollingPeriod = desktopPeriodMode === "last-12-months";
   const year = state.yearCursor;
   const todayIso = formatISODate(new Date());
   yearGrid.innerHTML = "";
 
-  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+  const months = isRollingPeriod
+    ? Array.from({ length: 12 }, (_, index) => {
+        const today = new Date();
+        return new Date(today.getFullYear(), today.getMonth() - 11 + index, 1);
+      })
+    : Array.from({ length: 12 }, (_, index) => new Date(year, index, 1));
+
+  for (const monthDate of months) {
+    const monthYear = monthDate.getFullYear();
+    const monthIndex = monthDate.getMonth();
     const column = document.createElement("section");
     column.className = "month-column";
-    if (new Date(year, monthIndex + 1, 0).getDate() === 31) {
+    if (new Date(monthYear, monthIndex + 1, 0).getDate() === 31) {
       column.classList.add("month-31");
     }
 
     const monthTitle = document.createElement("h3");
     monthTitle.className = "month-title";
-    monthTitle.textContent = new Date(year, monthIndex, 1).toLocaleDateString(undefined, { month: "long" });
+    monthTitle.textContent = monthDate.toLocaleDateString(undefined, {
+      month: "long",
+      ...(isRollingPeriod ? { year: "numeric" } : {})
+    });
     column.appendChild(monthTitle);
 
-    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    const daysInMonth = new Date(monthYear, monthIndex + 1, 0).getDate();
     for (let dayNum = 1; dayNum <= 31; dayNum += 1) {
       if (dayNum > daysInMonth) {
         const filler = document.createElement("div");
@@ -533,7 +561,7 @@ export function renderYearGrid() {
         continue;
       }
 
-      const date = new Date(year, monthIndex, dayNum);
+      const date = new Date(monthYear, monthIndex, dayNum);
       const iso = formatISODate(date);
       const isEditingThisDay = activeNoteEdit === iso;
       const row = document.createElement(isEditingThisDay ? "div" : "button");
