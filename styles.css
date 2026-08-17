@@ -2313,7 +2313,9 @@ html[data-theme="dark"] .auth-row textarea {
   inset: 0;
   background: rgba(0, 0, 0, 0.22);
   opacity: 0;
-  pointer-events: none;
+  /* Capture input as soon as the scrim is shown, even before its fade-in
+     animation reaches full opacity. */
+  pointer-events: auto;
   transition: opacity 180ms ease;
   z-index: 900;
 }
@@ -2331,7 +2333,6 @@ html[data-theme="dark"] .auth-row textarea {
 
 .menu-scrim.visible {
   opacity: 1;
-  pointer-events: auto;
 }
 
 .menu-scrim.hidden {

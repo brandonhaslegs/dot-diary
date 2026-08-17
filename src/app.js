@@ -243,7 +243,11 @@ periodPickerToggle?.addEventListener("click", (event) => {
     closePeriodMenu();
   }
 });
-menuScrim?.addEventListener("click", () => {
+menuScrim?.addEventListener("pointerdown", (event) => {
+  // Dismiss on pointerdown so the same tap cannot be interpreted as a click
+  // on a calendar day behind the mobile menu scrim.
+  event.preventDefault();
+  event.stopPropagation();
   closePeriodMenu();
   closeFiltersMenu();
   closeDotMenus();
