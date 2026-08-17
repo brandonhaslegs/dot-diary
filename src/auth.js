@@ -10,7 +10,7 @@ import {
   SUPABASE_URL,
   SYNC_DEBOUNCE_MS,
   SYNC_POLL_MS
-} from "./constants.js?v=auth-safety-20260817";
+} from "./constants.js?v=empty-sync-guard-20260817";
 import {
   authEmailInput,
   authRow,
@@ -389,9 +389,16 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
 async function syncToCloud() {
   if (!supabase || !syncUser) return;
   if (syncInFlight) return syncInFlight;
+  const snapshot = getCloudStateSnapshot(state);
+  // A blank device must never replace cloud history. This includes auth
+  // bootstrap, a fresh install, and any other sync path.
+  if (!hasDiaryContent(snapshot)) {
+    lastSyncError = "";
+    updateAuthUI();
+    return;
+  }
   syncInProgress = true;
   updateAuthUI();
-  const snapshot = getCloudStateSnapshot(state);
   const updatedAt = snapshot.lastModified || new Date().toISOString();
   const payloadWithUpdatedAt = {
     user_id: syncUser.id,

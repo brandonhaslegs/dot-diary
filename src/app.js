@@ -95,7 +95,7 @@ import {
   signOutSupabase,
   updateAuthUI,
   verifyEmailCode
-} from "./auth.js?v=auth-safety-20260817";
+} from "./auth.js?v=empty-sync-guard-20260817";
 import { openBillingPortal, startCheckout } from "./billing.js";
 import { showToast } from "./toast.js";
 import { initPwaInstallPrompt } from "./pwa-install.js";
