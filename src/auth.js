@@ -371,7 +371,10 @@ async function loadFromCloud({ silentError = false, fromAuthBootstrap = false } 
     const localMonthCursor = state.monthCursor;
     const localYearCursor = state.yearCursor;
     const merged = mergeDiaryStates(state, remoteState, {
-      preferLocalSettings: true,
+      // A sign-out intentionally clears this device's local state. When the
+      // account signs back in, do not let those fresh defaults overwrite
+      // settings already saved with the account (such as keyboard hints).
+      preferLocalSettings: !fromAuthBootstrap,
       preferLocalConflicts: false
     });
     merged.monthCursor = localMonthCursor;

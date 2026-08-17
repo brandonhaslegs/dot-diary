@@ -97,6 +97,19 @@ test("prefers newest diary snapshot over newer row timestamp", () => {
   assert.equal(latest?.data?.dayNotes?.["2026-02-01"], "new");
 });
 
+test("restores account settings after a device state reset", () => {
+  const accountState = baseState("2026-02-01T10:00:00.000Z");
+  accountState.showKeyboardHints = false;
+
+  const resetDeviceState = baseState(null);
+  const restored = mergeDiaryStates(resetDeviceState, accountState, {
+    preferLocalSettings: false,
+    preferLocalConflicts: false
+  });
+
+  assert.equal(restored.showKeyboardHints, false);
+});
+
 test("two devices converge with cross edits and duplicate cloud history", () => {
   const cloud = createCloud([
     {
