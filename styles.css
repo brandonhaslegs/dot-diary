@@ -3147,8 +3147,8 @@ button:active {
 
 .settings-close:hover,
 .settings-close:focus-visible {
-  background: var(--line);
-  opacity: 0.1;
+  /* Keep the icon fully opaque; opacity on the button also faded out the X. */
+  background: color-mix(in srgb, var(--card) 90%, var(--line) 10%);
 }
 
 .settings-tabs {
