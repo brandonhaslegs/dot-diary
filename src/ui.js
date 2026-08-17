@@ -394,6 +394,14 @@ function updateTodayButtonVisibility() {
   todayButton.classList.toggle("hidden", !shouldShow);
 }
 
+function shouldBlockDayOpen() {
+  return (
+    Date.now() < suppressDayOpenUntil ||
+    !menuScrim?.classList.contains("hidden") ||
+    !popoverScrim?.classList.contains("hidden")
+  );
+}
+
 export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0) {
   if (!periodPickerMenu || !periodPickerLabel) return;
   const currentYear = new Date().getFullYear();
@@ -616,7 +624,7 @@ export function renderYearGrid() {
 
       if (!isEditingThisDay) {
         row.addEventListener("click", (event) => {
-          if (Date.now() < suppressDayOpenUntil) return;
+          if (shouldBlockDayOpen()) return;
           if (activePopover && activePopover.isoDate !== iso) {
             closePopover();
             return;
@@ -695,7 +703,7 @@ export function renderMonthGrid() {
 
     if (!isEditingThisDay) {
       cell.addEventListener("click", (event) => {
-        if (Date.now() < suppressDayOpenUntil) return;
+        if (shouldBlockDayOpen()) return;
         if (activePopover && activePopover.isoDate !== day.iso) {
           closePopover();
           return;
@@ -1586,8 +1594,15 @@ export function openSettingsModal() {
 
 export function closePeriodMenu() {
   if (!periodPickerMenu) return;
+  const wasOpen = !periodPickerMenu.classList.contains("hidden");
   periodPickerMenu.classList.remove("visible");
   periodPickerMenu.classList.add("hidden");
+  if (wasOpen) {
+    // A calendar tap first reaches the document-level pointer handler, which
+    // closes this picker before the cell's click event fires. Suppress that
+    // follow-up click so it only dismisses the picker.
+    suppressDayOpenUntil = Date.now() + SUPPRESS_DAY_OPEN_MS;
+  }
   updateMenuScrim();
 }
 
