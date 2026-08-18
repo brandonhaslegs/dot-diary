@@ -1708,6 +1708,9 @@ export function closeFiltersMenu() {
     filterMenu.classList.add("hidden");
     filterMenuHideTimer = null;
     renderFilterMenu();
+    // Re-evaluate after the exit animation. Until now the filter menu still
+    // counts as open, so the mobile scrim must remain visible.
+    updateMenuScrim();
   }, POPOVER_ANIMATION_MS);
   updateMenuScrim();
 }
