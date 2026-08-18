@@ -200,6 +200,11 @@ textarea {
   z-index: 1;
 }
 
+/* The sign-in flow is intentionally more focused than the marketing card. */
+#marketing-login {
+  width: min(384px, 100%);
+}
+
 .marketing-card h1 {
   margin: 0;
   font-size: clamp(34px, 6vw, 64px);
