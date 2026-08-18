@@ -370,7 +370,7 @@ function renderCalendarControls() {
 export function handleCalendarAdd() {
   if (!hasFeature("unlimitedCalendars")) {
     showToast("Unlimited unlocks separate calendars.");
-    openSettingsModal("upgrade");
+    openSettingsModal("account");
     return;
   }
   createCalendar("New calendar");
@@ -1339,7 +1339,7 @@ export function renderDotTypeList(targetList = dotTypeList) {
     addButton.type = "button";
     addButton.className = "suggestion-chip add-new";
     addButton.textContent = atLimit ? `Upgrade to add more` : "Add New";
-    addButton.addEventListener("click", atLimit ? () => openSettingsModal("upgrade") : addNewDotType);
+    addButton.addEventListener("click", atLimit ? () => openSettingsModal("account") : addNewDotType);
     addItem.appendChild(addButton);
     targetList.appendChild(addItem);
   }
@@ -1374,7 +1374,7 @@ export function renderSuggestedDotTypes(targetList = suggestedDotList) {
   addNewChip.type = "button";
   addNewChip.className = "suggestion-chip add-new";
   addNewChip.textContent = atLimit ? "Upgrade to add more" : "Add New";
-  addNewChip.addEventListener("click", atLimit ? () => openSettingsModal("upgrade") : addNewDotType);
+  addNewChip.addEventListener("click", atLimit ? () => openSettingsModal("account") : addNewDotType);
   targetList.appendChild(addNewChip);
 }
 

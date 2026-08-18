@@ -1,5 +1,5 @@
 import { FREE_DOT_TYPE_LIMIT } from "./constants.js";
-import { billingCancel, billingManage, billingStatus, billingUpgrade, billingUpgradeYearly, brandUnlimited, settingsUpgradeTab } from "./dom.js";
+import { billingCancel, billingManage, billingStatus, billingUpgrade, billingUpgradeYearly, brandUnlimited } from "./dom.js";
 import { requestRender } from "./state.js";
 import { showToast } from "./toast.js";
 
@@ -101,14 +101,12 @@ function renderBillingUI() {
   if (!billingStatus) return;
   if (unlimited) {
     billingStatus.textContent = "You've got Unlimited.";
-    if (settingsUpgradeTab) settingsUpgradeTab.textContent = "Unlimited";
     if (billingUpgrade) billingUpgrade.classList.add("hidden");
     if (billingUpgradeYearly) billingUpgradeYearly.classList.add("hidden");
     if (billingManage) billingManage.classList.toggle("hidden", !hasFeature("billingPortal"));
     if (billingCancel) billingCancel.classList.toggle("hidden", !hasFeature("billingPortal"));
   } else {
     billingStatus.textContent = `Free plan: up to ${FREE_DOT_TYPE_LIMIT} dot types.`;
-    if (settingsUpgradeTab) settingsUpgradeTab.textContent = "Upgrade";
     if (billingUpgrade) billingUpgrade.classList.remove("hidden");
     if (billingUpgradeYearly) billingUpgradeYearly.classList.remove("hidden");
     if (billingManage) billingManage.classList.add("hidden");

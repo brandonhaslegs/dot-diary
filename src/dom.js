@@ -89,7 +89,6 @@ export const authRow = document.querySelector("#auth-row");
 export const settingsCloseButton = document.querySelector("#settings-close");
 export const settingsTabButtons = Array.from(document.querySelectorAll(".settings-tab"));
 export const settingsTabPanels = Array.from(document.querySelectorAll(".settings-tab-panel"));
-export const settingsUpgradeTab = document.querySelector("#settings-tab-upgrade");
 export const resetOnboardingButton = document.querySelector("#reset-onboarding");
 export const billingStatus = document.querySelector("#billing-status");
 export const billingUpgrade = document.querySelector("#billing-upgrade");
