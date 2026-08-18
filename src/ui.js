@@ -633,6 +633,12 @@ export function shiftYearBy(delta) {
     saveAndRender();
     return;
   }
+  if (amount > 0 && state.yearCursor === currentYear) {
+    desktopPeriodMode = "last-12-months";
+    closePeriodMenu();
+    saveAndRender();
+    return;
+  }
   const nextYear = Math.min(currentYear, state.yearCursor + amount);
   if (nextYear === state.yearCursor) return;
   state.yearCursor = nextYear;
