@@ -1797,7 +1797,9 @@ button:active {
   appearance: none;
   -webkit-appearance: none;
   resize: none;
+  white-space: nowrap;
   overflow: hidden;
+  overflow-x: auto;
   font: inherit;
   line-height: normal;
   background: var(--card);
