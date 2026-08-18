@@ -554,10 +554,20 @@ export function renderPeriodPicker(preserveScroll = false, previousScrollTop = 0
 
 export function shiftYearBy(delta) {
   if (isMobileView()) return;
-  if (desktopPeriodMode === "last-12-months") return;
   const amount = Number(delta) || 0;
   if (!amount) return;
   const currentYear = new Date().getFullYear();
+  if (desktopPeriodMode === "last-12-months") {
+    if (amount > 0) return;
+    desktopPeriodMode = "year";
+    state.yearCursor = currentYear;
+    const monthDate = new Date(state.monthCursor);
+    monthDate.setFullYear(currentYear);
+    state.monthCursor = startOfMonth(monthDate).toISOString();
+    closePeriodMenu();
+    saveAndRender();
+    return;
+  }
   const nextYear = Math.min(currentYear, state.yearCursor + amount);
   if (nextYear === state.yearCursor) return;
   state.yearCursor = nextYear;
