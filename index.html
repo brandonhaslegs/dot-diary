@@ -722,6 +722,20 @@
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script type="module" src="./src/app.js?v=settings-tabs-horizontal-20260817"></script>
+    <script type="module">
+      // Loading a module through an inline bootstrap lets a standalone PWA
+      // recover from the occasional interrupted/stale module fetch. Without
+      // this, the static landing page remains visible with no working controls
+      // or sample calendar until the user manually closes and reopens it.
+      const appModule = new URL("./src/app.js?v=pwa-boot-retry-20260818", import.meta.url).href;
+      const retryAppBoot = (attempt = 0) => import(`${appModule}&attempt=${attempt}`).catch((error) => {
+        if (attempt >= 1) {
+          console.error("Dot Diary could not start.", error);
+          return;
+        }
+        window.setTimeout(() => retryAppBoot(attempt + 1), 400);
+      });
+      retryAppBoot();
+    </script>
   </body>
 </html>
