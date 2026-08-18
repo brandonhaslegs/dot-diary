@@ -21,6 +21,7 @@ Dot Diary is a minimalist web app for tracking your life with colored dots.
 - Keyboard shortcuts + keyboard hint toggle
 - Data export/import (JSON)
 - Email code auth and cloud sync across devices
+- Optional Stripe-powered Unlimited plan: unlimited dot types, separate calendars, and diary sharing
 
 <img width="839" height="1020" alt="image" src="https://github.com/user-attachments/assets/942966c2-4f09-479f-a206-121a0888377d" />
 
@@ -51,3 +52,17 @@ Run the local two-device sync simulator:
 cd "/Users/brandonhaslegs/Code/Dot Diary"
 node --test tests/sync-simulator.test.mjs
 ```
+
+## Billing setup
+
+The Unlimited gate is served from the API, not trusted to the browser. Configure
+these Vercel environment variables before enabling the upgrade buttons:
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PRICE_MONTHLY`
+- `STRIPE_PRICE_YEARLY`
+- `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+- `PUBLIC_APP_URL` (recommended, for Checkout return URLs)
+
+For temporary manual access, set `UNLIMITED_BETA_EMAILS` to a comma-separated
+list of verified account emails. Do not put this allowlist in client code.

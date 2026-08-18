@@ -38,7 +38,7 @@ import {
   resetToLoggedOut
 } from "./ui.js";
 import { showToast } from "./toast.js";
-import { fetchBillingStatus, resetBilling, setDiarySharingBetaUser } from "./billing.js";
+import { fetchBillingStatus, resetBilling } from "./billing.js";
 import { offerPwaInstallAfterLogin } from "./pwa-install.js";
 
 const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -74,7 +74,6 @@ export async function initSupabaseAuth() {
   })();
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
-  setDiarySharingBetaUser(syncUser?.email);
   persistAuthMarker(syncUser);
   const enteredFromMarketing = !getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden");
   if (enteredFromMarketing) {
@@ -95,7 +94,6 @@ export async function initSupabaseAuth() {
   supabase.auth.onAuthStateChange(async (_event, session) => {
     const wasSignedIn = Boolean(syncUser);
     syncUser = session?.user || null;
-    setDiarySharingBetaUser(syncUser?.email);
     const enteredFromMarketingNow = !getHasEnteredApp() && syncUser && !marketingPage?.classList.contains("hidden");
     if (enteredFromMarketingNow) {
       enterApp({ skipOnboarding: true });
@@ -140,7 +138,6 @@ export async function refreshAuthSession({ loadCloud = false } = {}) {
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   syncUser = data?.session?.user || null;
-  setDiarySharingBetaUser(syncUser?.email);
   persistAuthMarker(syncUser);
   updateAuthUI();
   if (syncUser) {
@@ -273,7 +270,6 @@ export async function signOutSupabase() {
       syncInFlight = null;
       syncInProgress = false;
       syncUser = null;
-      setDiarySharingBetaUser(null);
       lastSyncedAt = null;
       lastSyncError = "";
       try {

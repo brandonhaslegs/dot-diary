@@ -1,14 +1,10 @@
 const {
-  findStripeCustomerBySupabaseUserId,
+  getUnlimitedEntitlement,
   getAuthedUser,
-  isProFromSubscriptionStatus,
   parseJsonBody,
-  sendJson,
-  stripeRequest
+  sendJson
 } = require("../_billing");
 const { randomBytes } = require("crypto");
-
-const DIARY_SHARING_BETA_EMAILS = new Set(["brandon.oxendine@gmail.com"]);
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -21,11 +17,8 @@ function createShareId() {
 }
 
 async function canCreateShare(user) {
-  if (DIARY_SHARING_BETA_EMAILS.has(String(user.email || "").toLowerCase())) return true;
-  const customer = await findStripeCustomerBySupabaseUserId(user.id, user.email);
-  if (!customer?.id) return false;
-  const subscriptions = await stripeRequest(`/subscriptions?customer=${encodeURIComponent(customer.id)}&status=all&limit=10`);
-  return subscriptions?.data?.some((subscription) => isProFromSubscriptionStatus(subscription?.status));
+  const entitlement = await getUnlimitedEntitlement(user);
+  return entitlement.features.diarySharing;
 }
 
 module.exports = async function handler(req, res) {
@@ -33,7 +26,7 @@ module.exports = async function handler(req, res) {
   try {
     const user = await getAuthedUser(req);
     if (!user?.id) return sendJson(res, 401, { error: "Sign in to create a share link." });
-    if (!await canCreateShare(user)) return sendJson(res, 403, { error: "Diary sharing is available with Pro." });
+    if (!await canCreateShare(user)) return sendJson(res, 403, { error: "Diary sharing is available with Unlimited." });
     const body = await parseJsonBody(req);
     const data = body?.data;
     if (!data || typeof data !== "object") return sendJson(res, 400, { error: "Share data is required." });

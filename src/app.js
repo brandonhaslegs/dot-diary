@@ -9,6 +9,8 @@ import {
   billingUpgrade,
   billingUpgradeYearly,
   brandHomeButton,
+  calendarAddButton,
+  calendarSelect,
   colorModeDarkButton,
   colorModeLightButton,
   deleteCancel,
@@ -69,6 +71,8 @@ import {
   activateSettingsTab,
   enterApp,
   handleDataImport,
+  handleCalendarAdd,
+  handleCalendarSwitch,
   handleGlobalKeyDown,
   handleGlobalPointerDown,
   interceptMobileMenuBackdropTap,
@@ -192,6 +196,8 @@ authSendButton?.addEventListener("click", () => requestEmailCode(undefined, auth
 submitOnEnter(authEmailInput, () => requestEmailCode(authEmailInput?.value, authSendButton));
 authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsCloseButton?.addEventListener("click", closeSettingsModal);
+calendarAddButton?.addEventListener("click", handleCalendarAdd);
+calendarSelect?.addEventListener("change", () => handleCalendarSwitch(calendarSelect.value));
 
 settingsTabButtons.forEach((button) => {
   button.addEventListener("click", () => activateSettingsTab(button.dataset.tab));

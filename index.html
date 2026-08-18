@@ -204,6 +204,10 @@
             </svg>
           </span>
         </div>
+        <div class="calendar-switcher">
+          <label class="sr-only" for="calendar-select">Calendar</label>
+          <select id="calendar-select" aria-label="Choose calendar"></select>
+        </div>
         <nav class="view-nav" aria-label="Sections">
           <button id="today-button" type="button" class="outline-button today-button hidden">Today</button>
           <button id="open-share" type="button" class="icon-button share-button" aria-label="Share diary">
@@ -519,6 +523,7 @@
 
         <nav class="settings-tabs" role="tablist" aria-label="Settings sections">
           <button id="settings-tab-dot-types" class="settings-tab is-active" type="button" role="tab" data-tab="dot-types" aria-selected="true" aria-controls="settings-panel-dot-types">Dot types</button>
+          <button id="settings-tab-calendars" class="settings-tab" type="button" role="tab" data-tab="calendars" aria-selected="false" aria-controls="settings-panel-calendars">Calendars</button>
           <button id="settings-tab-preferences" class="settings-tab" type="button" role="tab" data-tab="preferences" aria-selected="false" aria-controls="settings-panel-preferences">Preferences</button>
           <button id="settings-tab-import-export" class="settings-tab" type="button" role="tab" data-tab="import-export" aria-selected="false" aria-controls="settings-panel-import-export">Import + Export</button>
           <button id="settings-tab-account" class="settings-tab" type="button" role="tab" data-tab="account" aria-selected="false" aria-controls="settings-panel-account">Account</button>
@@ -541,6 +546,15 @@
                 <div id="suggested-dot-list" class="suggested-dot-list"></div>
               </div>
             </div>
+          </section>
+        </div>
+
+        <div id="settings-panel-calendars" class="settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-calendars" data-tab="calendars" hidden>
+          <section class="settings-section">
+            <h4>Calendars</h4>
+            <p class="muted">Keep separate diaries for different parts of your life.</p>
+            <div id="calendar-list" class="calendar-list"></div>
+            <button id="calendar-add" type="button">Add calendar</button>
           </section>
         </div>
 

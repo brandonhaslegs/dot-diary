@@ -44,7 +44,7 @@ export function mergeDiaryStates(localState, remoteState, { preferLocalSettings,
 
   const mergedDotTypes = mergeDotTypes(localState.dotTypes, remoteState.dotTypes, preferLocalConflicts);
 
-  return {
+  const merged = {
     ...settingsMerged,
     monthCursor: preferredState.monthCursor || fallbackState.monthCursor,
     yearCursor: Number.isInteger(preferredState.yearCursor)
@@ -61,6 +61,45 @@ export function mergeDiaryStates(localState, remoteState, { preferLocalSettings,
     ),
     dayNotes: mergeDayNotes(localState.dayNotes, remoteState.dayNotes, preferLocalConflicts)
   };
+  const calendars = mergeCalendars(localState.calendars, remoteState.calendars, preferLocalConflicts);
+  if (!calendars) return merged;
+  const preferredCalendarId = preferLocalConflicts ? localState.activeCalendarId : remoteState.activeCalendarId;
+  const activeCalendar = calendars.find((calendar) => calendar.id === preferredCalendarId) || calendars[0];
+  return {
+    ...merged,
+    calendars,
+    activeCalendarId: activeCalendar.id,
+    dotTypes: activeCalendar.dotTypes,
+    dayDots: activeCalendar.dayDots,
+    dotPositions: activeCalendar.dotPositions,
+    dayNotes: activeCalendar.dayNotes
+  };
+}
+
+function mergeCalendars(localCalendars, remoteCalendars, preferLocalConflicts) {
+  if (!Array.isArray(localCalendars) && !Array.isArray(remoteCalendars)) return null;
+  const local = Array.isArray(localCalendars) ? localCalendars : [];
+  const remote = Array.isArray(remoteCalendars) ? remoteCalendars : [];
+  const byId = new Map();
+  [...remote, ...local].forEach((calendar) => {
+    if (calendar && typeof calendar.id === "string" && calendar.id) byId.set(calendar.id, calendar);
+  });
+  return [...byId.keys()].map((id) => {
+    const localCalendar = local.find((calendar) => calendar?.id === id);
+    const remoteCalendar = remote.find((calendar) => calendar?.id === id);
+    if (!localCalendar) return structuredClone(remoteCalendar);
+    if (!remoteCalendar) return structuredClone(localCalendar);
+    const preferred = preferLocalConflicts ? localCalendar : remoteCalendar;
+    const mergedDots = mergeDotTypes(localCalendar.dotTypes, remoteCalendar.dotTypes, preferLocalConflicts);
+    return {
+      id,
+      name: preferred.name || "Untitled calendar",
+      dotTypes: mergedDots.dotTypes,
+      dayDots: mergeDayDots(localCalendar.dayDots, remoteCalendar.dayDots, preferLocalConflicts, mergedDots.idAliases),
+      dotPositions: mergeDotPositions(localCalendar.dotPositions, remoteCalendar.dotPositions, preferLocalConflicts, mergedDots.idAliases),
+      dayNotes: mergeDayNotes(localCalendar.dayNotes, remoteCalendar.dayNotes, preferLocalConflicts)
+    };
+  });
 }
 
 function mergeDotTypes(localDotTypes, remoteDotTypes, preferLocalConflicts) {

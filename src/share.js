@@ -134,7 +134,7 @@ export function toggleShareSelectAll() {
 
 export function openShareModal() {
   if (!canShareDiary() && !DEMO_MODE) {
-    showToast("Sharing is available with Pro. Upgrade in Settings to unlock it.");
+    showToast("Sharing is available with Unlimited. Upgrade in Settings to unlock it.");
     return;
   }
   if (!shareModal || !shareSelection) return;

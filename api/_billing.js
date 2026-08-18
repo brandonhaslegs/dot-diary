@@ -1,4 +1,10 @@
 const STRIPE_API_BASE = "https://api.stripe.com/v1";
+const UNLIMITED_BETA_EMAILS = new Set(
+  String(process.env.UNLIMITED_BETA_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -106,8 +112,48 @@ function isProFromSubscriptionStatus(status) {
   return ["active", "trialing", "past_due"].includes(status);
 }
 
+/**
+ * Resolves the server-authoritative Unlimited entitlement for a signed-in user.
+ * Keep every protected API feature behind this helper so the browser cannot
+ * unlock a paid feature merely by changing local state.
+ */
+async function getUnlimitedEntitlement(user) {
+  const isBetaUser = UNLIMITED_BETA_EMAILS.has(String(user?.email || "").trim().toLowerCase());
+  const customer = await findStripeCustomerBySupabaseUserId(user.id, user.email);
+  let subscriptionStatus = isBetaUser ? "early_access" : "inactive";
+  let interval = null;
+
+  if (customer?.id) {
+    const subscriptions = await stripeRequest(
+      `/subscriptions?customer=${encodeURIComponent(customer.id)}&status=all&limit=10`
+    );
+    const latestSubscription =
+      subscriptions?.data
+        ?.slice()
+        ?.sort((a, b) => (b?.created || 0) - (a?.created || 0))
+        ?.find((item) => item && item.status !== "canceled") || null;
+    subscriptionStatus = latestSubscription?.status || subscriptionStatus;
+    interval = latestSubscription?.items?.data?.[0]?.price?.recurring?.interval || null;
+  }
+
+  const isUnlimited = isBetaUser || isProFromSubscriptionStatus(subscriptionStatus);
+  return {
+    isUnlimited,
+    tier: isUnlimited ? "unlimited" : "free",
+    subscriptionStatus,
+    interval,
+    features: {
+      unlimitedDotTypes: isUnlimited,
+      unlimitedCalendars: isUnlimited,
+      diarySharing: isUnlimited,
+      billingPortal: Boolean(customer?.id)
+    }
+  };
+}
+
 module.exports = {
   findStripeCustomerBySupabaseUserId,
+  getUnlimitedEntitlement,
   getAuthedUser,
   isProFromSubscriptionStatus,
   normalizeOrigin,

@@ -23,9 +23,12 @@ import {
   VIEW_MODE_KEY,
   YEAR_BATCH_SIZE
 } from "./constants.js";
-import { canAddDotType, isPro } from "./billing.js";
+import { canAddDotType, hasFeature, isPro } from "./billing.js";
 import {
   appShell,
+  calendarAddButton,
+  calendarList,
+  calendarSelect,
   colorModeDarkButton,
   colorModeLightButton,
   deleteModal,
@@ -75,6 +78,7 @@ import {
 } from "./utils.js";
 import {
   clearDotPosition,
+  createCalendar,
   createDemoState,
   defaultState,
   getDayDotIds,
@@ -88,6 +92,8 @@ import {
   saveDotPosition,
   setDayNote,
   setState,
+  switchCalendar,
+  renameCalendar,
   state
 } from "./state.js";
 import { showToast } from "./toast.js";
@@ -298,6 +304,7 @@ export function render() {
   }
 
   applyTheme();
+  renderCalendarControls();
   renderPeriodPicker();
   renderFilterMenu();
   renderDiaryGrid();
@@ -317,6 +324,64 @@ export function render() {
   renderSuggestedDotTypes();
   renderOnboardingLists();
   updateAuthUIFn();
+}
+
+function renderCalendarControls() {
+  const calendars = Array.isArray(state.calendars) && state.calendars.length
+    ? state.calendars
+    : [{ id: "default", name: "My diary" }];
+  if (calendarSelect) {
+    calendarSelect.innerHTML = "";
+    calendars.forEach((calendar) => {
+      const option = document.createElement("option");
+      option.value = calendar.id;
+      option.textContent = calendar.name;
+      option.selected = calendar.id === state.activeCalendarId;
+      calendarSelect.append(option);
+    });
+    calendarSelect.disabled = !hasFeature("unlimitedCalendars");
+    calendarSelect.title = calendarSelect.disabled ? "Unlimited unlocks separate calendars" : "Switch calendar";
+  }
+  if (!calendarList) return;
+  calendarList.innerHTML = "";
+  calendars.forEach((calendar) => {
+    const row = document.createElement("div");
+    row.className = "calendar-row";
+    const input = document.createElement("input");
+    input.value = calendar.name;
+    input.disabled = !hasFeature("unlimitedCalendars");
+    input.setAttribute("aria-label", `Calendar name: ${calendar.name}`);
+    input.addEventListener("change", () => renameCalendar(calendar.id, input.value));
+    const use = document.createElement("button");
+    use.type = "button";
+    use.className = "outline-button";
+    use.textContent = calendar.id === state.activeCalendarId ? "Current" : "Open";
+    use.disabled = calendar.id === state.activeCalendarId || !hasFeature("unlimitedCalendars");
+    use.addEventListener("click", () => switchCalendar(calendar.id));
+    row.append(input, use);
+    calendarList.append(row);
+  });
+  if (calendarAddButton) {
+    calendarAddButton.disabled = !hasFeature("unlimitedCalendars");
+    calendarAddButton.textContent = hasFeature("unlimitedCalendars") ? "Add calendar" : "Upgrade to add calendars";
+  }
+}
+
+export function handleCalendarAdd() {
+  if (!hasFeature("unlimitedCalendars")) {
+    showToast("Unlimited unlocks separate calendars.");
+    openSettingsModal("upgrade");
+    return;
+  }
+  createCalendar("New calendar");
+}
+
+export function handleCalendarSwitch(calendarId) {
+  if (!hasFeature("unlimitedCalendars")) {
+    showToast("Unlimited unlocks separate calendars.");
+    return;
+  }
+  switchCalendar(calendarId);
 }
 
 function getActiveFilterDotIds() {
