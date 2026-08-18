@@ -3385,6 +3385,21 @@ html.shared-diary-mode .calendar-area { pointer-events: none; }
   display: none;
 }
 
+.calendar-switcher select {
+  max-width: 150px;
+  min-height: 34px;
+  padding: 5px 28px 5px 9px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--background);
+  font: inherit;
+}
+
+.calendar-list { display: grid; gap: 8px; margin: 16px 0; }
+.calendar-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.calendar-row input { min-width: 0; }
+
 .sr-only {
   position: absolute;
   width: 1px;

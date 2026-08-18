@@ -3,10 +3,12 @@ import { billingCancel, billingManage, billingStatus, billingUpgrade, billingUpg
 import { requestRender } from "./state.js";
 import { showToast } from "./toast.js";
 
-let cachedIsPro = false;
-let cachedDiarySharing = false;
-const UNLIMITED_BETA_EMAILS = new Set(["brandon.oxendine@gmail.com"]);
-let isUnlimitedBeta = false;
+let cachedFeatures = {
+  unlimitedDotTypes: false,
+  unlimitedCalendars: false,
+  diarySharing: false,
+  billingPortal: false
+};
 let fetchInFlight = null;
 let fetchRequestId = 0;
 let checkoutInFlight = false;
@@ -17,19 +19,17 @@ let portalInFlight = false;
  * Safe to call frequently — returns cached value synchronously.
  */
 export function isPro() {
-  return cachedIsPro;
+  return hasFeature("unlimitedDotTypes");
+}
+
+/** Returns whether the current account has a named server-authorized feature. */
+export function hasFeature(feature) {
+  return Boolean(cachedFeatures[feature]);
 }
 
 /** Returns whether the account can create a diary-sharing link. */
 export function canShareDiary() {
-  return cachedDiarySharing;
-}
-
-// Keep the early-access allowlist client-side so static development mirrors the
-// production billing status endpoint.
-export function setDiarySharingBetaUser(email) {
-  isUnlimitedBeta = UNLIMITED_BETA_EMAILS.has(String(email || "").trim().toLowerCase());
-  updateBillingState(cachedIsPro, cachedDiarySharing);
+  return hasFeature("diarySharing");
 }
 
 /**
@@ -39,7 +39,7 @@ export function setDiarySharingBetaUser(email) {
  */
 export async function fetchBillingStatus(accessToken) {
   if (!accessToken) {
-    updateBillingState(false);
+    updateBillingState();
     return;
   }
   const requestId = ++fetchRequestId;
@@ -50,15 +50,15 @@ export async function fetchBillingStatus(accessToken) {
       });
       if (requestId !== fetchRequestId) return;
       if (!response.ok) {
-        updateBillingState(false);
+        updateBillingState();
         return;
       }
       const data = await response.json();
       if (requestId !== fetchRequestId) return;
-      updateBillingState(Boolean(data?.isPro), Boolean(data?.features?.diarySharing));
+      updateBillingState(data?.features);
     } catch {
       if (requestId !== fetchRequestId) return;
-      updateBillingState(false);
+      updateBillingState();
     } finally {
       if (requestId === fetchRequestId) {
         fetchInFlight = null;
@@ -74,7 +74,7 @@ export async function fetchBillingStatus(accessToken) {
 export function resetBilling() {
   fetchRequestId += 1;
   fetchInFlight = null;
-  updateBillingState(false);
+  updateBillingState();
 }
 
 /**
@@ -82,7 +82,7 @@ export function resetBilling() {
  * Pro users get Infinity (unlimited), free users get the configured limit.
  */
 export function dotTypeLimit() {
-  return cachedIsPro ? Infinity : FREE_DOT_TYPE_LIMIT;
+  return hasFeature("unlimitedDotTypes") ? Infinity : FREE_DOT_TYPE_LIMIT;
 }
 
 /**
@@ -96,15 +96,16 @@ export function canAddDotType(currentCount) {
  * Updates the billing section in Settings to reflect current tier.
  */
 function renderBillingUI() {
-  if (brandUnlimited) brandUnlimited.classList.toggle("hidden", !cachedIsPro);
+  const unlimited = hasFeature("unlimitedDotTypes");
+  if (brandUnlimited) brandUnlimited.classList.toggle("hidden", !unlimited);
   if (!billingStatus) return;
-  if (cachedIsPro) {
+  if (unlimited) {
     billingStatus.textContent = "You've got Unlimited.";
     if (settingsUpgradeTab) settingsUpgradeTab.textContent = "Unlimited";
     if (billingUpgrade) billingUpgrade.classList.add("hidden");
     if (billingUpgradeYearly) billingUpgradeYearly.classList.add("hidden");
-    if (billingManage) billingManage.classList.toggle("hidden", isUnlimitedBeta);
-    if (billingCancel) billingCancel.classList.toggle("hidden", isUnlimitedBeta);
+    if (billingManage) billingManage.classList.toggle("hidden", !hasFeature("billingPortal"));
+    if (billingCancel) billingCancel.classList.toggle("hidden", !hasFeature("billingPortal"));
   } else {
     billingStatus.textContent = `Free plan: up to ${FREE_DOT_TYPE_LIMIT} dot types.`;
     if (settingsUpgradeTab) settingsUpgradeTab.textContent = "Upgrade";
@@ -119,12 +120,17 @@ function renderBillingUI() {
   if (billingCancel) billingCancel.disabled = portalInFlight;
 }
 
-function updateBillingState(nextIsPro, nextDiarySharing = nextIsPro) {
-  const resolvedIsPro = nextIsPro || isUnlimitedBeta;
-  const resolvedDiarySharing = nextDiarySharing || resolvedIsPro;
-  const changed = cachedIsPro !== resolvedIsPro || cachedDiarySharing !== resolvedDiarySharing;
-  cachedIsPro = resolvedIsPro;
-  cachedDiarySharing = resolvedDiarySharing;
+function updateBillingState(nextFeatures = {}) {
+  const resolvedFeatures = {
+    unlimitedDotTypes: Boolean(nextFeatures?.unlimitedDotTypes),
+    unlimitedCalendars: Boolean(nextFeatures?.unlimitedCalendars),
+    diarySharing: Boolean(nextFeatures?.diarySharing),
+    billingPortal: Boolean(nextFeatures?.billingPortal)
+  };
+  const changed = Object.keys(resolvedFeatures).some(
+    (feature) => cachedFeatures[feature] !== resolvedFeatures[feature]
+  );
+  cachedFeatures = resolvedFeatures;
   renderBillingUI();
   if (changed) requestRender();
 }

@@ -11,6 +11,8 @@ export const defaultState = {
   showCalendarNotes: true,
   darkMode: null,
   lastModified: null,
+  calendars: [],
+  activeCalendarId: "default",
   dotTypes: [],
   dayDots: {},
   dotPositions: {},
@@ -73,6 +75,7 @@ export function saveAndRender() {
     requestRender();
     return;
   }
+  syncActiveCalendarSnapshot(state);
   state.lastModified = new Date().toISOString();
   persistStateToLocal(state);
   scheduleSyncFn();
@@ -354,7 +357,7 @@ export function normalizeImportedState(parsed) {
     return structuredClone(defaultState);
   }
   const yearFromMonthCursor = parsed.monthCursor ? new Date(parsed.monthCursor).getFullYear() : null;
-  return {
+  const normalized = {
     monthCursor: typeof parsed.monthCursor === "string" ? parsed.monthCursor : defaultState.monthCursor,
     yearCursor: Number.isInteger(parsed.yearCursor) ? parsed.yearCursor : yearFromMonthCursor || defaultState.yearCursor,
     weekStartsMonday: Boolean(parsed.weekStartsMonday),
@@ -376,6 +379,77 @@ export function normalizeImportedState(parsed) {
     dotPositions: parsed.dotPositions && typeof parsed.dotPositions === "object" ? parsed.dotPositions : {},
     dayNotes: parsed.dayNotes && typeof parsed.dayNotes === "object" ? parsed.dayNotes : {}
   };
+  const calendars = normalizeCalendars(parsed.calendars, normalized);
+  const activeCalendarId = calendars.some((calendar) => calendar.id === parsed.activeCalendarId)
+    ? parsed.activeCalendarId
+    : calendars[0].id;
+  return applyCalendarSnapshot({ ...normalized, calendars, activeCalendarId }, activeCalendarId);
+}
+
+function calendarSnapshot(source) {
+  return {
+    dotTypes: structuredClone(source.dotTypes || []),
+    dayDots: structuredClone(source.dayDots || {}),
+    dotPositions: structuredClone(source.dotPositions || {}),
+    dayNotes: structuredClone(source.dayNotes || {})
+  };
+}
+
+function normalizeCalendars(rawCalendars, fallback) {
+  const source = Array.isArray(rawCalendars) && rawCalendars.length ? rawCalendars : [{ id: "default", name: "My diary", ...calendarSnapshot(fallback) }];
+  return source
+    .filter((calendar) => calendar && typeof calendar === "object" && typeof calendar.id === "string" && calendar.id)
+    .map((calendar, index) => ({
+      id: calendar.id,
+      name: normalizeCalendarName(calendar.name) || `Calendar ${index + 1}`,
+      ...calendarSnapshot(calendar)
+    }));
+}
+
+function normalizeCalendarName(name) {
+  return String(name || "").trim().slice(0, 32);
+}
+
+function applyCalendarSnapshot(source, calendarId) {
+  const calendar = source.calendars.find((item) => item.id === calendarId) || source.calendars[0];
+  return { ...source, activeCalendarId: calendar.id, ...calendarSnapshot(calendar) };
+}
+
+export function syncActiveCalendarSnapshot(source = state) {
+  ensureCalendars(source);
+  const calendar = source.calendars.find((item) => item.id === source.activeCalendarId) || source.calendars[0];
+  Object.assign(calendar, calendarSnapshot(source));
+}
+
+function ensureCalendars(source) {
+  if (Array.isArray(source.calendars) && source.calendars.length) return;
+  source.calendars = [{ id: "default", name: "My diary", ...calendarSnapshot(source) }];
+  source.activeCalendarId = "default";
+}
+
+export function switchCalendar(calendarId) {
+  ensureCalendars(state);
+  if (!state.calendars?.some((calendar) => calendar.id === calendarId)) return;
+  syncActiveCalendarSnapshot();
+  const next = applyCalendarSnapshot(state, calendarId);
+  Object.assign(state, next);
+  saveAndRender();
+}
+
+export function createCalendar(name) {
+  ensureCalendars(state);
+  syncActiveCalendarSnapshot();
+  const calendar = { id: crypto.randomUUID(), name: normalizeCalendarName(name) || "New calendar", dotTypes: [], dayDots: {}, dotPositions: {}, dayNotes: {} };
+  state.calendars.push(calendar);
+  Object.assign(state, applyCalendarSnapshot(state, calendar.id));
+  saveAndRender();
+}
+
+export function renameCalendar(calendarId, name) {
+  const calendar = state.calendars?.find((item) => item.id === calendarId);
+  if (!calendar) return;
+  calendar.name = normalizeCalendarName(name) || calendar.name;
+  saveAndRender();
 }
 
 function cleanOrphanDotIds(dayDots, dotTypes) {
