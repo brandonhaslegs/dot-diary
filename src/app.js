@@ -10,7 +10,8 @@ import {
   billingUpgradeYearly,
   brandHomeButton,
   calendarAddButton,
-  calendarSelect,
+  calendarMenu,
+  calendarToggle,
   colorModeDarkButton,
   colorModeLightButton,
   deleteCancel,
@@ -27,6 +28,12 @@ import {
   loginSendButton,
   loginVerifyButton,
   menuScrim,
+  mobileFiltersButton,
+  mobileOverflowMenu,
+  mobileOverflowToggle,
+  mobileSettingsButton,
+  mobileShareButton,
+  mobileTodayButton,
   mobileMenuPortal,
   onboardingEmailInput,
   onboardingBackButton,
@@ -72,7 +79,6 @@ import {
   enterApp,
   handleDataImport,
   handleCalendarAdd,
-  handleCalendarSwitch,
   handleGlobalKeyDown,
   handleGlobalPointerDown,
   interceptMobileMenuBackdropTap,
@@ -197,7 +203,37 @@ submitOnEnter(authEmailInput, () => requestEmailCode(authEmailInput?.value, auth
 authSignOutButton?.addEventListener("click", signOutSupabase);
 settingsCloseButton?.addEventListener("click", closeSettingsModal);
 calendarAddButton?.addEventListener("click", handleCalendarAdd);
-calendarSelect?.addEventListener("change", () => handleCalendarSwitch(calendarSelect.value));
+function closeCalendarMenu() {
+  calendarMenu?.classList.add("hidden");
+  calendarToggle?.setAttribute("aria-expanded", "false");
+}
+
+calendarToggle?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  if (calendarToggle.disabled) return;
+  const isOpening = calendarMenu?.classList.contains("hidden");
+  closeCalendarMenu();
+  if (isOpening) {
+    calendarMenu?.classList.remove("hidden");
+    calendarToggle.setAttribute("aria-expanded", "true");
+  }
+});
+calendarMenu?.addEventListener("click", () => closeCalendarMenu());
+
+function closeMobileOverflowMenu() {
+  mobileOverflowMenu?.classList.add("hidden");
+  mobileOverflowToggle?.setAttribute("aria-expanded", "false");
+}
+
+mobileOverflowToggle?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const isOpening = mobileOverflowMenu?.classList.contains("hidden");
+  closeMobileOverflowMenu();
+  if (isOpening) {
+    mobileOverflowMenu?.classList.remove("hidden");
+    mobileOverflowToggle.setAttribute("aria-expanded", "true");
+  }
+});
 
 settingsTabButtons.forEach((button) => {
   button.addEventListener("click", () => activateSettingsTab(button.dataset.tab));
@@ -256,6 +292,23 @@ openSettings?.addEventListener("click", async () => {
   openSettingsModal();
 });
 openShare?.addEventListener("click", openShareModal);
+mobileTodayButton?.addEventListener("click", () => {
+  closeMobileOverflowMenu();
+  scrollToToday();
+});
+mobileShareButton?.addEventListener("click", () => {
+  closeMobileOverflowMenu();
+  openShareModal();
+});
+mobileFiltersButton?.addEventListener("click", () => {
+  closeMobileOverflowMenu();
+  closePopover();
+  openFiltersMenu();
+});
+mobileSettingsButton?.addEventListener("click", () => {
+  closeMobileOverflowMenu();
+  openSettings?.click();
+});
 document.querySelector("#share-close")?.addEventListener("click", closeShareModal);
 document.querySelector("#share-modal")?.addEventListener("pointerdown", (event) => {
   if (event.target === event.currentTarget) closeShareModal();
@@ -414,7 +467,16 @@ uploadDataInput?.addEventListener("change", handleDataImport);
 
 document.addEventListener("pointerdown", interceptMobileMenuBackdropTap, true);
 document.addEventListener("pointerdown", handleGlobalPointerDown);
+document.addEventListener("pointerdown", (event) => {
+  if (!event.target.closest(".calendar-switcher")) closeCalendarMenu();
+  if (!event.target.closest(".mobile-overflow-wrap")) closeMobileOverflowMenu();
+});
 document.addEventListener("keydown", handleGlobalKeyDown);
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  closeCalendarMenu();
+  closeMobileOverflowMenu();
+});
 
 // Initial render and first-view routing.
 render();

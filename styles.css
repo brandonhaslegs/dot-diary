@@ -35,7 +35,7 @@ html {
 
 body {
   margin: 0;
-  font-family: "Funnel Sans", "Avenir Next", "Trebuchet MS", sans-serif;
+  font-family: "Funnel Sans", Helvetica, Arial, sans-serif;
   font-weight: 700;
   color: var(--ink);
   background: var(--bg);
@@ -479,7 +479,7 @@ textarea {
   padding: 0 9px;
   border: 0;
   border-radius: 999px;
-  font-family: "Funnel Sans", "Avenir Next", "Trebuchet MS", sans-serif;
+  font-family: "Funnel Sans", Helvetica, Arial, sans-serif;
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -669,7 +669,7 @@ textarea {
 }
 
 .how-chip span:last-child {
-  font-family: "Funnel Sans", "Avenir Next", "Trebuchet MS", sans-serif;
+  font-family: "Funnel Sans", Helvetica, Arial, sans-serif;
   font-size: 20px;
   font-weight: 700;
   line-height: 1;
@@ -854,10 +854,6 @@ textarea {
 }
 
 .brand-link {
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
   font-size: 18px;
   font-weight: 700;
   border: 0;
@@ -872,6 +868,103 @@ textarea {
   gap: 8px;
   transition: none;
   box-shadow: none;
+}
+
+.brand-controls {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  transform: translateY(-50%);
+}
+
+.calendar-switcher {
+  position: relative;
+  /* The logo button contributes 12px of trailing padding and this button
+     centers its 12px caret in a 34px touch target. Offset that extra space so
+     the visible text-to-caret gap matches #period-picker-toggle's 8px gap. */
+  margin-left: -15px;
+}
+
+.calendar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: none;
+  transform: none;
+}
+
+.calendar-toggle:hover:not(:disabled),
+.calendar-toggle:focus-visible {
+  background: var(--background);
+}
+
+.calendar-toggle:disabled {
+  cursor: not-allowed;
+  /* Keep the logo-adjacent caret visually consistent with the period picker.
+     Availability is communicated by its tooltip rather than a washed-out icon. */
+  opacity: 1;
+}
+
+.calendar-menu,
+.mobile-overflow-menu {
+  position: absolute;
+  z-index: 70;
+  display: grid;
+  gap: 2px;
+  min-width: 180px;
+  padding: 5px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--background);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+.calendar-menu {
+  top: calc(100% + 7px);
+  left: 0;
+}
+
+.calendar-menu-item,
+.mobile-overflow-menu button {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+  transform: none;
+}
+
+.calendar-menu-item[aria-checked="true"] {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.calendar-menu-item:hover:not(:disabled),
+.calendar-menu-item:focus-visible,
+.mobile-overflow-menu button:hover,
+.mobile-overflow-menu button:focus-visible {
+  background: var(--card);
+}
+
+.calendar-menu-item[aria-checked="true"]:hover,
+.calendar-menu-item[aria-checked="true"]:focus-visible {
+  background: var(--foreground);
 }
 
 .brand-unlimited {
@@ -1027,6 +1120,16 @@ textarea {
   display: flex;
   gap: 8px;
   z-index: 19;
+}
+
+.mobile-overflow-wrap {
+  display: none;
+  position: relative;
+}
+
+.mobile-overflow-menu {
+  top: calc(100% + 7px);
+  right: 0;
 }
 
 .filter-menu-wrap {
@@ -1236,9 +1339,9 @@ button:active {
 }
 
 @media (min-width: 921px) {
-  .app-shell .brand-link,
-  .app-shell .brand-link:hover,
-  .app-shell .brand-link:active {
+  .app-shell .brand-controls,
+  .app-shell .brand-controls:hover,
+  .app-shell .brand-controls:active {
     transform: translateY(-50%);
   }
 }
@@ -1282,7 +1385,7 @@ button:active {
 
   .brand-link:hover,
   .brand-link:active {
-    transform: translateY(-50%);
+    transform: none;
     box-shadow: none;
   }
 }
@@ -3385,17 +3488,6 @@ html.shared-diary-mode .calendar-area { pointer-events: none; }
   display: none;
 }
 
-.calendar-switcher select {
-  max-width: 150px;
-  min-height: 34px;
-  padding: 5px 28px 5px 9px;
-  border: 2px solid var(--line);
-  border-radius: 8px;
-  color: var(--ink);
-  background: var(--background);
-  font: inherit;
-}
-
 .calendar-list { display: grid; gap: 8px; margin: 16px 0; }
 .calendar-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
 .calendar-row input { min-width: 0; }
@@ -3576,7 +3668,35 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   }
 
   .brand-link {
+    position: static;
+    transform: none;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .brand-controls {
+    position: static;
+    flex: 0 0 auto;
+    transform: none;
+  }
+
+  .brand-name,
+  .brand-unlimited {
     display: none;
+  }
+
+  .calendar-switcher {
+    position: relative;
+    transform: none;
+    margin-left: -15px;
+    flex: 0 0 auto;
+  }
+
+  .calendar-toggle {
+    width: 34px;
+    height: 34px;
   }
 
   .period-picker {
@@ -3611,6 +3731,14 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
     /* Let the fixed filter sheet escape this stacking context. Its backdrop
        sits at z-index 900, so otherwise it intercepts every mobile tap. */
     z-index: auto;
+  }
+
+  .view-nav > :not(.mobile-overflow-wrap) {
+    display: none;
+  }
+
+  .mobile-overflow-wrap {
+    display: block;
   }
 
   .filter-menu {

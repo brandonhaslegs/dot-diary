@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Funnel+Sans:wght@700&family=Borel&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Funnel+Sans:wght@400;500;600;700;800&family=Borel&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css?v=settings-tabs-horizontal-20260817" />
@@ -169,11 +169,21 @@
 
     <div class="app-shell hidden">
       <header class="topbar">
-        <button id="brand-home" type="button" class="brand-link">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>Dot Diary</span>
-          <span id="brand-unlimited" class="brand-unlimited hidden">Unlimited</span>
-        </button>
+        <div class="brand-controls">
+          <button id="brand-home" type="button" class="brand-link">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span class="brand-name">Dot Diary</span>
+            <span id="brand-unlimited" class="brand-unlimited hidden">Unlimited</span>
+          </button>
+          <div class="calendar-switcher">
+            <button id="calendar-toggle" type="button" class="calendar-toggle" aria-label="Choose calendar" aria-expanded="false" aria-controls="calendar-menu">
+              <svg class="year-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M9.75 4.5 6 8.25 2.25 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <div id="calendar-menu" class="calendar-menu hidden" role="menu" aria-label="Choose calendar"></div>
+          </div>
+        </div>
         <div class="period-picker">
           <div class="period-picker-main">
             <button id="period-picker-toggle" type="button" aria-label="Select period">
@@ -203,10 +213,6 @@
               <path d="M5.5 2.3L8.2 5L5.5 7.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </span>
-        </div>
-        <div class="calendar-switcher">
-          <label class="sr-only" for="calendar-select">Calendar</label>
-          <select id="calendar-select" aria-label="Choose calendar"></select>
         </div>
         <nav class="view-nav" aria-label="Sections">
           <button id="today-button" type="button" class="outline-button today-button hidden">Today</button>
@@ -243,6 +249,21 @@
             <span class="icon-button-label">Settings</span>
             <span class="key-hint topbar-key" aria-hidden="true">?</span>
           </button>
+          <div class="mobile-overflow-wrap">
+            <button id="mobile-overflow-toggle" type="button" class="icon-button mobile-overflow-toggle" aria-label="More actions" aria-expanded="false" aria-controls="mobile-overflow-menu">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <circle cx="4" cy="9" r="1.25" fill="currentColor" />
+                <circle cx="9" cy="9" r="1.25" fill="currentColor" />
+                <circle cx="14" cy="9" r="1.25" fill="currentColor" />
+              </svg>
+            </button>
+            <div id="mobile-overflow-menu" class="mobile-overflow-menu hidden" role="menu" aria-label="More actions">
+              <button id="mobile-today" type="button" role="menuitem">Today</button>
+              <button id="mobile-share" type="button" role="menuitem">Share diary</button>
+              <button id="mobile-filters" type="button" role="menuitem">Filters</button>
+              <button id="mobile-settings" type="button" role="menuitem">Settings</button>
+            </div>
+          </div>
         </nav>
       </header>
 
