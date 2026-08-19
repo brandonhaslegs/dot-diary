@@ -119,8 +119,25 @@ function isProFromSubscriptionStatus(status) {
  */
 async function getUnlimitedEntitlement(user) {
   const isBetaUser = UNLIMITED_BETA_EMAILS.has(String(user?.email || "").trim().toLowerCase());
+  // Beta access is a complete entitlement and must not require Stripe to be
+  // configured, which keeps allowlisted accounts working in local development.
+  if (isBetaUser) {
+    return {
+      isUnlimited: true,
+      tier: "unlimited",
+      subscriptionStatus: "early_access",
+      interval: null,
+      features: {
+        unlimitedDotTypes: true,
+        unlimitedCalendars: true,
+        diarySharing: true,
+        billingPortal: false
+      }
+    };
+  }
+
   const customer = await findStripeCustomerBySupabaseUserId(user.id, user.email);
-  let subscriptionStatus = isBetaUser ? "early_access" : "inactive";
+  let subscriptionStatus = "inactive";
   let interval = null;
 
   if (customer?.id) {

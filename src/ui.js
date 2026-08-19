@@ -28,7 +28,8 @@ import {
   appShell,
   calendarAddButton,
   calendarList,
-  calendarSelect,
+  calendarMenu,
+  calendarToggle,
   colorModeDarkButton,
   colorModeLightButton,
   deleteModal,
@@ -330,17 +331,23 @@ function renderCalendarControls() {
   const calendars = Array.isArray(state.calendars) && state.calendars.length
     ? state.calendars
     : [{ id: "default", name: "My diary" }];
-  if (calendarSelect) {
-    calendarSelect.innerHTML = "";
+  if (calendarMenu) {
+    calendarMenu.innerHTML = "";
     calendars.forEach((calendar) => {
-      const option = document.createElement("option");
-      option.value = calendar.id;
-      option.textContent = calendar.name;
-      option.selected = calendar.id === state.activeCalendarId;
-      calendarSelect.append(option);
+      const item = document.createElement("button");
+      item.type = "button";
+      item.role = "menuitemradio";
+      item.className = "calendar-menu-item";
+      item.textContent = calendar.name;
+      item.setAttribute("aria-checked", String(calendar.id === state.activeCalendarId));
+      item.disabled = !hasFeature("unlimitedCalendars");
+      item.addEventListener("click", () => handleCalendarSwitch(calendar.id));
+      calendarMenu.append(item);
     });
-    calendarSelect.disabled = !hasFeature("unlimitedCalendars");
-    calendarSelect.title = calendarSelect.disabled ? "Unlimited unlocks separate calendars" : "Switch calendar";
+  }
+  if (calendarToggle) {
+    calendarToggle.disabled = !hasFeature("unlimitedCalendars");
+    calendarToggle.title = calendarToggle.disabled ? "Unlimited unlocks separate calendars" : "Switch calendar";
   }
   if (!calendarList) return;
   calendarList.innerHTML = "";
