@@ -1308,7 +1308,10 @@ button {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  button:hover {
+  /* Calendar day cells are buttons for accessibility, but they are a fixed
+     grid—not raised controls. Exclude them here so this global effect can
+     never enter their cascade. */
+  button:not(.month-day):not(.year-day):hover {
     transform: translateY(-4px);
     filter: drop-shadow(0 4px 0 var(--line));
   }
