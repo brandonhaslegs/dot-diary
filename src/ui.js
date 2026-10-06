@@ -111,7 +111,6 @@ let loadedMobileMonthCount = 24;
 let desktopPeriodMode = "last-12-months";
 let periodLoadInProgress = false;
 let suppressDayOpenUntil = 0;
-let blockNextDayOpen = false;
 let monthScrollAttached = false;
 let hasInitializedMobileMonthScroll = false;
 let pendingMobileMonthAnchorIso = null;
@@ -480,10 +479,6 @@ function updateTodayButtonVisibility() {
 }
 
 function shouldBlockDayOpen() {
-  if (blockNextDayOpen) {
-    blockNextDayOpen = false;
-    return true;
-  }
   return (
     Date.now() < suppressDayOpenUntil ||
     !menuScrim?.classList.contains("hidden") ||
@@ -1778,40 +1773,6 @@ export function closePeriodMenu() {
     suppressDayOpenUntil = Date.now() + SUPPRESS_DAY_OPEN_MS;
   }
   updateMenuScrim();
-}
-
-// On iOS, a tap on the backdrop can occasionally be hit-tested against the
-// calendar beneath a fixed sheet. Catch it during the capture phase so the
-// calendar never receives the same gesture.
-export function interceptMobileMenuBackdropTap(event) {
-  if (!isMobileView()) return false;
-
-  const hasOpenMenu =
-    !periodPickerMenu?.classList.contains("hidden") ||
-    !filterMenu?.classList.contains("hidden") ||
-    Boolean(document.querySelector(".dot-actions-menu:not(.hidden)")) ||
-    Boolean(document.querySelector(".color-picker:not(.hidden)"));
-  if (!hasOpenMenu) return false;
-
-  const clickedMenu = event.target?.closest?.(
-    ".period-picker-menu, .filter-menu, .dot-actions-menu, .color-picker"
-  );
-  if (clickedMenu) return false;
-
-  // Safari can report a backdrop tap as targeting the fixed calendar beneath
-  // the sheet. Consume exactly that resulting day click, without relying on a
-  // timing window that may expire before Safari dispatches it.
-  if (event.target?.closest?.(".year-day, .month-day")) {
-    blockNextDayOpen = true;
-  }
-  suppressDayOpenUntil = Date.now() + 600;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  closePeriodMenu();
-  closeFiltersMenu();
-  closeDotMenus();
-  closeColorPickers();
-  return true;
 }
 
 function getPeriodPickerItems() {

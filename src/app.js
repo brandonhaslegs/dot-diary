@@ -1,5 +1,6 @@
 import { AUTH_STATE_KEY, DEMO_MODE, VIEW_MODE_KEY } from "./constants.js";
 import { formatISODate } from "./utils.js";
+import { installOverlayDismissGuard } from "./overlay-dismiss.mjs";
 import {
   authEmailInput,
   authSendButton,
@@ -81,7 +82,6 @@ import {
   handleCalendarAdd,
   handleGlobalKeyDown,
   handleGlobalPointerDown,
-  interceptMobileMenuBackdropTap,
   handlePeriodPickerScroll,
   handleResetOnboarding,
   openPeriodMenu,
@@ -465,7 +465,30 @@ uploadDataButton?.addEventListener("click", () => {
 });
 uploadDataInput?.addEventListener("change", handleDataImport);
 
-document.addEventListener("pointerdown", interceptMobileMenuBackdropTap, true);
+installOverlayDismissGuard(document, () => {
+  // Nested dialogs and menus take precedence over their parent overlay.
+  const overlays = [
+    ["#delete-modal", closeDeleteModal, ".modal-card"],
+    ["#pwa-install-modal", () => document.querySelector("#pwa-install-dismiss")?.click(), ".modal-card"],
+    [".color-picker:not(.hidden)", closeColorPickers],
+    [".dot-actions-menu:not(.hidden)", closeDotMenus],
+    ["#share-modal", closeShareModal, ".modal-card"],
+    ["#settings-modal", closeSettingsModal, ".modal-card"],
+    ["#onboarding-modal", completeOnboarding, ".modal-card"],
+    ["#filter-menu", closeFiltersMenu],
+    ["#period-picker-menu", closePeriodMenu],
+    ["#day-popover", closePopover],
+    ["#calendar-menu", closeCalendarMenu],
+    ["#mobile-overflow-menu", closeMobileOverflowMenu]
+  ];
+  for (const [selector, close, contentSelector] of overlays) {
+    const element = document.querySelector(selector);
+    if (!element || element.classList.contains("hidden")) continue;
+    const content = contentSelector ? element.querySelector(contentSelector) : element;
+    return { contains: (target) => content?.contains(target), close };
+  }
+  return null;
+});
 document.addEventListener("pointerdown", handleGlobalPointerDown);
 document.addEventListener("pointerdown", (event) => {
   if (!event.target.closest(".calendar-switcher")) closeCalendarMenu();
