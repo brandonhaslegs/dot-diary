@@ -1,68 +1,135 @@
-🔴🟠🟡🟢🔵🟣
 # Dot Diary
 
-Dot Diary is a minimalist web app for tracking your life with colored dots.
+🔴 🟠 🟡 🟢 🔵 🟣
 
-![year view](https://github.com/user-attachments/assets/91d3a2e6-3804-4246-a564-d7e6765420b4)
+A diary made of colored dots. Track habits, remember small moments, and see patterns across your days, months, and years.
 
-## Features
+[Open Dot Diary](https://dot-diary.com) · [GitHub](https://github.com/brandonhaslegs/dot-diary) · [Radicle](https://radicle.network/nodes/oak.radicle.garden/rad:z3gkDi3uPJkesCqiwqjxbmLWefJep)
 
-- Marketing landing page and in-app login flow
-- Desktop year view and mobile month view
-- Onboarding flow for first-time setup
-- Custom dot types with color changes
-- Add/remove dots per day
-- Drag dots to reposition and persist their placement
-- Short note per day (normalized to a concise format)
-- Dot type management (rename/delete/permanently delete)
-- Suggested dot types with hide/show toggle
-- Start weeks on Monday toggle (month view)
-- Light/dark mode
-- Keyboard shortcuts + keyboard hint toggle
-- Data export/import (JSON)
-- Email code auth and cloud sync across devices
-- Optional Stripe-powered Unlimited plan: unlimited dot types, separate calendars, and diary sharing
+![Dot Diary on desktop, showing the rolling 12-month calendar](docs/screenshots/desktop-calendar.png)
 
-<img width="839" height="1020" alt="image" src="https://github.com/user-attachments/assets/942966c2-4f09-479f-a206-121a0888377d" />
+## What you can do
 
-## Tech
+- Create your own dot types, choose their colors, and place dots on each day.
+- Drag dots around a day and add short notes alongside them.
+- Browse a year or the last 12 months on desktop, and scroll through months on mobile.
+- Filter the calendar by dot type and show or hide notes.
+- Rename, recolor, hide, or delete dot types in Settings.
+- Choose light, dark, or system appearance, Monday-first weeks, and keyboard hints.
+- Export and import your diary as JSON.
+- Sign in with an email code to sync across devices, with local browser storage for persistence.
+- Add the app to your home screen on supported devices.
 
-- Vanilla HTML, CSS, and JavaScript
-- LocalStorage persistence
-- Supabase Auth + data sync
+The free plan supports six dot types. Unlimited adds more dot types, separate calendars, and shareable diary snapshots, with Stripe checkout and a billing portal.
+
+## On mobile
+
+The month view keeps your diary close at hand. Tap a day to choose a dot or add a note.
+
+<p>
+  <img src="docs/screenshots/mobile-calendar.png" width="320" alt="Mobile month view with colored dots and bottom navigation" />
+  <img src="docs/screenshots/mobile-day-picker.png" width="320" alt="Mobile day picker with dot types and an Add note action" />
+</p>
+
+## Settings
+
+Manage dot types, calendars, preferences, data imports and exports, and your account in one place.
+
+![Dot Diary Settings with the Dot types tab open](docs/screenshots/desktop-settings.png)
+
+Screenshots were captured from the local development app on October 7, 2026, using generated demo data rather than a personal diary. They include UI refinements that are not yet committed in this checkout.
+
+## Stack
+
+- **Frontend:** vanilla JavaScript with native ES modules, HTML, and CSS. No UI framework or frontend build step.
+- **Storage and sync:** browser localStorage, Supabase Auth, and a Supabase database.
+- **API:** Node.js handlers in `api/`, hosted as Vercel functions.
+- **Billing:** Stripe, called from the server-side API.
+- **Tests:** Node's built-in test runner; additional Playwright browser tests are in local development.
 
 ## Run locally
 
-Because this is a static app, you can open `index.html` directly or run a local server:
+From the repository root, start a static server with Python 3:
 
-```bash
-cd "/Users/brandonhaslegs/Code/Dot Diary"
+```sh
 python3 -m http.server 8788
 ```
 
-Then visit:
+Open [localhost:8788](http://localhost:8788). Use a server rather than opening `index.html` directly, because the app loads JavaScript modules.
 
-`http://127.0.0.1:8788`
+For a populated preview without signing in, open [demo mode](http://localhost:8788/?demo=1). Demo edits are not saved to browser storage.
 
-## Sync simulation test
+The Python server serves the frontend only. It does not execute the billing or sharing routes under `/api`. Use a Vercel development environment or deployment when working on those integrations.
 
-Run the local two-device sync simulator:
+## Backend setup
 
-```bash
-cd "/Users/brandonhaslegs/Code/Dot Diary"
-node --test tests/sync-simulator.test.mjs
+### Authentication and sync
+
+The browser's Supabase project URL and publishable key are configured in `src/constants.js`. To run against your own project, replace both values and configure Supabase email-code authentication.
+
+The sync code expects a `user_data` table with a unique `user_id`, a JSON `data` column, and an `updated_at` timestamp. Restrict reads and writes to the signed-in owner with row-level security. The repository does not currently include a complete bootstrap migration for this table.
+
+### Billing and Unlimited access
+
+Configure these environment variables for the Vercel API functions:
+
+| Variable | Purpose |
+| --- | --- |
+| `SUPABASE_URL` | Supabase project URL used by the API. |
+| `SUPABASE_ANON_KEY` | Public client key used to validate user sessions and access sharing with the caller's permissions. |
+| `STRIPE_SECRET_KEY` | Server-only Stripe secret key. |
+| `STRIPE_PRICE_MONTHLY` | Stripe price ID for the monthly plan. |
+| `STRIPE_PRICE_YEARLY` | Stripe price ID for the yearly plan. |
+| `PUBLIC_APP_URL` | Recommended public origin for checkout and billing-portal return URLs. |
+| `UNLIMITED_BETA_EMAILS` | Optional comma-separated list of account emails with complimentary access. |
+
+The email allowlist unlocks Unlimited without requiring Stripe to be configured. An additional permanent grant through admin-controlled `app_metadata.unlimited: true` is in local development and is not yet included in the published code.
+
+Keep Stripe secrets and the complimentary-access allowlist in the server environment, outside source control.
+
+### Sharing
+
+The sharing API stores selected diary snapshots in `public_shares`. The existing table migration is in `supabase/migrations/`.
+
+**Known limitation:** the current migration's SELECT policy allows reading all rows; it does not enforce access only through a known share ID. Review and tighten database access before using sharing for sensitive data. An unguessable link alone does not prevent direct table enumeration when the table is publicly readable.
+
+## Tests
+
+Run the committed regression tests with a modern Node.js installation:
+
+```sh
+node --test tests/sync-simulator.test.mjs tests/overlay-dismiss.test.mjs
 ```
 
-## Billing setup
+These cover diary synchronization and overlay dismissal behavior.
 
-The Unlimited gate is served from the API, not trusted to the browser. Configure
-these Vercel environment variables before enabling the upgrade buttons:
+### Test tooling in local development
 
-- `STRIPE_SECRET_KEY`
-- `STRIPE_PRICE_MONTHLY`
-- `STRIPE_PRICE_YEARLY`
-- `SUPABASE_URL` and `SUPABASE_ANON_KEY`
-- `PUBLIC_APP_URL` (recommended, for Checkout return URLs)
+The local working tree also contains billing regression tests, npm scripts, a
+Playwright mobile interaction suite, and a GitHub Actions workflow. These are not
+yet committed, so the following commands apply only once those files are available:
 
-For temporary manual access, set `UNLIMITED_BETA_EMAILS` to a comma-separated
-list of verified account emails. Do not put this allowlist in client code.
+```sh
+npm ci
+npm test
+npx playwright install chromium webkit
+npm run test:mobile
+```
+
+The pending workflow uses Node.js 22. The mobile suite starts a Python preview
+server and covers day editing, persistence, menus, filters, sharing dialogs, and
+settings across phone sizes and landscape WebKit. It does not validate live
+Stripe payments or production database permissions.
+
+## Project layout
+
+| Path | Contents |
+| --- | --- |
+| `index.html`, `styles.css` | App markup and styles. |
+| `src/` | UI rendering, diary state, auth, sync, billing, sharing, and installation UI. |
+| `api/` | Server-side billing and sharing endpoints. |
+| `supabase/migrations/` | Database migrations currently included with the app. |
+| `tests/` | Node regression tests; additional mobile tests are pending publication. |
+| `docs/screenshots/` | Screenshots used in documentation. |
+| `icons/`, `manifest.json` | Home-screen icons and web app manifest. |
+| `privacy.html`, `impressum.html` | Legal pages. |
