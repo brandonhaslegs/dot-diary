@@ -1,6 +1,7 @@
 const {
   findStripeCustomerBySupabaseUserId,
   getAuthedUser,
+  getUnlimitedEntitlement,
   normalizeOrigin,
   parseJsonBody,
   sendJson,
@@ -32,6 +33,9 @@ module.exports = async function handler(req, res) {
     const user = await getAuthedUser(req);
     if (!user?.id) {
       return sendJson(res, 401, { error: "Unauthorized." });
+    }
+    if ((await getUnlimitedEntitlement(user)).isUnlimited) {
+      return sendJson(res, 409, { error: "You already have Unlimited." });
     }
     const body = await parseJsonBody(req);
     const cycle = body?.cycle === "yearly" ? "yearly" : "monthly";

@@ -121,11 +121,12 @@ async function getUnlimitedEntitlement(user) {
   const isBetaUser = UNLIMITED_BETA_EMAILS.has(String(user?.email || "").trim().toLowerCase());
   // Beta access is a complete entitlement and must not require Stripe to be
   // configured, which keeps allowlisted accounts working in local development.
-  if (isBetaUser) {
+  const hasAccountGrant = user?.app_metadata?.unlimited === true;
+  if (hasAccountGrant || isBetaUser) {
     return {
       isUnlimited: true,
       tier: "unlimited",
-      subscriptionStatus: "early_access",
+      subscriptionStatus: hasAccountGrant ? "granted" : "early_access",
       interval: null,
       features: {
         unlimitedDotTypes: true,
