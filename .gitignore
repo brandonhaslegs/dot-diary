@@ -15,3 +15,7 @@ build/
 
 .vercel
 .env*.local
+
+# Browser regression artifacts
+playwright-report/
+test-results/

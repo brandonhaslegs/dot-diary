@@ -497,25 +497,19 @@ function bindDayPopoverTrigger(element, isoDate, contextMonthIso) {
     openPopover(isoDate, event.clientX, event.clientY, contextMonthIso);
   };
 
-  // A mobile sheet can be dismissed during a gesture. Safari may then emit a
-  // click for the calendar below it, even though the gesture began on the
-  // backdrop. Only open a day when its own pointerdown started the gesture.
+  // Open on click, after the dismissal guard has seen the gesture. Opening on
+  // pointerup lets that same gesture's click immediately dismiss the new sheet.
+  // Capture also records taps that begin on a draggable dot.
   element.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || event.target.closest?.(".dot-sticker")) return;
-    activePointerId = event.pointerId;
-  });
-  element.addEventListener("pointercancel", (event) => {
-    if (event.pointerId === activePointerId) activePointerId = null;
-  });
-  element.addEventListener("pointerup", (event) => {
-    if (event.pointerId !== activePointerId) return;
+    activePointerId = event.button === 0 ? event.pointerId : null;
+  }, true);
+  element.addEventListener("pointercancel", () => {
     activePointerId = null;
-    openForDay(event);
-  });
-  // Keep keyboard activation accessible without accepting synthetic pointer
-  // clicks (which have a non-zero detail value).
+  }, true);
   element.addEventListener("click", (event) => {
-    if (event.detail === 0) openForDay(event);
+    const startedHere = activePointerId !== null;
+    activePointerId = null;
+    if (startedHere || event.detail === 0) openForDay(event);
   });
 }
 
@@ -2295,6 +2289,7 @@ export function startDotDrag(event, { isoDate, dotId, sticker, mode }) {
   let last = null;
   const onMove = (moveEvent) => {
     if (moveEvent.pointerId !== pointerId) return;
+    if (!moved && Math.hypot(moveEvent.clientX - event.clientX, moveEvent.clientY - event.clientY) < 8) return;
     last = updatePosition(moveEvent);
   };
 

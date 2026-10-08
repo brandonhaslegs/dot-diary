@@ -1,0 +1,10 @@
+{
+  "name": "dot-diary",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:mobile": "playwright test",
+    "test:mobile:update": "playwright test --update-snapshots"
+  },
+  "devDependencies": { "playwright": "1.58.2" }
+}

@@ -1,5 +1,14 @@
 # Project instructions
 
+## Interaction changes
+
+For calendar, dot picker, or overlay event changes, run `npm test` and
+`npx playwright test day-picker` before calling the change verified. Check both
+touch and desktop behavior: open a day, keep the picker visible after the opening
+gesture, select a dot, reopen it, and dismiss it without activating the background.
+For a reported regression, demonstrate that the browser check fails with the old
+behavior and passes with the fix. Report checks that could not run explicitly.
+
 ## Publishing changes
 
 Whenever pushing this project, push the same intended branches and tags to both
