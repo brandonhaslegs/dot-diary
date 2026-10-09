@@ -354,16 +354,21 @@ function renderCalendarControls() {
     const row = document.createElement("div");
     row.className = "calendar-row";
     const input = document.createElement("input");
+    input.type = "text";
     input.value = calendar.name;
     input.disabled = !hasFeature("unlimitedCalendars");
     input.setAttribute("aria-label", `Calendar name: ${calendar.name}`);
     input.addEventListener("change", () => renameCalendar(calendar.id, input.value));
-    const use = document.createElement("button");
-    use.type = "button";
-    use.className = "outline-button";
-    use.textContent = calendar.id === state.activeCalendarId ? "Current" : "Open";
-    use.disabled = calendar.id === state.activeCalendarId || !hasFeature("unlimitedCalendars");
-    use.addEventListener("click", () => switchCalendar(calendar.id));
+    const isCurrent = calendar.id === state.activeCalendarId;
+    const use = document.createElement(isCurrent ? "span" : "button");
+    use.className = isCurrent ? "calendar-current" : "calendar-open";
+    use.textContent = isCurrent ? "Current" : "Open";
+    if (!isCurrent) {
+      use.type = "button";
+      use.disabled = !hasFeature("unlimitedCalendars");
+      use.setAttribute("aria-label", `Open ${calendar.name}`);
+      use.addEventListener("click", () => switchCalendar(calendar.id));
+    }
     row.append(input, use);
     calendarList.append(row);
   });
