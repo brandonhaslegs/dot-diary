@@ -40,6 +40,26 @@ for (const desktop of [false, true]) {
           await expect(input).toHaveCSS('font-family', await page.locator('body').evaluate(el => getComputedStyle(el).fontFamily));
           expect((await input.boundingBox()).height).toBeGreaterThanOrEqual(44);
         }
+        // The entire outer focus ring must fit inside every clipping ancestor.
+        for (const control of await page.locator('.calendar-row input, #calendar-add').all()) {
+          await control.focus();
+          await expect(control).toBeFocused();
+          const clippedBy = await control.evaluate(el => {
+            const style = getComputedStyle(el);
+            const outset = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+            const rect = el.getBoundingClientRect();
+            const clipped = [];
+            for (let ancestor = el.parentElement; ancestor; ancestor = ancestor.parentElement) {
+              const css = getComputedStyle(ancestor);
+              const bounds = ancestor.getBoundingClientRect();
+              if (css.overflowX !== 'visible' && (rect.left - outset < bounds.left || rect.right + outset > bounds.right)) {
+                clipped.push(ancestor.id || ancestor.className);
+              }
+            }
+            return clipped;
+          });
+          expect(clippedBy, 'focus ring should not be horizontally clipped').toEqual([]);
+        }
         const panel = page.locator('#settings-panel-calendars');
         expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
         await page.screenshot({ path: info.outputPath(`calendars-${theme}.png`) });

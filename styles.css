@@ -3510,6 +3510,12 @@ html.shared-diary-mode .calendar-area { pointer-events: none; }
   display: none;
 }
 
+/* Leave room for outer focus rings inside the panel's scrolling boundary. */
+#settings-panel-calendars {
+  margin-inline: -6px;
+  padding-inline: 6px;
+}
+
 #settings-panel-calendars .muted {
   max-width: 38ch;
   font-weight: 400;
