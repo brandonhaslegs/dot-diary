@@ -95,31 +95,40 @@ The sharing API stores selected diary snapshots in `public_shares`. The existing
 
 ## Tests
 
-Run the committed regression tests with a modern Node.js installation:
-
-```sh
-node --test tests/sync-simulator.test.mjs tests/overlay-dismiss.test.mjs
-```
-
-These cover diary synchronization and overlay dismissal behavior.
-
-### Test tooling in local development
-
-The local working tree also contains billing regression tests, npm scripts, a
-Playwright mobile interaction suite, and a GitHub Actions workflow. These are not
-yet committed, so the following commands apply only once those files are available:
+Install dependencies and browser engines, then run the full regression gate:
 
 ```sh
 npm ci
-npm test
 npx playwright install chromium webkit
-npm run test:mobile
+npm run test:regression
 ```
 
-The pending workflow uses Node.js 22. The mobile suite starts a Python preview
-server and covers day editing, persistence, menus, filters, sharing dialogs, and
-settings across phone sizes and landscape WebKit. It does not validate live
-Stripe payments or production database permissions.
+The gate runs all Node tests and Playwright browser tests. GitHub Actions runs
+this same command on pushes and pull requests, retaining screenshots, traces,
+and the HTML report for failed browser checks. Browser tests start a local Python
+preview server and mock external services; they do not use a real diary account.
+
+The browser suite covers:
+
+- Small iPhones, standard iPhones, Android Chromium, and landscape WebKit.
+- Light and dark footer navigation, menus fitting inside the viewport, and every
+  overflow action remaining unobscured and reachable.
+- Resizing across the 480/481px sheet breakpoint and into landscape.
+- Outside taps dismissing menus without activating calendar days underneath.
+- Calendar logo hover/focus, touch and desktop day-picker opening, adding dots,
+  reopening, dismissal, and saved notes surviving reload.
+- Period selection, filters, free-account sharing restrictions, mocked Unlimited
+  sharing access, settings tabs, dot actions, colors, and delete cancellation.
+
+Use `npm test` for unit tests, `npx playwright test day-picker` for the required
+picker checks, or `npx playwright test footer-menu` for mobile navigation checks.
+Run the full gate before publishing UI changes. When fixing a regression, first
+show that its new check fails with the faulty behavior, then passes with the fix.
+Do not change assertions or refresh snapshots simply to make a failure disappear.
+
+Browser emulation does not replace a physical iPhone check for standalone safe
+areas, the on-screen keyboard, or Safari-specific device behavior. These tests do
+not validate live Stripe payments or production database permissions.
 
 ## Project layout
 

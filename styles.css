@@ -845,6 +845,8 @@ textarea {
 
 .topbar {
   position: relative;
+  /* Keep header menus above calendar cells, below modal scrims. */
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -906,7 +908,8 @@ textarea {
 
 .calendar-toggle:hover:not(:disabled),
 .calendar-toggle:focus-visible {
-  background: var(--background);
+  /* This touch target overlaps the logo padding; keep it transparent. */
+  background: transparent;
 }
 
 .calendar-toggle:disabled {
@@ -933,6 +936,18 @@ textarea {
 .calendar-menu {
   top: calc(100% + 7px);
   left: 0;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 32px));
+  max-height: min(360px, calc(100dvh - 100px));
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 920px) {
+  .calendar-menu {
+    top: auto;
+    bottom: calc(100% + 7px);
+  }
 }
 
 .calendar-menu-item,
@@ -4331,5 +4346,46 @@ html[data-theme="dark"] .dot-actions-item:disabled:hover {
   #onboarding-modal .modal-card {
     height: 100%;
     max-height: 100%;
+  }
+}
+
+/* Mobile navigation lives at the bottom: menus must open into the viewport. */
+@media (max-width: 920px) {
+  .mobile-overflow-menu {
+    top: auto;
+    bottom: calc(100% + 7px);
+    max-height: calc(100dvh - 76px);
+    overflow-y: auto;
+  }
+
+  /* Let the filter sheet rise above its body-level scrim while it is open. */
+  .topbar:has(.filter-menu:not(.hidden)) {
+    z-index: auto;
+  }
+
+  /* Keep the filter sheet renderable when its desktop trigger is hidden. */
+  .view-nav > .filter-menu-wrap {
+    display: contents;
+  }
+  .filter-menu-wrap > #open-filters {
+    display: none;
+  }
+  .filter-menu {
+    max-height: calc(100dvh - 76px);
+    overflow-y: auto;
+  }
+}
+
+.popover {
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 481px) and (max-width: 920px) {
+  .period-picker-menu {
+    top: auto;
+    bottom: calc(100% + 8px);
+    max-height: min(280px, calc(100dvh - 80px));
   }
 }
