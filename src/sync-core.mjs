@@ -63,8 +63,11 @@ export function mergeDiaryStates(localState, remoteState, { preferLocalSettings,
   };
   const calendars = mergeCalendars(localState.calendars, remoteState.calendars, preferLocalConflicts);
   if (!calendars) return merged;
-  const preferredCalendarId = preferLocalConflicts ? localState.activeCalendarId : remoteState.activeCalendarId;
-  const activeCalendar = calendars.find((calendar) => calendar.id === preferredCalendarId) || calendars[0];
+  // The viewed calendar is local navigation, independent of content conflicts.
+  // A delayed cloud response must not undo a calendar the user just opened.
+  const activeCalendar = calendars.find((calendar) => calendar.id === localState.activeCalendarId)
+    || calendars.find((calendar) => calendar.id === remoteState.activeCalendarId)
+    || calendars[0];
   return {
     ...merged,
     calendars,

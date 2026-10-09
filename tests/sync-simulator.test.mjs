@@ -139,3 +139,31 @@ test("two devices converge with cross edits and duplicate cloud history", () => 
   assert.equal(deviceA.state.dayNotes["2026-02-03"], "B note");
   assert.ok(areStatesEqual(deviceA.state, deviceB.state));
 });
+
+for (const preferLocalSettings of [false, true]) {
+  test(`cloud merge preserves the locally selected calendar (local settings: ${preferLocalSettings})`, () => {
+    const original = { id: 'default', name: 'My diary', ...baseState() };
+    const added = { id: 'new', name: 'New calendar', dotTypes: [], dayDots: {}, dotPositions: {}, dayNotes: {} };
+    const local = { ...baseState(), calendars: [original, added], activeCalendarId: 'new' };
+    const remote = clone(local);
+    remote.activeCalendarId = 'default';
+    remote.lastModified = '2099-01-01T00:00:00.000Z';
+    remote.calendars[0].dayNotes['2026-10-09'] = 'Updated remotely';
+    const merged = mergeDiaryStates(local, remote, { preferLocalSettings, preferLocalConflicts: false });
+    assert.equal(merged.activeCalendarId, 'new');
+    assert.deepEqual(merged.dotTypes, []);
+    assert.deepEqual(merged.dayNotes, {});
+    assert.equal(merged.calendars[0].dayNotes['2026-10-09'], 'Updated remotely');
+  });
+}
+
+test('cloud merge restores the remote selection when there is no valid local selection', () => {
+  const remote = { ...baseState(), activeCalendarId: 'remote', calendars: [
+    { id: 'first', name: 'First', ...baseState() },
+    { id: 'remote', name: 'Remote diary', ...baseState() }
+  ] };
+  const merged = mergeDiaryStates({ ...baseState(), calendars: [] }, remote, {
+    preferLocalSettings: false, preferLocalConflicts: false
+  });
+  assert.equal(merged.activeCalendarId, 'remote');
+});
