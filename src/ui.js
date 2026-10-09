@@ -1441,7 +1441,7 @@ export function openPopover(isoDate, x, y, contextMonthIso = null) {
   const addDotTypeButton = document.createElement("button");
   addDotTypeButton.type = "button";
   addDotTypeButton.className = "note-edit-button";
-  setButtonLabelWithShortcut(addDotTypeButton, "Add dot type", "D");
+  addDotTypeButton.textContent = "Add dot type";
   addDotTypeButton.addEventListener("click", () => {
     closePopover();
     addNewDotType();
@@ -1450,7 +1450,7 @@ export function openPopover(isoDate, x, y, contextMonthIso = null) {
   const noteButton = document.createElement("button");
   noteButton.type = "button";
   noteButton.className = "note-edit-button";
-  setButtonLabelWithShortcut(noteButton, getDayNote(isoDate) ? "Edit note" : "Add note", "N");
+  noteButton.textContent = getDayNote(isoDate) ? "Edit note" : "Add note";
   noteButton.addEventListener("click", () => {
     closePopover();
     startNoteEdit(isoDate, contextMonthIso, "", true);
@@ -1910,19 +1910,6 @@ export function hasDotTypeName(name) {
   return state.dotTypes.some((dot) => normalizeDotTypeName(dot.name).toLowerCase() === target);
 }
 
-function setButtonLabelWithShortcut(button, label, shortcut) {
-  button.textContent = "";
-  const text = document.createElement("span");
-  text.className = "button-label";
-  text.textContent = label;
-  const hint = document.createElement("span");
-  hint.className = "key-hint";
-  hint.setAttribute("aria-hidden", "true");
-  hint.textContent = shortcut;
-  button.append(text, hint);
-  button.setAttribute("aria-label", `${label} (${shortcut})`);
-}
-
 function normalizeDotTypeColorInput(value) {
   const raw = String(value || "").trim();
   if (!raw) return null;
@@ -2099,6 +2086,16 @@ export function handleGlobalKeyDown(event) {
     }
   }
 
+  // Printable keys belong to the day note while its picker is open.
+  if (isDotPopoverOpen && isPlainShortcutKey && !isEditableTarget &&
+      event.key.length === 1 && event.key !== " ") {
+    event.preventDefault();
+    const { isoDate, contextMonthIso } = activePopover;
+    closePopover();
+    startNoteEdit(isoDate, contextMonthIso || null, event.key, true);
+    return;
+  }
+
   const isQuestionSettingsShortcut = isPlainShortcutKey && !isEditableTarget && event.key === "?";
   if (isQuestionSettingsShortcut) {
     event.preventDefault();
@@ -2132,40 +2129,6 @@ export function handleGlobalKeyDown(event) {
     closePopover();
     if (periodPickerMenu.classList.contains("hidden")) openPeriodMenu();
     else closePeriodMenu();
-    return;
-  }
-
-  const isAddDotTypeShortcut = isPlainShortcutKey && !isEditableTarget && activePopover && key === "d";
-  if (isAddDotTypeShortcut) {
-    event.preventDefault();
-    closePopover();
-    addNewDotType();
-    openSettingsModal();
-    return;
-  }
-
-  const isAddNoteShortcut = isPlainShortcutKey && !isEditableTarget && activePopover && key === "n";
-  if (isAddNoteShortcut) {
-    event.preventDefault();
-    const { isoDate, contextMonthIso } = activePopover;
-    closePopover();
-    startNoteEdit(isoDate, contextMonthIso || null, "", true);
-    return;
-  }
-
-  const isTypeToStartNote =
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.altKey &&
-    !isEditableTarget &&
-    activePopover &&
-    event.key.length === 1 &&
-    event.key !== " ";
-  if (isTypeToStartNote) {
-    event.preventDefault();
-    const { isoDate, contextMonthIso } = activePopover;
-    closePopover();
-    startNoteEdit(isoDate, contextMonthIso || null, event.key);
     return;
   }
 
